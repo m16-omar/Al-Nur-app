@@ -54,12 +54,12 @@ class SocialAuthButtons extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
-                      Icons.g_mobiledata_rounded,
-                      size: 24,
-                      color: Color(0xFF4285F4),
+                    Image.asset(
+                      'assets/icons/google_logo.png',
+                      width: 20,
+                      height: 20,
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 8),
                     Text(
                       'Google',
                       style: GoogleFonts.plusJakartaSans(
