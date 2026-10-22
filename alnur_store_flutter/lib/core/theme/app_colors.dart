@@ -28,6 +28,7 @@ class AppColors {
 
   // Status & Utility
   static const Color starAmber = Color(0xFFF59E0B);
+  static const Color error = Color(0xFFEF4444);
   static const Color notificationRed = Color(0xFFEF4444);
   static const Color border = Color(0xFFEBE6DC);
   static const Color inputBackground = Colors.white;
