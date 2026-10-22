@@ -100,6 +100,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
                 // Featured Products Section
                 SliverToBoxAdapter(
                   child: FeaturedProductsSection(
+                    title: 'Featured Products',
                     products: homeState.featuredProducts,
                     onProductTap: (product) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -114,6 +115,87 @@ class _HomeViewState extends ConsumerState<HomeView> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Viewing all featured products'),
+                          duration: Duration(seconds: 1),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+                const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
+                // Al-Nur Abayas Section
+                SliverToBoxAdapter(
+                  child: FeaturedProductsSection(
+                    title: 'Al-Nur Abayas',
+                    products: homeState.abayasProducts,
+                    onProductTap: (product) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Selected ${product.name}'),
+                          duration: const Duration(seconds: 1),
+                        ),
+                      );
+                    },
+                    onFavoriteToggle: (product) => homeController.toggleFavorite(product),
+                    onViewAllTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Viewing Al-Nur Abayas Collection'),
+                          duration: Duration(seconds: 1),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+                const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
+                // Al-Nur Hijabs Section
+                SliverToBoxAdapter(
+                  child: FeaturedProductsSection(
+                    title: 'Al-Nur Hijabs',
+                    products: homeState.hijabsProducts,
+                    onProductTap: (product) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Selected ${product.name}'),
+                          duration: const Duration(seconds: 1),
+                        ),
+                      );
+                    },
+                    onFavoriteToggle: (product) => homeController.toggleFavorite(product),
+                    onViewAllTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Viewing Al-Nur Hijabs Collection'),
+                          duration: Duration(seconds: 1),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+                const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
+                // Al-Nur Jalabias Section
+                SliverToBoxAdapter(
+                  child: FeaturedProductsSection(
+                    title: 'Al-Nur Jalabias',
+                    products: homeState.jalabiasProducts,
+                    onProductTap: (product) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Selected ${product.name}'),
+                          duration: const Duration(seconds: 1),
+                        ),
+                      );
+                    },
+                    onFavoriteToggle: (product) => homeController.toggleFavorite(product),
+                    onViewAllTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Viewing Al-Nur Jalabias Collection'),
                           duration: Duration(seconds: 1),
                         ),
                       );

@@ -4,6 +4,7 @@ import '../../../shared/models/product_model.dart';
 import '../../../shared/widgets/product_card.dart';
 
 class FeaturedProductsSection extends StatelessWidget {
+  final String title;
   final List<ProductModel> products;
   final VoidCallback? onViewAllTap;
   final ValueChanged<ProductModel>? onProductTap;
@@ -11,6 +12,7 @@ class FeaturedProductsSection extends StatelessWidget {
 
   const FeaturedProductsSection({
     super.key,
+    this.title = 'Featured Products',
     required this.products,
     this.onViewAllTap,
     this.onProductTap,
@@ -19,6 +21,8 @@ class FeaturedProductsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (products.isEmpty) return const SizedBox.shrink();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -29,7 +33,7 @@ class FeaturedProductsSection extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Featured Products',
+                title,
                 style: AppTextStyles.sectionTitle,
               ),
               GestureDetector(
