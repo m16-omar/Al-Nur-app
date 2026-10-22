@@ -1,0 +1,28 @@
+# Files and directories created by pub
+.dart_tool/
+**/.dart_tool/
+.packages
+**/.packages
+.pub-cache/
+**/.pub-cache/
+.pub/
+**/.pub/
+
+# Pubspec overrides
+pubspec_overrides.yaml
+
+# Build directories and outputs
+build/
+**/build/
+**/Pods/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.last_build_id
+**/.DS_Store
+*.swp
+*.class
+*.log
+
+# Serverpod credentials
+**/config/passwords.yaml
+**/config/firebase_service_account_key.json

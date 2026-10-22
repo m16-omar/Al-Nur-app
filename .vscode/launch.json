@@ -1,0 +1,38 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "alnur_store_flutter",
+            "cwd": "${workspaceFolder}/alnur_store_flutter",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart"
+        },
+        {
+            "name": "alnur_store_server",
+            "cwd": "${workspaceFolder}/alnur_store_server",
+            "request": "launch",
+            "type": "dart",
+            "preLaunchTask": "docker_compose_up",
+            "program": "bin/main.dart",
+            "env": {
+                "SERVERPOD_PASSWORD_database": "FvHhQLQ0jc8FC2QPCDdg-idkxAghPjQm"
+            },
+            "args": [
+                "--apply-migrations"
+            ]
+        }
+    ],
+    "compounds": [
+        {
+            "name": "alnur_store (full stack)",
+            "configurations": [
+                "alnur_store_server",
+                "alnur_store_flutter"
+            ],
+            "presentation": {
+                "order": 1
+            }
+        }
+    ]
+}
