@@ -15,7 +15,7 @@ class AiAssistantBanner extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Container(
-        height: 140,
+        height: 154,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           gradient: const LinearGradient(
@@ -62,7 +62,7 @@ class AiAssistantBanner extends StatelessWidget {
                   Expanded(
                     flex: 6,
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(4, 16, 16, 16),
+                      padding: const EdgeInsets.fromLTRB(4, 12, 16, 12),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
