@@ -45,7 +45,7 @@ class ProductCard extends StatelessWidget {
               children: [
                 ProductImage(
                   imageUrl: product.imageUrl,
-                  height: 150,
+                  height: 138,
                   width: double.infinity,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                 ),
@@ -83,7 +83,7 @@ class ProductCard extends StatelessWidget {
 
             // Product Details
             Padding(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
