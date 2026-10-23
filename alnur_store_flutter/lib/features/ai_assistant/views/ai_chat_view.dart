@@ -6,7 +6,9 @@ import '../controllers/ai_chat_controller.dart';
 import '../models/chat_message.dart';
 
 class AiChatView extends ConsumerStatefulWidget {
-  const AiChatView({super.key});
+  final bool isEmbeddedTab;
+
+  const AiChatView({super.key, this.isEmbeddedTab = false});
 
   @override
   ConsumerState<AiChatView> createState() => _AiChatViewState();
@@ -53,6 +55,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 1,
+        automaticallyImplyLeading: !widget.isEmbeddedTab,
         title: Row(
           children: [
             Container(
@@ -150,7 +153,12 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
 
             // Chat Input Bar
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                10,
+                16,
+                widget.isEmbeddedTab ? 100 : 10,
+              ),
               decoration: BoxDecoration(
                 color: Colors.white,
                 boxShadow: [
