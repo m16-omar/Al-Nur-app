@@ -189,9 +189,17 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
                 tooltip: 'Back to Home',
               )
             : null,
-        title: Text(
-          'Islamic Modest Collections',
-          style: AppTextStyles.productTitle.copyWith(fontSize: 18),
+        title: const FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            'Modest Collections',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
         ),
         actions: [
           if (_isLoadingBackend)
@@ -699,7 +707,7 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
                   child: ListView(
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
                             child: Text(
@@ -707,6 +715,7 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
                               style: AppTextStyles.productTitle.copyWith(fontSize: 18),
                             ),
                           ),
+                          const SizedBox(width: 12),
                           Text(
                             '₦${product.price.toStringAsFixed(0)}',
                             style: const TextStyle(
@@ -719,14 +728,23 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
                       ),
                       const SizedBox(height: 6),
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Icon(Icons.star_rounded, color: AppColors.starAmber, size: 18),
-                          const SizedBox(width: 4),
-                          Text('${product.rating} Rating (${product.reviewCount} reviews)',
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                          const Spacer(),
-                          const Text('100% Halal Fabric',
-                              style: TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.bold)),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.star_rounded, color: AppColors.starAmber, size: 18),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${product.rating} Rating (${product.reviewCount} reviews)',
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                          const Text(
+                            '100% Halal Fabric',
+                            style: TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.bold),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 14),
@@ -735,24 +753,28 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                       ),
                       const SizedBox(height: 8),
-                      Row(
-                        children: sizes.map((s) {
-                          final isSelected = selectedSize == s;
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: ChoiceChip(
-                              label: Text('Size $s'),
-                              selected: isSelected,
-                              selectedColor: AppColors.primary,
-                              labelStyle: TextStyle(
-                                color: isSelected ? Colors.white : AppColors.textPrimary,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        child: Row(
+                          children: sizes.map((s) {
+                            final isSelected = selectedSize == s;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: ChoiceChip(
+                                label: Text('Size $s'),
+                                selected: isSelected,
+                                selectedColor: AppColors.primary,
+                                labelStyle: TextStyle(
+                                  color: isSelected ? Colors.white : AppColors.textPrimary,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                                onSelected: (_) => setModalState(() => selectedSize = s),
                               ),
-                              onSelected: (_) => setModalState(() => selectedSize = s),
-                            ),
-                          );
-                        }).toList(),
+                            );
+                          }).toList(),
+                        ),
                       ),
                       const SizedBox(height: 14),
                       const Text(
