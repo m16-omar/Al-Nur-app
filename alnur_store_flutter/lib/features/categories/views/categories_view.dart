@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alnur_store_client/alnur_store_client.dart';
+import 'package:go_router/go_router.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../main.dart';
 import '../../../shared/models/product_model.dart';
+import '../../cart/controllers/cart_controller.dart';
 import '../../home/controllers/home_controller.dart';
 
 class CategoriesView extends ConsumerStatefulWidget {
@@ -87,6 +90,7 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
   Widget build(BuildContext context) {
     final homeState = ref.watch(homeControllerProvider);
     final homeController = ref.read(homeControllerProvider.notifier);
+    final cartCount = ref.watch(cartControllerProvider).totalCount;
 
     // Sync with homeState.selectedCategoryId if changed from outside (e.g. Home tab)
     ref.listen<HomeState>(homeControllerProvider, (prev, next) {
@@ -228,6 +232,57 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
             icon: const Icon(Icons.sort_rounded, color: AppColors.primary),
             tooltip: 'Sort Collections',
             onPressed: () => _showSortModal(),
+          ),
+          // Shopping Bag / Cart Action Button with Badge
+          GestureDetector(
+            onTap: () => context.push(AppRoutes.cart),
+            child: Padding(
+              padding: const EdgeInsets.only(right: 14, left: 4),
+              child: Center(
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceMuted,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: const Icon(
+                        Icons.shopping_bag_outlined,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
+                    ),
+                    if (cartCount > 0)
+                      Positioned(
+                        top: -3,
+                        right: -3,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: AppColors.primary,
+                            shape: BoxShape.circle,
+                          ),
+                          constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                          child: Center(
+                            child: Text(
+                              '$cartCount',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -614,12 +669,18 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
                       ),
                       GestureDetector(
                         onTap: () {
-                          homeController.incrementCart();
+                          ref.read(cartControllerProvider.notifier).addItem(product);
+                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text('Added ${product.name} to bag!'),
                               backgroundColor: AppColors.primary,
-                              duration: const Duration(seconds: 1),
+                              duration: const Duration(seconds: 3),
+                              action: SnackBarAction(
+                                label: 'VIEW BAG',
+                                textColor: AppColors.gold,
+                                onPressed: () => context.push(AppRoutes.cart),
+                              ),
                             ),
                           );
                         },
@@ -853,12 +914,22 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
                       style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                     ),
                     onPressed: () {
-                      homeController.incrementCart();
+                      ref.read(cartControllerProvider.notifier).addItem(
+                            product,
+                            size: selectedSize,
+                          );
                       Navigator.pop(context);
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Added ${product.name} (Size $selectedSize) to your shopping bag!'),
+                          content: Text('Added ${product.name} (Size $selectedSize) to bag!'),
                           backgroundColor: AppColors.primary,
+                          duration: const Duration(seconds: 3),
+                          action: SnackBarAction(
+                            label: 'VIEW BAG',
+                            textColor: AppColors.gold,
+                            onPressed: () => context.push(AppRoutes.cart),
+                          ),
                         ),
                       );
                     },

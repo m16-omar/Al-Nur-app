@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/ai_assistant/views/ai_chat_view.dart';
 import '../../features/authentication/views/login_view.dart';
 import '../../features/authentication/views/sign_up_view.dart';
+import '../../features/cart/views/cart_view.dart';
 import '../../features/home/views/home_view.dart';
 import '../../features/onboarding/views/onboarding_view.dart';
 import '../../features/splash/views/splash_view.dart';
@@ -39,6 +40,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.home,
       builder: (context, state) => const HomeView(),
+    ),
+    GoRoute(
+      path: AppRoutes.cart,
+      builder: (context, state) => const CartView(),
     ),
     GoRoute(
       path: AppRoutes.aiChat,

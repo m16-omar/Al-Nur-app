@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/models/product_model.dart';
 import '../../ai_assistant/views/ai_chat_view.dart';
 import '../../authentication/controllers/auth_controller.dart';
+import '../../cart/controllers/cart_controller.dart';
 import '../../categories/views/categories_view.dart';
 import '../../orders/views/orders_view.dart';
 import '../../profile/views/profile_view.dart';
@@ -122,9 +126,9 @@ class _HomeViewState extends ConsumerState<HomeView> {
           // Header (App Bar)
           SliverToBoxAdapter(
             child: HomeHeader(
-              cartCount: homeState.cartCount,
+              cartCount: ref.watch(cartControllerProvider).totalCount,
               hasUnreadNotifications: homeState.hasUnreadNotifications,
-              onCartTap: widget.onOpenCart ?? () => _showCartModal(context, homeState, homeController),
+              onCartTap: widget.onOpenCart ?? () => _showCartModal(context),
               onNotificationTap: widget.onOpenNotifications ?? () => _showNotificationsModal(context),
             ),
           ),
@@ -182,14 +186,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
           child: FeaturedProductsSection(
             title: 'Featured Products',
             products: homeState.featuredProducts,
-            onProductTap: (product) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Selected ${product.name}'),
-                  duration: const Duration(seconds: 1),
-                ),
-              );
-            },
+            onProductTap: (product) => _showProductDetailsModal(context, product),
             onFavoriteToggle: (product) => homeController.toggleFavorite(product),
             onViewAllTap: () => setState(() => _currentNavIndex = 1),
           ),
@@ -202,14 +199,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
           child: FeaturedProductsSection(
             title: 'Al-Nur Abayas',
             products: homeState.abayasProducts,
-            onProductTap: (product) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Selected ${product.name}'),
-                  duration: const Duration(seconds: 1),
-                ),
-              );
-            },
+            onProductTap: (product) => _showProductDetailsModal(context, product),
             onFavoriteToggle: (product) => homeController.toggleFavorite(product),
             onViewAllTap: () => setState(() => _currentNavIndex = 1),
           ),
@@ -222,14 +212,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
           child: FeaturedProductsSection(
             title: 'Al-Nur Hijabs',
             products: homeState.hijabsProducts,
-            onProductTap: (product) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Selected ${product.name}'),
-                  duration: const Duration(seconds: 1),
-                ),
-              );
-            },
+            onProductTap: (product) => _showProductDetailsModal(context, product),
             onFavoriteToggle: (product) => homeController.toggleFavorite(product),
             onViewAllTap: () => setState(() => _currentNavIndex = 1),
           ),
@@ -242,14 +225,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
           child: FeaturedProductsSection(
             title: 'Al-Nur Jalabias',
             products: homeState.jalabiasProducts,
-            onProductTap: (product) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Selected ${product.name}'),
-                  duration: const Duration(seconds: 1),
-                ),
-              );
-            },
+            onProductTap: (product) => _showProductDetailsModal(context, product),
             onFavoriteToggle: (product) => homeController.toggleFavorite(product),
             onViewAllTap: () => setState(() => _currentNavIndex = 1),
           ),
@@ -262,14 +238,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
           child: FeaturedProductsSection(
             title: 'Al-Nur Thobes & Jubbahs',
             products: homeState.thobesProducts,
-            onProductTap: (product) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Selected ${product.name}'),
-                  duration: const Duration(seconds: 1),
-                ),
-              );
-            },
+            onProductTap: (product) => _showProductDetailsModal(context, product),
             onFavoriteToggle: (product) => homeController.toggleFavorite(product),
             onViewAllTap: () => setState(() => _currentNavIndex = 1),
           ),
@@ -667,378 +636,241 @@ class _HomeViewState extends ConsumerState<HomeView> {
     );
   }
 
-  void _showCartModal(BuildContext context, HomeState homeState, HomeController homeController) {
-    int dubaiQty = 1;
-    int medinaQty = 2;
-    int jalabiaQty = 1;
-    bool promoApplied = true;
+  void _showCartModal(BuildContext context) {
+    context.push(AppRoutes.cart);
+  }
+
+  void _showProductDetailsModal(BuildContext context, ProductModel product) {
+    String selectedSize = '56';
+    String selectedColor = 'Default';
+    final List<String> sizes = ['52', '54', '56', '58', '60'];
+    final List<String> colors = ['Default', 'Black', 'Emerald', 'Gold', 'Burgundy'];
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            final subtotal = (dubaiQty * 28500) + (medinaQty * 8500) + (jalabiaQty * 32000);
-            final discount = promoApplied ? (subtotal * 0.15).round() : 0;
-            const shipping = 2500;
-            final grandTotal = subtotal - discount + shipping;
-
-            return Container(
-              height: MediaQuery.of(context).size.height * 0.85,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          height: MediaQuery.of(context).size.height * 0.85,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Drag handle
+              Center(
+                child: Container(
+                  margin: const EdgeInsets.only(top: 12, bottom: 8),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
               ),
-              child: Column(
+              // Header & Image
+              Stack(
                 children: [
-                  Container(
-                    margin: const EdgeInsets.only(top: 12, bottom: 8),
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: AppColors.border,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Row(
-                          children: [
-                            Icon(Icons.shopping_bag_outlined, color: AppColors.primary, size: 22),
-                            SizedBox(width: 8),
-                            Text(
-                              'Modest Shopping Bag',
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                            ),
-                          ],
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close_rounded, color: AppColors.textSecondary),
-                          onPressed: () => Navigator.pop(ctx),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(height: 1, color: AppColors.border),
-                  Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-                      children: [
-                        if (dubaiQty > 0)
-                          _buildCartCard(
-                            title: 'Dubai Gold Noir Abaya',
-                            subtitle: 'Size 56 • Midnight Black / Gold',
-                            price: 28500,
-                            qty: dubaiQty,
-                            imageUrl: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=500&q=80',
-                            onIncrement: () => setModalState(() => dubaiQty++),
-                            onDecrement: () => setModalState(() => dubaiQty--),
-                          ),
-                        if (medinaQty > 0)
-                          _buildCartCard(
-                            title: 'Pure Medina Silk Hijab',
-                            subtitle: 'Standard (180x75cm) • Emerald Silk',
-                            price: 8500,
-                            qty: medinaQty,
-                            imageUrl: 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?auto=format&fit=crop&w=500&q=80',
-                            onIncrement: () => setModalState(() => medinaQty++),
-                            onDecrement: () => setModalState(() => medinaQty--),
-                          ),
-                        if (jalabiaQty > 0)
-                          _buildCartCard(
-                            title: 'Royal Emerald Velvet Jalabia',
-                            subtitle: 'Size 58 • Deep Emerald / Gold Thread',
-                            price: 32000,
-                            qty: jalabiaQty,
-                            imageUrl: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=500&q=80',
-                            onIncrement: () => setModalState(() => jalabiaQty++),
-                            onDecrement: () => setModalState(() => jalabiaQty--),
-                          ),
-
-                        const SizedBox(height: 12),
-
-                        // Promo voucher applied pill
-                        GestureDetector(
-                          onTap: () => setModalState(() => promoApplied = !promoApplied),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: promoApplied ? const Color(0xFFFBF4E6) : AppColors.surfaceMuted,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: promoApplied ? AppColors.gold.withValues(alpha: 0.6) : AppColors.border,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  promoApplied ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                                  color: promoApplied ? AppColors.goldDark : AppColors.textSecondary,
-                                  size: 18,
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    promoApplied
-                                        ? 'Promo Code ALNUR15 applied (15% Modesty Savings)'
-                                        : 'Tap to apply promo code ALNUR15 (15% OFF)',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w700,
-                                      color: promoApplied ? AppColors.goldDark : AppColors.textSecondary,
-                                    ),
-                                  ),
-                                ),
-                                if (promoApplied)
-                                  Text(
-                                    '-₦${discount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w800,
-                                      color: AppColors.goldDark,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Bill breakdown
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceMuted,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: AppColors.border),
-                          ),
-                          child: Column(
-                            children: [
-                              _buildCostRow('Subtotal', '₦${subtotal.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}'),
-                              const SizedBox(height: 8),
-                              _buildCostRow('Modesty Voucher Discount (15%)', '-₦${discount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}', isGreen: true),
-                              const SizedBox(height: 8),
-                              _buildCostRow('Express Halal Delivery (Lagos & Nationwide)', '₦2,500'),
-                              const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 10),
-                                child: Divider(height: 1, color: AppColors.border),
-                              ),
-                              _buildCostRow('Estimated Total', '₦${grandTotal.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}', isBold: true),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Bottom Checkout Action
-                  Container(
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      border: Border(top: BorderSide(color: AppColors.border)),
-                    ),
-                    child: SizedBox(
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                    child: Image.network(
+                      product.imageUrl,
+                      height: 220,
                       width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          elevation: 0,
-                        ),
-                        onPressed: () {
-                          Navigator.pop(ctx);
-                          _showCheckoutSuccessDialog(grandTotal);
-                        },
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.lock_outline_rounded, color: Colors.white, size: 18),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Proceed to Halal Checkout • ₦${grandTotal.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        height: 220,
+                        color: AppColors.surfaceMuted,
+                        child: const Icon(Icons.checkroom_rounded, size: 48, color: AppColors.primary),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 10,
+                    right: 10,
+                    child: CircleAvatar(
+                      backgroundColor: Colors.black45,
+                      radius: 18,
+                      child: IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white, size: 18),
+                        onPressed: () => Navigator.pop(ctx),
                       ),
                     ),
                   ),
                 ],
               ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildCartCard({
-    required String title,
-    required String subtitle,
-    required int price,
-    required int qty,
-    required String imageUrl,
-    required VoidCallback onIncrement,
-    required VoidCallback onDecrement,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Image.network(
-              imageUrl,
-              width: 64,
-              height: 64,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                width: 64,
-                height: 64,
-                color: AppColors.surfaceMuted,
-                child: const Icon(Icons.dry_cleaning_rounded, color: AppColors.primary),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  '₦${price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.primary),
-                ),
-              ],
-            ),
-          ),
-          Row(
-            children: [
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                icon: const Icon(Icons.remove_circle_outline_rounded, color: AppColors.textSecondary, size: 20),
-                onPressed: onDecrement,
-              ),
-              Text(
-                '$qty',
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-              ),
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                icon: const Icon(Icons.add_circle_outline_rounded, color: AppColors.primary, size: 20),
-                onPressed: onIncrement,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCostRow(String label, String value, {bool isGreen = false, bool isBold = false}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: isBold ? 14 : 12,
-            fontWeight: isBold ? FontWeight.w800 : FontWeight.w500,
-            color: isBold ? AppColors.textPrimary : AppColors.textSecondary,
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: isBold ? 15 : 12,
-            fontWeight: isBold ? FontWeight.w800 : FontWeight.w600,
-            color: isGreen
-                ? const Color(0xFF10B981)
-                : (isBold ? AppColors.primary : AppColors.textPrimary),
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _showCheckoutSuccessDialog(int totalAmount) {
-    showDialog(
-      context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          contentPadding: const EdgeInsets.all(24),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFDCFCE7),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.check_rounded, color: Color(0xFF16A34A), size: 36),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Alhamdulillah! Order Placed',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Your modest attire order of ₦${totalAmount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} has been confirmed. Sizing and quality verification in progress.',
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+              // Content Details
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: ListView(
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              product.name,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            '₦${product.price.toStringAsFixed(0)}',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.star_rounded, color: AppColors.starAmber, size: 18),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${product.rating} (${product.reviewCount} reviews)',
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                          const Text(
+                            '100% Halal Fabric',
+                            style: TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Select Modest Length / Size:',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                      const SizedBox(height: 8),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: sizes.map((s) {
+                            final isSelected = selectedSize == s;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: ChoiceChip(
+                                label: Text('Size $s'),
+                                selected: isSelected,
+                                selectedColor: AppColors.primary,
+                                labelStyle: TextStyle(
+                                  color: isSelected ? Colors.white : AppColors.textPrimary,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                ),
+                                onSelected: (val) {
+                                  if (val) setModalState(() => selectedSize = s);
+                                },
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Select Color:',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                      const SizedBox(height: 8),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: colors.map((c) {
+                            final isSelected = selectedColor == c;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: ChoiceChip(
+                                label: Text(c),
+                                selected: isSelected,
+                                selectedColor: AppColors.primary,
+                                labelStyle: TextStyle(
+                                  color: isSelected ? Colors.white : AppColors.textPrimary,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                ),
+                                onSelected: (val) {
+                                  if (val) setModalState(() => selectedColor = c);
+                                },
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        product.description.isNotEmpty
+                            ? product.description
+                            : 'Experience pure modest luxury crafted with precision, premium breathable textiles, and traditional Islamic styling tailored for daily comfort and celebration.',
+                        style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.5),
+                      ),
+                    ],
                   ),
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    setState(() => _currentNavIndex = 3); // Switch to Orders tab
-                  },
-                  child: const Text('View Order Status', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              ),
+              // Add to Bag Button
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  border: Border(top: BorderSide(color: AppColors.border)),
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    icon: const Icon(Icons.shopping_bag_outlined, size: 18),
+                    label: Text(
+                      'Add to Bag (Size $selectedSize) • ₦${product.price.toStringAsFixed(0)}',
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                    ),
+                    onPressed: () {
+                      ref.read(cartControllerProvider.notifier).addItem(
+                            product,
+                            size: selectedSize,
+                            color: selectedColor,
+                          );
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Added ${product.name} (Size $selectedSize) to bag!'),
+                          backgroundColor: AppColors.primary,
+                          duration: const Duration(seconds: 3),
+                          action: SnackBarAction(
+                            label: 'VIEW BAG',
+                            textColor: AppColors.gold,
+                            onPressed: () => context.push(AppRoutes.cart),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
             ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
