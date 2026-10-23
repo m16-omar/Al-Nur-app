@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../main.dart';
 import '../../../shared/models/category_model.dart';
 import '../../../shared/models/product_model.dart';
 
@@ -359,7 +360,125 @@ class HomeController extends Notifier<HomeState> {
 
   @override
   HomeState build() {
+    Future.microtask(() => fetchHomeDataFromBackend());
     return _initialState;
+  }
+
+  /// Fetches real-time collections and products from the Serverpod backend
+  Future<void> fetchHomeDataFromBackend() async {
+    state = state.copyWith(isLoading: true);
+    try {
+      final serverCategories = await client.category.getCategories();
+      final serverProducts = await client.product.getProducts();
+
+      // Ensure only genuine Islamic modest attire categories are processed
+      final modestServerCategories = serverCategories.where((c) {
+        final id = c.categoryId.toLowerCase();
+        return id != 'perfumes' && id != 'jewelries' && id != 'bags' && id != 'slippers';
+      }).toList();
+
+      final modestServerProducts = serverProducts.where((p) {
+        final id = p.categoryId.toLowerCase();
+        return id != 'perfumes' && id != 'jewelries';
+      }).toList();
+
+      List<CategoryModel> mappedCategories = [];
+      if (modestServerCategories.isNotEmpty) {
+        mappedCategories = modestServerCategories.map((c) {
+          return CategoryModel(
+            id: c.categoryId,
+            name: c.name,
+            fallbackIcon: _getCategoryIcon(c.categoryId),
+            backgroundColor: _parseColor(c.colorHex),
+          );
+        }).toList();
+      }
+
+      List<ProductModel> allMappedProducts = [];
+      if (modestServerProducts.isNotEmpty) {
+        allMappedProducts = modestServerProducts.map((p) {
+          return ProductModel(
+            id: p.id?.toString() ?? p.slug,
+            name: p.name,
+            price: p.price,
+            originalPrice: p.originalPrice,
+            rating: p.rating,
+            reviewCount: p.reviewCount,
+            imageUrl: p.imageUrl,
+            categoryId: p.categoryId,
+            description: p.description,
+            isFavorite: p.isFavorite ?? false,
+          );
+        }).toList();
+      }
+
+      if (allMappedProducts.isNotEmpty) {
+        final abayas = allMappedProducts.where((p) => p.categoryId == 'abayas').toList();
+        final hijabs = allMappedProducts.where((p) => p.categoryId == 'hijabs').toList();
+        final jalabias = allMappedProducts.where((p) => p.categoryId == 'jalabias').toList();
+        final thobes = allMappedProducts.where((p) => p.categoryId == 'thobes').toList();
+        final featured = allMappedProducts.where((p) => p.rating >= 4.8 || p.isFavorite).toList();
+
+        state = state.copyWith(
+          categories: mappedCategories.isNotEmpty ? mappedCategories : state.categories,
+          featuredProducts: featured.isNotEmpty ? featured : state.featuredProducts,
+          abayasProducts: abayas.isNotEmpty ? abayas : state.abayasProducts,
+          hijabsProducts: hijabs.isNotEmpty ? hijabs : state.hijabsProducts,
+          jalabiasProducts: jalabias.isNotEmpty ? jalabias : state.jalabiasProducts,
+          thobesProducts: thobes.isNotEmpty ? thobes : state.thobesProducts,
+          isLoading: false,
+        );
+      } else {
+        state = state.copyWith(isLoading: false);
+      }
+    } catch (e) {
+      debugPrint('[HomeController] Serverpod backend sync notice: $e');
+      state = state.copyWith(isLoading: false);
+    }
+  }
+
+  /// Pull-to-refresh handler
+  Future<void> refreshHomeData() async {
+    await fetchHomeDataFromBackend();
+  }
+
+  static IconData _getCategoryIcon(String categoryId) {
+    switch (categoryId.toLowerCase()) {
+      case 'abayas':
+        return Icons.dry_cleaning_rounded;
+      case 'hijabs':
+        return Icons.all_inclusive_rounded;
+      case 'jalabias':
+        return Icons.auto_awesome_outlined;
+      case 'thobes':
+        return Icons.person_rounded;
+      case 'khimars':
+        return Icons.face_3_rounded;
+      case 'prayer':
+        return Icons.mosque_outlined;
+      case 'jilbabs':
+        return Icons.checkroom_rounded;
+      default:
+        return Icons.checkroom_rounded;
+    }
+  }
+
+  static Color _parseColor(String? hexString) {
+    if (hexString == null || hexString.isEmpty) return const Color(0xFFF5EFE6);
+    try {
+      final buffer = StringBuffer();
+      if (hexString.startsWith('0x') || hexString.startsWith('0X')) {
+        buffer.write(hexString.substring(2));
+      } else if (hexString.startsWith('#')) {
+        buffer.write(hexString.substring(1));
+      } else {
+        buffer.write(hexString);
+      }
+      if (buffer.length == 6) buffer.write('FF');
+      return Color(int.parse(buffer.toString(), radix: 16));
+    } catch (_) {
+      return const Color(0xFFF5EFE6);
+    }
   }
 
   void selectCategory(CategoryModel category) {
@@ -387,6 +506,14 @@ class HomeController extends Notifier<HomeState> {
       jalabiasProducts: updateList(state.jalabiasProducts),
       thobesProducts: updateList(state.thobesProducts),
     );
+
+    // Asynchronously sync favorite status to Serverpod backend
+    final intId = int.tryParse(product.id);
+    if (intId != null) {
+      try {
+        client.product.toggleFavorite(intId);
+      } catch (_) {}
+    }
   }
 
   void updateSearchQuery(String query) {

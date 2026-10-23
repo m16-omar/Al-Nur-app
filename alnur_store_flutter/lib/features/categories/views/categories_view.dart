@@ -104,6 +104,8 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
 
     if (_serverCategories.isNotEmpty) {
       for (final sc in _serverCategories) {
+        final cid = sc.categoryId.toLowerCase();
+        if (cid == 'perfumes' || cid == 'jewelries' || cid == 'accessories' || cid == 'slippers') continue;
         categoryTabs.add({
           'id': sc.categoryId,
           'label': sc.name,
@@ -124,6 +126,10 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
     List<ProductModel> allProducts = [];
     if (_serverProducts.isNotEmpty) {
       allProducts = _serverProducts
+          .where((sp) {
+            final cid = sp.categoryId.toLowerCase();
+            return cid != 'perfumes' && cid != 'jewelries' && cid != 'accessories' && cid != 'slippers';
+          })
           .map(
             (sp) => ProductModel(
               id: (sp.id ?? sp.slug).toString(),
@@ -373,44 +379,58 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
 
           // Products Grid
           Expanded(
-            child: displayedProducts.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.search_off_rounded, size: 48, color: AppColors.textSecondary),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'No modest dressings matched your search',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            child: RefreshIndicator(
+              onRefresh: _fetchServerpodData,
+              color: AppColors.primary,
+              backgroundColor: Colors.white,
+              child: displayedProducts.isEmpty
+                  ? LayoutBuilder(
+                      builder: (context, constraints) => SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.search_off_rounded, size: 48, color: AppColors.textSecondary),
+                                const SizedBox(height: 12),
+                                const Text(
+                                  'No modest dressings matched your search',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                ),
+                                const SizedBox(height: 8),
+                                TextButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _selectedCategory = 'all';
+                                      _searchFilter = '';
+                                    });
+                                  },
+                                  child: const Text('Reset All Filters', style: TextStyle(color: AppColors.primary)),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                        const SizedBox(height: 8),
-                        TextButton(
-                          onPressed: () {
-                            setState(() {
-                              _selectedCategory = 'all';
-                              _searchFilter = '';
-                            });
-                          },
-                          child: const Text('Reset All Filters', style: TextStyle(color: AppColors.primary)),
-                        ),
-                      ],
+                      ),
+                    )
+                  : GridView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        childAspectRatio: 0.64,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                      ),
+                      itemCount: displayedProducts.length,
+                      itemBuilder: (context, index) {
+                        final product = displayedProducts[index];
+                        return _buildProductCard(context, product, homeController);
+                      },
                     ),
-                  )
-                : GridView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.64,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                    ),
-                    itemCount: displayedProducts.length,
-                    itemBuilder: (context, index) {
-                      final product = displayedProducts[index];
-                      return _buildProductCard(context, product, homeController);
-                    },
-                  ),
+            ),
           ),
         ],
       ),

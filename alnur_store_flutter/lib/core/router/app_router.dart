@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/ai_assistant/views/ai_chat_view.dart';
 import '../../features/authentication/views/login_view.dart';
@@ -39,19 +38,7 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: AppRoutes.home,
-      builder: (context, state) => HomeView(
-        onOpenAiChat: () => context.push(AppRoutes.aiChat),
-        onOpenCart: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Cart opened')),
-          );
-        },
-        onOpenNotifications: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Notifications opened')),
-          );
-        },
-      ),
+      builder: (context, state) => const HomeView(),
     ),
     GoRoute(
       path: AppRoutes.aiChat,
