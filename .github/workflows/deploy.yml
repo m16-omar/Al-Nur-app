@@ -31,7 +31,7 @@ jobs:
           SERVERPOD_CLOUD_TOKEN: ${{ secrets.SERVERPOD_CLOUD_TOKEN }}
         run: |
           export PATH="$HOME/.pub-cache/bin:$PATH"
-          echo "Linking project to alnur-store..."
-          scloud project link alnur-store --token "$SERVERPOD_CLOUD_TOKEN" --yes --no-analytics || true
-          echo "Deploying to Serverpod Cloud..."
-          scloud deploy --token "$SERVERPOD_CLOUD_TOKEN" --yes --no-analytics
+          echo "=== Linking Project ==="
+          scloud project link alnur-store --token "$SERVERPOD_CLOUD_TOKEN" --yes --no-analytics -v || true
+          echo "=== Deploying ==="
+          scloud deploy --token "$SERVERPOD_CLOUD_TOKEN" --yes --no-analytics -v
