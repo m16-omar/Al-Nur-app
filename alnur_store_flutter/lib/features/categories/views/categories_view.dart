@@ -911,6 +911,8 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
                     icon: const Icon(Icons.shopping_bag_outlined, size: 18),
                     label: Text(
                       'Add to Bag (Size $selectedSize) • ₦${product.price.toStringAsFixed(0)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                     ),
                     onPressed: () {

@@ -7,8 +7,8 @@ import '../../../shared/models/product_model.dart';
 import '../../ai_assistant/views/ai_chat_view.dart';
 import '../../authentication/controllers/auth_controller.dart';
 import '../../cart/controllers/cart_controller.dart';
+import '../../cart/views/cart_view.dart';
 import '../../categories/views/categories_view.dart';
-import '../../orders/views/orders_view.dart';
 import '../../profile/views/profile_view.dart';
 import '../controllers/home_controller.dart';
 import '../widgets/ai_assistant_banner.dart';
@@ -97,8 +97,8 @@ class _HomeViewState extends ConsumerState<HomeView> {
                   onOpenAiChat: () => setState(() => _currentNavIndex = 2),
                 ),
                 const AiChatView(isEmbeddedTab: true),
-                OrdersView(onBackToHome: () => setState(() => _currentNavIndex = 0)),
-                ProfileView(onNavigateToOrders: () => setState(() => _currentNavIndex = 3)),
+                const CartView(),
+                ProfileView(onNavigateToOrders: () => context.push(AppRoutes.orders)),
               ],
             ),
 
@@ -254,6 +254,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
   }
 
   Widget _buildFloatingNavBar() {
+    final cartCount = ref.watch(cartControllerProvider).totalCount;
     return Container(
       height: 68,
       decoration: BoxDecoration(
@@ -273,14 +274,14 @@ class _HomeViewState extends ConsumerState<HomeView> {
           _buildNavItem(0, Icons.home_rounded, 'Home'),
           _buildNavItem(1, Icons.grid_view_rounded, 'Categories'),
           _buildCenterAiItem(),
-          _buildNavItem(3, Icons.inventory_2_outlined, 'Orders'),
+          _buildNavItem(3, Icons.shopping_bag_outlined, 'Cart', badgeCount: cartCount),
           _buildNavItem(4, Icons.person_outline_rounded, 'Profile'),
         ],
       ),
     );
   }
 
-  Widget _buildNavItem(int index, IconData icon, String label) {
+  Widget _buildNavItem(int index, IconData icon, String label, {int badgeCount = 0}) {
     final isSelected = _currentNavIndex == index;
     return GestureDetector(
       onTap: () {
@@ -290,10 +291,18 @@ class _HomeViewState extends ConsumerState<HomeView> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            icon,
-            size: 22,
-            color: isSelected ? AppColors.primary : AppColors.textSecondary,
+          Badge(
+            isLabelVisible: badgeCount > 0,
+            label: Text(
+              '$badgeCount',
+              style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
+            ),
+            backgroundColor: AppColors.goldDark,
+            child: Icon(
+              icon,
+              size: 22,
+              color: isSelected ? AppColors.primary : AppColors.textSecondary,
+            ),
           ),
           const SizedBox(height: 3),
           Text(
@@ -841,6 +850,8 @@ class _HomeViewState extends ConsumerState<HomeView> {
                     icon: const Icon(Icons.shopping_bag_outlined, size: 18),
                     label: Text(
                       'Add to Bag (Size $selectedSize) • ₦${product.price.toStringAsFixed(0)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                     ),
                     onPressed: () {

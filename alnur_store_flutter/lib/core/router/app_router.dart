@@ -5,6 +5,7 @@ import '../../features/authentication/views/sign_up_view.dart';
 import '../../features/cart/views/cart_view.dart';
 import '../../features/home/views/home_view.dart';
 import '../../features/onboarding/views/onboarding_view.dart';
+import '../../features/orders/views/orders_view.dart';
 import '../../features/splash/views/splash_view.dart';
 
 class AppRoutes {
@@ -15,6 +16,7 @@ class AppRoutes {
   static const String home = '/';
   static const String aiChat = '/ai-chat';
   static const String cart = '/cart';
+  static const String orders = '/orders';
   static const String productDetails = '/product/:id';
 }
 
@@ -44,6 +46,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.cart,
       builder: (context, state) => const CartView(),
+    ),
+    GoRoute(
+      path: AppRoutes.orders,
+      builder: (context, state) => const OrdersView(),
     ),
     GoRoute(
       path: AppRoutes.aiChat,

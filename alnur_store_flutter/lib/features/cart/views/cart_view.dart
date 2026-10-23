@@ -383,22 +383,32 @@ class _CartViewState extends ConsumerState<CartView> {
                 const SizedBox(height: 3),
                 Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceMuted,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        'Size ${item.size}',
-                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceMuted,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          'Size ${item.size}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      item.color,
-                      style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                    ),
+                    if (item.color.isNotEmpty && item.color != 'Default') ...[
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          item.color,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 6),
@@ -469,22 +479,28 @@ class _CartViewState extends ConsumerState<CartView> {
                 size: 18,
               ),
               const SizedBox(width: 8),
-              Text(
-                hasPromo
-                    ? 'Promo Code Applied: ${cartState.appliedPromoCode} (15% OFF)'
-                    : 'Modesty Voucher / Promo Code',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: hasPromo ? AppColors.goldDark : AppColors.textPrimary,
+              Expanded(
+                child: Text(
+                  hasPromo
+                      ? 'Promo Code: ${cartState.appliedPromoCode} (15% OFF)'
+                      : 'Modesty Voucher / Promo Code',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: hasPromo ? AppColors.goldDark : AppColors.textPrimary,
+                  ),
                 ),
               ),
-              const Spacer(),
               if (hasPromo)
                 TextButton(
-                  style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                  ),
                   onPressed: () => cartController.togglePromoCode(''),
-                  child: const Text('Remove', style: TextStyle(color: AppColors.error, fontSize: 12)),
+                  child: const Text('Remove', style: TextStyle(color: AppColors.error, fontSize: 12, fontWeight: FontWeight.bold)),
                 ),
             ],
           ),
@@ -568,14 +584,19 @@ class _CartViewState extends ConsumerState<CartView> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: isBold ? 14 : 12,
-            fontWeight: isBold ? FontWeight.w800 : FontWeight.w500,
-            color: isBold ? AppColors.textPrimary : AppColors.textSecondary,
+        Expanded(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: isBold ? 14 : 12,
+              fontWeight: isBold ? FontWeight.w800 : FontWeight.w500,
+              color: isBold ? AppColors.textPrimary : AppColors.textSecondary,
+            ),
           ),
         ),
+        const SizedBox(width: 8),
         Text(
           value,
           style: TextStyle(

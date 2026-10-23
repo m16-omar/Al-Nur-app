@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../authentication/controllers/auth_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../cart/controllers/cart_controller.dart';
 import '../../onboarding/services/onboarding_preferences.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
@@ -27,6 +28,8 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
+    final cartState = ref.watch(cartControllerProvider);
+    final cartCount = cartState.totalCount;
     final user = authState.user;
     final displayName = user != null && user.name.isNotEmpty ? user.name : _userName;
     final displayEmail = user != null && user.email.isNotEmpty ? user.email : _userEmail;
@@ -41,6 +44,19 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
           style: AppTextStyles.productTitle.copyWith(fontSize: 18),
         ),
         actions: [
+          IconButton(
+            icon: Badge(
+              isLabelVisible: cartCount > 0,
+              label: Text(
+                '$cartCount',
+                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+              ),
+              backgroundColor: AppColors.goldDark,
+              child: const Icon(Icons.shopping_bag_outlined, color: AppColors.primary),
+            ),
+            tooltip: 'My Shopping Bag',
+            onPressed: () => context.push(AppRoutes.cart),
+          ),
           IconButton(
             icon: const Icon(Icons.settings_outlined, color: AppColors.primary),
             tooltip: 'Settings',
@@ -162,14 +178,24 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
               children: [
                 Expanded(
                   child: _buildMetricTile(
+                    icon: Icons.shopping_bag_outlined,
+                    count: '$cartCount',
+                    label: 'Cart',
+                    color: AppColors.primary,
+                    onTap: () => context.push(AppRoutes.cart),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildMetricTile(
                     icon: Icons.inventory_2_outlined,
                     count: '12',
                     label: 'Orders',
-                    color: AppColors.primary,
-                    onTap: widget.onNavigateToOrders ?? () {},
+                    color: AppColors.primaryDark,
+                    onTap: widget.onNavigateToOrders ?? () => context.push(AppRoutes.orders),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 Expanded(
                   child: _buildMetricTile(
                     icon: Icons.favorite_border_rounded,
@@ -179,7 +205,7 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                     onTap: () => _showWishlistModal(),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 Expanded(
                   child: _buildMetricTile(
                     icon: Icons.stars_rounded,
@@ -197,6 +223,31 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
             // Section 1: Account & Details
             _buildSectionHeader('Account & Address'),
             _buildCardGroup([
+              _buildListTile(
+                icon: Icons.shopping_bag_outlined,
+                title: 'My Shopping Bag (Cart)',
+                subtitle: cartCount > 0
+                    ? '$cartCount items reserved in your bag'
+                    : 'View saved modest garments & checkout',
+                trailingWidget: cartCount > 0
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          '$cartCount items',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      )
+                    : null,
+                onTap: () => context.push(AppRoutes.cart),
+              ),
               _buildListTile(
                 icon: Icons.person_outline_rounded,
                 title: 'Personal Information',
@@ -398,6 +449,7 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    Widget? trailingWidget,
   }) {
     return ListTile(
       leading: Container(
@@ -416,7 +468,16 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
         subtitle,
         style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
       ),
-      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.textSecondary),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (trailingWidget != null) ...[
+            trailingWidget,
+            const SizedBox(width: 6),
+          ],
+          const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.textSecondary),
+        ],
+      ),
       onTap: onTap,
     );
   }
