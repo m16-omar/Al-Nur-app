@@ -10,6 +10,7 @@ class HomeState {
   final List<ProductModel> abayasProducts;
   final List<ProductModel> hijabsProducts;
   final List<ProductModel> jalabiasProducts;
+  final List<ProductModel> thobesProducts;
   final int cartCount;
   final bool hasUnreadNotifications;
   final String searchQuery;
@@ -22,6 +23,7 @@ class HomeState {
     required this.abayasProducts,
     required this.hijabsProducts,
     required this.jalabiasProducts,
+    required this.thobesProducts,
     this.cartCount = 3,
     this.hasUnreadNotifications = true,
     this.searchQuery = '',
@@ -35,6 +37,7 @@ class HomeState {
     List<ProductModel>? abayasProducts,
     List<ProductModel>? hijabsProducts,
     List<ProductModel>? jalabiasProducts,
+    List<ProductModel>? thobesProducts,
     int? cartCount,
     bool? hasUnreadNotifications,
     String? searchQuery,
@@ -47,6 +50,7 @@ class HomeState {
       abayasProducts: abayasProducts ?? this.abayasProducts,
       hijabsProducts: hijabsProducts ?? this.hijabsProducts,
       jalabiasProducts: jalabiasProducts ?? this.jalabiasProducts,
+      thobesProducts: thobesProducts ?? this.thobesProducts,
       cartCount: cartCount ?? this.cartCount,
       hasUnreadNotifications: hasUnreadNotifications ?? this.hasUnreadNotifications,
       searchQuery: searchQuery ?? this.searchQuery,
@@ -77,28 +81,28 @@ class HomeController extends Notifier<HomeState> {
         backgroundColor: Color(0xFFFBF4E6),
       ),
       CategoryModel(
-        id: 'dresses',
-        name: 'Dresses',
+        id: 'thobes',
+        name: 'Thobes',
+        fallbackIcon: Icons.person_rounded,
+        backgroundColor: Color(0xFFE9F0FA),
+      ),
+      CategoryModel(
+        id: 'khimars',
+        name: 'Khimars',
+        fallbackIcon: Icons.face_3_rounded,
+        backgroundColor: Color(0xFFF5EDF9),
+      ),
+      CategoryModel(
+        id: 'prayer',
+        name: 'Prayer Sets',
+        fallbackIcon: Icons.mosque_outlined,
+        backgroundColor: Color(0xFFE7F3EE),
+      ),
+      CategoryModel(
+        id: 'jilbabs',
+        name: 'Jilbabs',
         fallbackIcon: Icons.checkroom_rounded,
         backgroundColor: Color(0xFFF9EAE1),
-      ),
-      CategoryModel(
-        id: 'shoes',
-        name: 'Shoes',
-        fallbackIcon: Icons.roller_skating_outlined,
-        backgroundColor: Color(0xFFF3ECE2),
-      ),
-      CategoryModel(
-        id: 'bags',
-        name: 'Bags',
-        fallbackIcon: Icons.shopping_bag_outlined,
-        backgroundColor: Color(0xFFE5EDE8),
-      ),
-      CategoryModel(
-        id: 'accessories',
-        name: 'Accessories',
-        fallbackIcon: Icons.watch_outlined,
-        backgroundColor: Color(0xFFF6F0E4),
       ),
     ],
     featuredProducts: const [
@@ -140,15 +144,15 @@ class HomeController extends Notifier<HomeState> {
       ),
       ProductModel(
         id: 'feat_4',
-        name: 'Pleated Rose Crepe Hijab',
-        price: 6800,
-        originalPrice: 8500,
-        rating: 4.7,
-        reviewCount: 54,
-        imageUrl: 'https://images.unsplash.com/photo-1574169208507-84376144848b?auto=format&fit=crop&w=500&q=80',
-        categoryId: 'hijabs',
+        name: 'Emirati Minimalist Thobe',
+        price: 26000,
+        originalPrice: 32000,
+        rating: 4.8,
+        reviewCount: 57,
+        imageUrl: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=500&q=80',
+        categoryId: 'thobes',
         isFavorite: false,
-        description: 'Delicate accordion pleated chiffon crepe in dusty rose, effortless non-iron styling.',
+        description: 'Crisp white cotton thobe with round collar, tailored for daily prayer, Friday Jumuah, and formal events.',
       ),
     ],
     abayasProducts: const [
@@ -240,15 +244,15 @@ class HomeController extends Notifier<HomeState> {
       ),
       ProductModel(
         id: 'hijab_4',
-        name: 'Breathable Jersey Hijab',
-        price: 5500,
-        originalPrice: 7000,
-        rating: 4.6,
-        reviewCount: 168,
+        name: 'Pleated Rose Crepe Hijab',
+        price: 6800,
+        originalPrice: 8500,
+        rating: 4.7,
+        reviewCount: 54,
         imageUrl: 'https://images.unsplash.com/photo-1574169208507-84376144848b?auto=format&fit=crop&w=500&q=80',
         categoryId: 'hijabs',
         isFavorite: false,
-        description: 'Ultra-stretch cotton jersey with natural temperature regulation for daily modest wear.',
+        description: 'Delicate accordion pleated chiffon crepe in dusty rose, effortless non-iron styling.',
       ),
     ],
     jalabiasProducts: const [
@@ -301,6 +305,56 @@ class HomeController extends Notifier<HomeState> {
         description: 'Plush sapphire velvet jalabia with artisanal threadwork, tailored for grand receptions.',
       ),
     ],
+    thobesProducts: const [
+      ProductModel(
+        id: 'thobe_1',
+        name: 'Emirati Minimalist White Thobe',
+        price: 26000,
+        originalPrice: 32000,
+        rating: 4.8,
+        reviewCount: 57,
+        imageUrl: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=500&q=80',
+        categoryId: 'thobes',
+        isFavorite: false,
+        description: 'Crisp white cotton thobe with round collar, tailored for daily prayer, Friday Jumuah, and formal events.',
+      ),
+      ProductModel(
+        id: 'thobe_2',
+        name: 'Saudi Gold Collar Jubbah',
+        price: 34000,
+        originalPrice: 40000,
+        rating: 4.9,
+        reviewCount: 48,
+        imageUrl: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=500&q=80',
+        categoryId: 'thobes',
+        isFavorite: true,
+        description: 'Tailored luxury Jubbah with subtle gold embroidery on Mandarin collar and french cuff detailing.',
+      ),
+      ProductModel(
+        id: 'thobe_3',
+        name: 'Omani Tassel Royal Thobe',
+        price: 29500,
+        originalPrice: 35000,
+        rating: 4.7,
+        reviewCount: 39,
+        imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=500&q=80',
+        categoryId: 'thobes',
+        isFavorite: false,
+        description: 'Authentic Omani thobe with signature handcrafted chest tassel and breathable cotton-linen weave.',
+      ),
+      ProductModel(
+        id: 'thobe_4',
+        name: 'Moroccan Wool Blend Djellaba',
+        price: 42000,
+        originalPrice: 49000,
+        rating: 4.9,
+        reviewCount: 34,
+        imageUrl: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=500&q=80',
+        categoryId: 'thobes',
+        isFavorite: false,
+        description: 'Traditional hooded Moroccan djellaba crafted with warm wool-blend fabric for winter prayer gatherings.',
+      ),
+    ],
   );
 
   @override
@@ -331,6 +385,7 @@ class HomeController extends Notifier<HomeState> {
       abayasProducts: updateList(state.abayasProducts),
       hijabsProducts: updateList(state.hijabsProducts),
       jalabiasProducts: updateList(state.jalabiasProducts),
+      thobesProducts: updateList(state.thobesProducts),
     );
   }
 

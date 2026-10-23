@@ -20,25 +20,25 @@ class _HeroBannerState extends State<HeroBanner> {
 
   final List<Map<String, String>> _banners = [
     {
-      'tag': 'NEW ARRIVALS',
-      'title': 'Elegant Abayas\nfor Every Occasion',
+      'tag': 'HAUTE MODESTY',
+      'title': 'Luxury Abayas\nfor Every Occasion',
       'subtitle': 'Modest. Stylish. Timeless.',
       'buttonText': 'Shop Now →',
-      'imageUrl': 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=600&q=80',
+      'imageUrl': 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=600&q=80',
     },
     {
-      'tag': 'RAMADAN SPECIAL',
-      'title': 'Silk Chiffon\nHijab Collection',
+      'tag': 'RAMADAN & EID',
+      'title': 'Pure Medina Silk\nHijab Collection',
       'subtitle': 'Breathable. Graceful. Pure.',
       'buttonText': 'Explore →',
-      'imageUrl': 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=600&q=80',
+      'imageUrl': 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?auto=format&fit=crop&w=600&q=80',
     },
     {
-      'tag': 'TRENDING NOW',
-      'title': 'Modest Maxi\nDresses & Robes',
-      'subtitle': 'Designed for Modern Elegance.',
+      'tag': 'ARTISANAL LUXURY',
+      'title': 'Royal Moroccan\nJalabias & Kaftans',
+      'subtitle': 'Embroidered Festive Elegance.',
       'buttonText': 'View All →',
-      'imageUrl': 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80',
+      'imageUrl': 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=600&q=80',
     },
   ];
 

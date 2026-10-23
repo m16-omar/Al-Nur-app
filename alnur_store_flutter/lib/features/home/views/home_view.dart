@@ -203,6 +203,33 @@ class _HomeViewState extends ConsumerState<HomeView> {
                   ),
                 ),
 
+                const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
+                // Al-Nur Thobes & Jubbahs Section
+                SliverToBoxAdapter(
+                  child: FeaturedProductsSection(
+                    title: 'Al-Nur Thobes & Jubbahs',
+                    products: homeState.thobesProducts,
+                    onProductTap: (product) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Selected ${product.name}'),
+                          duration: const Duration(seconds: 1),
+                        ),
+                      );
+                    },
+                    onFavoriteToggle: (product) => homeController.toggleFavorite(product),
+                    onViewAllTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Viewing Al-Nur Thobes Collection'),
+                          duration: Duration(seconds: 1),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
                 // Bottom Padding for floating nav bar
                 const SliverToBoxAdapter(
                   child: SizedBox(height: 110),

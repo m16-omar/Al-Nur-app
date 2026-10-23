@@ -46,7 +46,7 @@ class SearchBarWidget extends StatelessWidget {
                 onTap: onTap,
                 style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
                 decoration: InputDecoration(
-                  hintText: 'Search for abayas, hijabs, shoes...',
+                  hintText: 'Search for abayas, hijabs, jalabias...',
                   hintStyle: AppTextStyles.searchHint,
                   prefixIcon: const Icon(
                     Icons.search_rounded,
