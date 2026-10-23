@@ -1,12 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:alnur_store_client/alnur_store_client.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../main.dart';
 import '../../../shared/models/product_model.dart';
 import '../../home/controllers/home_controller.dart';
 
 class CategoriesView extends ConsumerStatefulWidget {
-  const CategoriesView({super.key});
+  final String? initialCategoryId;
+  final VoidCallback? onBackToHome;
+  final VoidCallback? onOpenAiChat;
+
+  const CategoriesView({
+    super.key,
+    this.initialCategoryId,
+    this.onBackToHome,
+    this.onOpenAiChat,
+  });
 
   @override
   ConsumerState<CategoriesView> createState() => _CategoriesViewState();
@@ -16,39 +27,144 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
   String _selectedCategory = 'all';
   String _searchFilter = '';
   String _selectedSort = 'featured';
+  bool _isLoadingBackend = false;
+  List<StoreCategory> _serverCategories = [];
+  List<StoreProduct> _serverProducts = [];
 
-  final List<Map<String, dynamic>> _categoryTabs = [
-    {'id': 'all', 'label': 'All Modest Wear', 'icon': Icons.all_inclusive_rounded},
-    {'id': 'abayas', 'label': 'Abayas', 'icon': Icons.dry_cleaning_rounded},
-    {'id': 'hijabs', 'label': 'Hijabs', 'icon': Icons.face_3_rounded},
-    {'id': 'jalabias', 'label': 'Jalabias', 'icon': Icons.auto_awesome_outlined},
-    {'id': 'thobes', 'label': 'Thobes', 'icon': Icons.person_rounded},
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _selectedCategory = widget.initialCategoryId ?? 'all';
+    _fetchServerpodData();
+  }
+
+  Future<void> _fetchServerpodData() async {
+    setState(() => _isLoadingBackend = true);
+    try {
+      final fetchedCategories = await client.category.getCategories();
+      final fetchedProducts = await client.product.getProducts();
+
+      if (mounted) {
+        setState(() {
+          _serverCategories = fetchedCategories;
+          _serverProducts = fetchedProducts;
+          _isLoadingBackend = false;
+        });
+      }
+    } catch (e) {
+      // Graceful fallback to local Riverpod state if Serverpod is starting up or offline
+      debugPrint('[CategoriesView] Serverpod sync notice: $e');
+      if (mounted) {
+        setState(() => _isLoadingBackend = false);
+      }
+    }
+  }
+
+  IconData _getCategoryIcon(String categoryId) {
+    switch (categoryId) {
+      case 'abayas':
+        return Icons.dry_cleaning_rounded;
+      case 'hijabs':
+        return Icons.all_inclusive_rounded;
+      case 'jalabias':
+        return Icons.auto_awesome_outlined;
+      case 'thobes':
+        return Icons.person_rounded;
+      case 'perfumes':
+        return Icons.spa_rounded;
+      case 'jewelries':
+        return Icons.diamond_outlined;
+      case 'bags':
+        return Icons.shopping_bag_outlined;
+      case 'slippers':
+        return Icons.hiking_rounded;
+      default:
+        return Icons.checkroom_rounded;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final homeState = ref.watch(homeControllerProvider);
     final homeController = ref.read(homeControllerProvider.notifier);
 
-    // Combine all products
-    final allProducts = [
-      ...homeState.abayasProducts,
-      ...homeState.hijabsProducts,
-      ...homeState.jalabiasProducts,
-      ...homeState.thobesProducts,
+    // Sync with homeState.selectedCategoryId if changed from outside (e.g. Home tab)
+    ref.listen<HomeState>(homeControllerProvider, (prev, next) {
+      if (next.selectedCategoryId != null && next.selectedCategoryId != _selectedCategory) {
+        setState(() {
+          _selectedCategory = next.selectedCategoryId!;
+        });
+      }
+    });
+
+    // Merge categories: use Serverpod categories if available, otherwise fallback to homeState
+    final List<Map<String, dynamic>> categoryTabs = [
+      {'id': 'all', 'label': 'All Modest Wear', 'icon': Icons.all_inclusive_rounded},
     ];
 
-    // Filter by selected category
+    if (_serverCategories.isNotEmpty) {
+      for (final sc in _serverCategories) {
+        categoryTabs.add({
+          'id': sc.categoryId,
+          'label': sc.name,
+          'icon': _getCategoryIcon(sc.categoryId),
+        });
+      }
+    } else {
+      for (final c in homeState.categories) {
+        categoryTabs.add({
+          'id': c.id,
+          'label': c.name,
+          'icon': c.fallbackIcon,
+        });
+      }
+    }
+
+    // Merge products: prioritize Serverpod backend products, fallback to homeState
+    List<ProductModel> allProducts = [];
+    if (_serverProducts.isNotEmpty) {
+      allProducts = _serverProducts
+          .map(
+            (sp) => ProductModel(
+              id: (sp.id ?? sp.slug).toString(),
+              name: sp.name,
+              price: sp.price,
+              originalPrice: sp.originalPrice,
+              rating: sp.rating,
+              reviewCount: sp.reviewCount,
+              imageUrl: sp.imageUrl,
+              categoryId: sp.categoryId,
+              isFavorite: sp.isFavorite ?? false,
+              description: sp.description,
+            ),
+          )
+          .toList();
+    } else {
+      final productMap = <String, ProductModel>{};
+      for (final p in [
+        ...homeState.featuredProducts,
+        ...homeState.abayasProducts,
+        ...homeState.hijabsProducts,
+        ...homeState.jalabiasProducts,
+        ...homeState.thobesProducts,
+      ]) {
+        productMap[p.id] = p;
+      }
+      allProducts = productMap.values.toList();
+    }
+
+    // Filter by category
     List<ProductModel> displayedProducts = _selectedCategory == 'all'
         ? allProducts
         : allProducts.where((p) => p.categoryId == _selectedCategory).toList();
 
-    // Filter by search text
+    // Filter by search query
     if (_searchFilter.isNotEmpty) {
       displayedProducts = displayedProducts
           .where((p) =>
               p.name.toLowerCase().contains(_searchFilter.toLowerCase()) ||
-              p.description.toLowerCase().contains(_searchFilter.toLowerCase()))
+              p.description.toLowerCase().contains(_searchFilter.toLowerCase()) ||
+              p.categoryId.toLowerCase().contains(_searchFilter.toLowerCase()))
           .toList();
     }
 
@@ -66,11 +182,34 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0.5,
+        leading: widget.onBackToHome != null
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.primary, size: 20),
+                onPressed: widget.onBackToHome,
+                tooltip: 'Back to Home',
+              )
+            : null,
         title: Text(
           'Islamic Modest Collections',
           style: AppTextStyles.productTitle.copyWith(fontSize: 18),
         ),
         actions: [
+          if (_isLoadingBackend)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8),
+              child: Center(
+                child: SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                ),
+              ),
+            ),
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded, color: AppColors.primary),
+            tooltip: 'Sync with Serverpod',
+            onPressed: _fetchServerpodData,
+          ),
           IconButton(
             icon: const Icon(Icons.sort_rounded, color: AppColors.primary),
             tooltip: 'Sort Collections',
@@ -87,7 +226,7 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
             child: TextField(
               onChanged: (val) => setState(() => _searchFilter = val),
               decoration: InputDecoration(
-                hintText: 'Search abayas, hijabs, jalabias, thobes...',
+                hintText: 'Search abayas, hijabs, jalabias, perfumes...',
                 hintStyle: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
                 prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primary, size: 20),
                 suffixIcon: _searchFilter.isNotEmpty
@@ -114,9 +253,9 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 12),
-              itemCount: _categoryTabs.length,
+              itemCount: categoryTabs.length,
               itemBuilder: (context, index) {
-                final tab = _categoryTabs[index];
+                final tab = categoryTabs[index];
                 final isSelected = _selectedCategory == tab['id'];
 
                 return Padding(
@@ -141,7 +280,17 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
                       color: isSelected ? AppColors.primary : AppColors.border,
                     ),
                     onSelected: (val) {
-                      setState(() => _selectedCategory = tab['id'] as String);
+                      final selectedId = tab['id'] as String;
+                      setState(() => _selectedCategory = selectedId);
+                      // Sync with global homeController
+                      if (selectedId != 'all') {
+                        final matchedCat = homeState.categories
+                            .where((c) => c.id == selectedId)
+                            .firstOrNull;
+                        if (matchedCat != null) {
+                          homeController.selectCategory(matchedCat);
+                        }
+                      }
                     },
                   ),
                 );
@@ -157,13 +306,41 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  '${displayedProducts.length} Modest Items Found',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      '${displayedProducts.length} Modest Items Found',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    if (_serverProducts.isNotEmpty) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.cloud_done_rounded, size: 10, color: AppColors.primary),
+                            SizedBox(width: 3),
+                            Text(
+                              'Serverpod Live',
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 GestureDetector(
                   onTap: () => _showSortModal(),
@@ -276,18 +453,27 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
                     top: 8,
                     right: 8,
                     child: GestureDetector(
-                      onTap: () {
+                      onTap: () async {
                         homeController.toggleFavorite(product);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              product.isFavorite
-                                  ? 'Removed ${product.name} from favorites'
-                                  : 'Added ${product.name} to favorites!',
+                        // Also sync to Serverpod if ID is numeric
+                        final intId = int.tryParse(product.id);
+                        if (intId != null) {
+                          try {
+                            await client.product.toggleFavorite(intId);
+                          } catch (_) {}
+                        }
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                product.isFavorite
+                                    ? 'Removed ${product.name} from favorites'
+                                    : 'Added ${product.name} to favorites!',
+                              ),
+                              duration: const Duration(milliseconds: 900),
                             ),
-                            duration: const Duration(milliseconds: 900),
-                          ),
-                        );
+                          );
+                        }
                       },
                       child: Container(
                         padding: const EdgeInsets.all(6),
@@ -439,7 +625,7 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
       backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => Container(
-          height: MediaQuery.of(context).size.height * 0.78,
+          height: MediaQuery.of(context).size.height * 0.80,
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -474,6 +660,35 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
                       ),
                     ),
                   ),
+                  if (widget.onOpenAiChat != null)
+                    Positioned(
+                      top: 14,
+                      left: 14,
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.pop(context);
+                          widget.onOpenAiChat!();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryDark.withValues(alpha: 0.85),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.auto_awesome_rounded, color: Colors.amber, size: 14),
+                              SizedBox(width: 4),
+                              Text(
+                                'Ask AI Stylist',
+                                style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
 

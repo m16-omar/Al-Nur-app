@@ -14,11 +14,17 @@
 import 'package:serverpod/serverpod.dart' as _i1;
 import '../auth/email_idp_endpoint.dart' as _i2;
 import '../auth/jwt_refresh_endpoint.dart' as _i3;
-import '../greetings/greeting_endpoint.dart' as _i4;
+import '../categories/category_endpoint.dart' as _i4;
+import '../greetings/greeting_endpoint.dart' as _i5;
+import '../products/product_endpoint.dart' as _i6;
+import 'package:alnur_store_server/src/generated/categories/store_category.dart'
+    as _i7;
+import 'package:alnur_store_server/src/generated/products/store_product.dart'
+    as _i8;
 import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
-    as _i5;
+    as _i9;
 import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
-    as _i6;
+    as _i10;
 
 class Endpoints extends _i1.EndpointDispatch {
   @override
@@ -36,10 +42,22 @@ class Endpoints extends _i1.EndpointDispatch {
           'jwtRefresh',
           null,
         ),
-      'greeting': _i4.GreetingEndpoint()
+      'category': _i4.CategoryEndpoint()
+        ..initialize(
+          server,
+          'category',
+          null,
+        ),
+      'greeting': _i5.GreetingEndpoint()
         ..initialize(
           server,
           'greeting',
+          null,
+        ),
+      'product': _i6.ProductEndpoint()
+        ..initialize(
+          server,
+          'product',
           null,
         ),
     };
@@ -247,6 +265,60 @@ class Endpoints extends _i1.EndpointDispatch {
         ),
       },
     );
+    connectors['category'] = _i1.EndpointConnector(
+      name: 'category',
+      endpoint: endpoints['category']!,
+      methodConnectors: {
+        'getCategories': _i1.MethodConnector(
+          name: 'getCategories',
+          params: {},
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['category'] as _i4.CategoryEndpoint)
+                  .getCategories(session),
+        ),
+        'createCategory': _i1.MethodConnector(
+          name: 'createCategory',
+          params: {
+            'category': _i1.ParameterDescription(
+              name: 'category',
+              type: _i1.getType<_i7.StoreCategory>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['category'] as _i4.CategoryEndpoint)
+                  .createCategory(
+                    session,
+                    params['category'],
+                  ),
+        ),
+        'deleteCategory': _i1.MethodConnector(
+          name: 'deleteCategory',
+          params: {
+            'id': _i1.ParameterDescription(
+              name: 'id',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['category'] as _i4.CategoryEndpoint)
+                  .deleteCategory(
+                    session,
+                    params['id'],
+                  ),
+        ),
+      },
+    );
     connectors['greeting'] = _i1.EndpointConnector(
       name: 'greeting',
       endpoint: endpoints['greeting']!,
@@ -264,16 +336,142 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['greeting'] as _i4.GreetingEndpoint).hello(
+              ) async => (endpoints['greeting'] as _i5.GreetingEndpoint).hello(
                 session,
                 params['name'],
               ),
         ),
       },
     );
-    modules['serverpod_auth_idp'] = _i5.Endpoints()
+    connectors['product'] = _i1.EndpointConnector(
+      name: 'product',
+      endpoint: endpoints['product']!,
+      methodConnectors: {
+        'getProducts': _i1.MethodConnector(
+          name: 'getProducts',
+          params: {
+            'categoryId': _i1.ParameterDescription(
+              name: 'categoryId',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+            'search': _i1.ParameterDescription(
+              name: 'search',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['product'] as _i6.ProductEndpoint).getProducts(
+                    session,
+                    categoryId: params['categoryId'],
+                    search: params['search'],
+                  ),
+        ),
+        'getProductById': _i1.MethodConnector(
+          name: 'getProductById',
+          params: {
+            'id': _i1.ParameterDescription(
+              name: 'id',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['product'] as _i6.ProductEndpoint).getProductById(
+                    session,
+                    params['id'],
+                  ),
+        ),
+        'toggleFavorite': _i1.MethodConnector(
+          name: 'toggleFavorite',
+          params: {
+            'productId': _i1.ParameterDescription(
+              name: 'productId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['product'] as _i6.ProductEndpoint).toggleFavorite(
+                    session,
+                    params['productId'],
+                  ),
+        ),
+        'createProduct': _i1.MethodConnector(
+          name: 'createProduct',
+          params: {
+            'product': _i1.ParameterDescription(
+              name: 'product',
+              type: _i1.getType<_i8.StoreProduct>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['product'] as _i6.ProductEndpoint).createProduct(
+                    session,
+                    params['product'],
+                  ),
+        ),
+        'updateProduct': _i1.MethodConnector(
+          name: 'updateProduct',
+          params: {
+            'product': _i1.ParameterDescription(
+              name: 'product',
+              type: _i1.getType<_i8.StoreProduct>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['product'] as _i6.ProductEndpoint).updateProduct(
+                    session,
+                    params['product'],
+                  ),
+        ),
+        'deleteProduct': _i1.MethodConnector(
+          name: 'deleteProduct',
+          params: {
+            'id': _i1.ParameterDescription(
+              name: 'id',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['product'] as _i6.ProductEndpoint).deleteProduct(
+                    session,
+                    params['id'],
+                  ),
+        ),
+      },
+    );
+    modules['serverpod_auth_idp'] = _i9.Endpoints()
       ..initializeEndpoints(server);
-    modules['serverpod_auth_core'] = _i6.Endpoints()
+    modules['serverpod_auth_core'] = _i10.Endpoints()
       ..initializeEndpoints(server);
   }
 }

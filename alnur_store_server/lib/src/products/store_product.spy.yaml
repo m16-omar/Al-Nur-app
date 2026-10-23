@@ -1,0 +1,14 @@
+class: StoreProduct
+table: store_product
+fields:
+  name: String
+  slug: String
+  categoryId: String
+  price: double
+  originalPrice: double?
+  rating: double
+  reviewCount: int
+  imageUrl: String
+  description: String
+  isAvailable: bool
+  isFavorite: bool?

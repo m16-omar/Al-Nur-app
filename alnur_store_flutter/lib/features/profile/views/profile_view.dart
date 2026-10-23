@@ -1,19 +1,21 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../authentication/controllers/auth_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 
-class ProfileView extends StatefulWidget {
+class ProfileView extends ConsumerStatefulWidget {
   final VoidCallback? onNavigateToOrders;
 
   const ProfileView({super.key, this.onNavigateToOrders});
 
   @override
-  State<ProfileView> createState() => _ProfileViewState();
+  ConsumerState<ProfileView> createState() => _ProfileViewState();
 }
 
-class _ProfileViewState extends State<ProfileView> {
+class _ProfileViewState extends ConsumerState<ProfileView> {
   String _userName = 'Amina Al-Mansoor';
   String _userEmail = 'amina.mansoor@example.com';
   String _userPhone = '+234 803 987 6543';
@@ -23,6 +25,11 @@ class _ProfileViewState extends State<ProfileView> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authControllerProvider);
+    final user = authState.user;
+    final displayName = user != null && user.name.isNotEmpty ? user.name : _userName;
+    final displayEmail = user != null && user.email.isNotEmpty ? user.email : _userEmail;
+    final isGuest = authState.isGuest;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -97,7 +104,7 @@ class _ProfileViewState extends State<ProfileView> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    _userName,
+                    displayName,
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
@@ -106,32 +113,41 @@ class _ProfileViewState extends State<ProfileView> {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    _userEmail,
+                    displayEmail,
                     style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 10),
-                  // VIP Badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: AppColors.goldLight,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppColors.gold.withValues(alpha: 0.4)),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.workspace_premium_rounded, color: AppColors.goldDark, size: 16),
-                        SizedBox(width: 6),
-                        Text(
-                          'Gold VIP Modesty Member',
-                          style: TextStyle(
-                            color: AppColors.goldDark,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 12,
-                          ),
+                  // VIP or Guest Badge
+                  GestureDetector(
+                    onTap: isGuest ? () => context.go(AppRoutes.login) : null,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: isGuest ? AppColors.surfaceMuted : AppColors.goldLight,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isGuest ? AppColors.border : AppColors.gold.withValues(alpha: 0.4),
                         ),
-                      ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isGuest ? Icons.person_outline_rounded : Icons.workspace_premium_rounded,
+                            color: isGuest ? AppColors.primary : AppColors.goldDark,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            isGuest ? 'Guest Shopper (Tap to Sign In)' : 'Gold VIP Modesty Member',
+                            style: TextStyle(
+                              color: isGuest ? AppColors.primary : AppColors.goldDark,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -1072,9 +1088,12 @@ class _ProfileViewState extends State<ProfileView> {
               backgroundColor: AppColors.error,
               foregroundColor: Colors.white,
             ),
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              context.go(AppRoutes.login);
+              await ref.read(authControllerProvider.notifier).logout();
+              if (context.mounted) {
+                context.go(AppRoutes.login);
+              }
             },
             child: const Text('Sign Out'),
           ),

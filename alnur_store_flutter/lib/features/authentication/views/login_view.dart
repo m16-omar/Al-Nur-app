@@ -1,3 +1,4 @@
+import '../../../main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -39,12 +40,27 @@ class _LoginViewState extends ConsumerState<LoginView> {
         );
 
     if (success && mounted) {
+      final user = ref.read(authControllerProvider).user;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Assalamu Alaikum! Welcome back, ${user?.name ?? 'Member'}.'),
+          backgroundColor: AppColors.primary,
+          duration: const Duration(seconds: 2),
+        ),
+      );
       context.go(AppRoutes.home);
     }
   }
 
   void _handleContinueAsGuest() {
     ref.read(authControllerProvider.notifier).continueAsGuest();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Ahlan wa Sahlan! Browsing as Guest.'),
+        backgroundColor: AppColors.primary,
+        duration: Duration(seconds: 2),
+      ),
+    );
     context.go(AppRoutes.home);
   }
 
@@ -183,13 +199,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
                     ],
                   ),
                   TextButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Password reset instructions sent to your email.'),
-                        ),
-                      );
-                    },
+                    onPressed: () => _showForgotPasswordModal(),
                     child: Text(
                       'Forgot Password?',
                       style: GoogleFonts.plusJakartaSans(
@@ -202,6 +212,25 @@ class _LoginViewState extends ConsumerState<LoginView> {
                 ],
               ),
               const SizedBox(height: 24),
+
+              // Quick Demo Credentials Pill
+              Align(
+                alignment: Alignment.center,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: ActionChip(
+                    avatar: const Icon(Icons.flash_on_rounded, size: 14, color: AppColors.primary),
+                    label: const Text('Quick Fill Demo (Amina)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                    backgroundColor: AppColors.primaryContainer.withValues(alpha: 0.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    side: const BorderSide(color: AppColors.primary, width: 0.8),
+                    onPressed: () {
+                      _emailController.text = 'amina@alnur.store';
+                      _passwordController.text = 'password123';
+                    },
+                  ),
+                ),
+              ),
 
               // Sign In Button
               AppButton(
@@ -272,6 +301,89 @@ class _LoginViewState extends ConsumerState<LoginView> {
                 ),
               ),
               const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showForgotPasswordModal() {
+    final resetEmailController = TextEditingController(text: _emailController.text.trim());
+    bool isSubmitting = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(context).viewInsets.bottom + 24),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Reset Password',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Enter your registered email address to receive password recovery instructions.',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 16),
+              AppTextField(
+                controller: resetEmailController,
+                hintText: 'Enter your email',
+                labelText: 'Email Address',
+                keyboardType: TextInputType.emailAddress,
+                prefixIcon: const Icon(Icons.email_outlined, color: AppColors.primary, size: 20),
+              ),
+              const SizedBox(height: 20),
+              AppButton(
+                text: 'Send Reset Instructions',
+                isLoading: isSubmitting,
+                onPressed: () async {
+                  final email = resetEmailController.text.trim();
+                  if (email.isEmpty) return;
+
+                  setModalState(() => isSubmitting = true);
+                  try {
+                    await client.emailIdp.startPasswordReset(email: email);
+                  } catch (_) {}
+
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Password reset code sent to $email'),
+                        backgroundColor: AppColors.primary,
+                      ),
+                    );
+                  }
+                },
+              ),
             ],
           ),
         ),

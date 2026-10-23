@@ -9,5 +9,16 @@ emailIdp:
   - hasAccount:
 jwtRefresh:
   - refreshAccessToken:
+category:
+  - getCategories:
+  - createCategory:
+  - deleteCategory:
 greeting:
   - hello:
+product:
+  - getProducts:
+  - getProductById:
+  - toggleFavorite:
+  - createProduct:
+  - updateProduct:
+  - deleteProduct:

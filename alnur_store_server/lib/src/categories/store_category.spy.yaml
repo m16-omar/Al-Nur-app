@@ -1,0 +1,9 @@
+class: StoreCategory
+table: store_category
+fields:
+  categoryId: String
+  name: String
+  iconName: String?
+  tagline: String?
+  intro: String?
+  colorHex: String?

@@ -49,6 +49,10 @@ void run(List<String> args) async {
     '/app/assets/assets/config.json',
   );
 
+  // Setup the executive Admin panel routes.
+  final adminFile = File(Uri(path: 'web/admin/index.html').toFilePath());
+  pod.webServer.addRoute(StaticRoute.file(adminFile), '/admin/**');
+
   // Checks if the flutter web app has been built and serves it if it has.
   final appDir = Directory(Uri(path: 'web/app').toFilePath());
   if (appDir.existsSync()) {
