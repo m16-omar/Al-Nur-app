@@ -24,6 +24,9 @@ jobs:
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@v1
 
+      - name: Resolve workspace dependencies
+        run: flutter pub get
+
       - name: Install Serverpod Cloud CLI
         run: |
           dart pub global activate serverpod_cloud_cli
