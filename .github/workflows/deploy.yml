@@ -1,0 +1,30 @@
+name: Deploy to Serverpod Cloud
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy Serverpod
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@v1
+
+      - name: Activate Serverpod CLI
+        run: dart pub global activate serverpod_cli
+
+      - name: Deploy to Serverpod Cloud
+        uses: serverpod/serverpod-cloud-deploy@v1
+        with:
+          token: ${{ secrets.SERVERPOD_CLOUD_TOKEN }}
+          project_id: alnur-store
+          project_dir: alnur_store_server
