@@ -95,10 +95,14 @@ class _HomeViewState extends ConsumerState<HomeView> {
                 CategoriesView(
                   onBackToHome: () => setState(() => _currentNavIndex = 0),
                   onOpenAiChat: () => setState(() => _currentNavIndex = 2),
+                  onOpenCart: () => setState(() => _currentNavIndex = 3),
                 ),
                 const AiChatView(isEmbeddedTab: true),
                 const CartView(),
-                ProfileView(onNavigateToOrders: () => context.push(AppRoutes.orders)),
+                ProfileView(
+                  onNavigateToOrders: () => context.push(AppRoutes.orders),
+                  onOpenCart: () => setState(() => _currentNavIndex = 3),
+                ),
               ],
             ),
 
@@ -645,8 +649,17 @@ class _HomeViewState extends ConsumerState<HomeView> {
     );
   }
 
+  void _navigateToCart() {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    if (mounted) {
+      setState(() => _currentNavIndex = 3);
+    } else {
+      appRouter.push(AppRoutes.cart);
+    }
+  }
+
   void _showCartModal(BuildContext context) {
-    context.push(AppRoutes.cart);
+    _navigateToCart();
   }
 
   void _showProductDetailsModal(BuildContext context, ProductModel product) {
@@ -660,8 +673,8 @@ class _HomeViewState extends ConsumerState<HomeView> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
-        builder: (context, setModalState) => Container(
-          height: MediaQuery.of(context).size.height * 0.85,
+        builder: (modalCtx, setModalState) => Container(
+          height: MediaQuery.of(modalCtx).size.height * 0.85,
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -691,7 +704,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
                       height: 220,
                       width: double.infinity,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
+                      errorBuilder: (imgCtx, error, stackTrace) => Container(
                         height: 220,
                         color: AppColors.surfaceMuted,
                         child: const Icon(Icons.checkroom_rounded, size: 48, color: AppColors.primary),
@@ -870,7 +883,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
                           action: SnackBarAction(
                             label: 'VIEW BAG',
                             textColor: AppColors.gold,
-                            onPressed: () => context.push(AppRoutes.cart),
+                            onPressed: _navigateToCart,
                           ),
                         ),
                       );

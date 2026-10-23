@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alnur_store_client/alnur_store_client.dart';
-import 'package:go_router/go_router.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -14,12 +13,14 @@ class CategoriesView extends ConsumerStatefulWidget {
   final String? initialCategoryId;
   final VoidCallback? onBackToHome;
   final VoidCallback? onOpenAiChat;
+  final VoidCallback? onOpenCart;
 
   const CategoriesView({
     super.key,
     this.initialCategoryId,
     this.onBackToHome,
     this.onOpenAiChat,
+    this.onOpenCart,
   });
 
   @override
@@ -33,6 +34,15 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
   bool _isLoadingBackend = false;
   List<StoreCategory> _serverCategories = [];
   List<StoreProduct> _serverProducts = [];
+
+  void _navigateToCart() {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    if (widget.onOpenCart != null) {
+      widget.onOpenCart!();
+    } else {
+      appRouter.push(AppRoutes.cart);
+    }
+  }
 
   @override
   void initState() {
@@ -235,7 +245,7 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
           ),
           // Shopping Bag / Cart Action Button with Badge
           GestureDetector(
-            onTap: () => context.push(AppRoutes.cart),
+            onTap: _navigateToCart,
             child: Padding(
               padding: const EdgeInsets.only(right: 14, left: 4),
               child: Center(
@@ -679,7 +689,7 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
                               action: SnackBarAction(
                                 label: 'VIEW BAG',
                                 textColor: AppColors.gold,
-                                onPressed: () => context.push(AppRoutes.cart),
+                                onPressed: _navigateToCart,
                               ),
                             ),
                           );
@@ -712,9 +722,9 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => Container(
-          height: MediaQuery.of(context).size.height * 0.80,
+      builder: (sheetCtx) => StatefulBuilder(
+        builder: (modalCtx, setModalState) => Container(
+          height: MediaQuery.of(modalCtx).size.height * 0.80,
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -738,7 +748,7 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
                     top: 14,
                     right: 14,
                     child: GestureDetector(
-                      onTap: () => Navigator.pop(context),
+                      onTap: () => Navigator.pop(sheetCtx),
                       child: Container(
                         padding: const EdgeInsets.all(6),
                         decoration: const BoxDecoration(
@@ -755,7 +765,7 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
                       left: 14,
                       child: GestureDetector(
                         onTap: () {
-                          Navigator.pop(context);
+                          Navigator.pop(sheetCtx);
                           widget.onOpenAiChat!();
                         },
                         child: Container(
@@ -920,7 +930,7 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
                             product,
                             size: selectedSize,
                           );
-                      Navigator.pop(context);
+                      Navigator.pop(sheetCtx);
                       ScaffoldMessenger.of(context).hideCurrentSnackBar();
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -930,7 +940,7 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
                           action: SnackBarAction(
                             label: 'VIEW BAG',
                             textColor: AppColors.gold,
-                            onPressed: () => context.push(AppRoutes.cart),
+                            onPressed: _navigateToCart,
                           ),
                         ),
                       );

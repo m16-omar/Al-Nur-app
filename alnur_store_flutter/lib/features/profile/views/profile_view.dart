@@ -10,8 +10,13 @@ import '../../../core/theme/app_text_styles.dart';
 
 class ProfileView extends ConsumerStatefulWidget {
   final VoidCallback? onNavigateToOrders;
+  final VoidCallback? onOpenCart;
 
-  const ProfileView({super.key, this.onNavigateToOrders});
+  const ProfileView({
+    super.key,
+    this.onNavigateToOrders,
+    this.onOpenCart,
+  });
 
   @override
   ConsumerState<ProfileView> createState() => _ProfileViewState();
@@ -24,6 +29,14 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
   String _selectedCurrency = 'NGN (₦)';
   bool _notificationsEnabled = true;
   bool _jumuahRemindersEnabled = true;
+
+  void _navigateToCart() {
+    if (widget.onOpenCart != null) {
+      widget.onOpenCart!();
+    } else {
+      appRouter.push(AppRoutes.cart);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +68,7 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
               child: const Icon(Icons.shopping_bag_outlined, color: AppColors.primary),
             ),
             tooltip: 'My Shopping Bag',
-            onPressed: () => context.push(AppRoutes.cart),
+            onPressed: _navigateToCart,
           ),
           IconButton(
             icon: const Icon(Icons.settings_outlined, color: AppColors.primary),
@@ -182,7 +195,7 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                     count: '$cartCount',
                     label: 'Cart',
                     color: AppColors.primary,
-                    onTap: () => context.push(AppRoutes.cart),
+                    onTap: _navigateToCart,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -246,7 +259,7 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                         ),
                       )
                     : null,
-                onTap: () => context.push(AppRoutes.cart),
+                onTap: _navigateToCart,
               ),
               _buildListTile(
                 icon: Icons.person_outline_rounded,
