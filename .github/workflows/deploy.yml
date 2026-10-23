@@ -19,9 +19,19 @@ jobs:
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@v1
 
-      - name: Deploy to Serverpod Cloud
-        uses: serverpod/serverpod_cloud_deploy@main
-        with:
-          token: ${{ secrets.SERVERPOD_CLOUD_TOKEN }}
-          project_id: alnur-store
-          project_dir: alnur_store_server
+      - name: Install Serverpod Cloud CLI
+        run: |
+          dart pub global activate serverpod_cloud_cli
+          echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
+
+      - name: Deploy Serverpod
+        working-directory: alnur_store_server
+        shell: bash
+        env:
+          SERVERPOD_CLOUD_TOKEN: ${{ secrets.SERVERPOD_CLOUD_TOKEN }}
+        run: |
+          export PATH="$HOME/.pub-cache/bin:$PATH"
+          echo "Checking scloud version:"
+          scloud --version --no-analytics
+          echo "Running initial launch / deployment..."
+          scloud launch --token "$SERVERPOD_CLOUD_TOKEN" --yes --no-analytics || scloud deploy --token "$SERVERPOD_CLOUD_TOKEN" --yes --no-analytics
