@@ -12,6 +12,7 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
 import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:alnur_store_server/src/generated/protocol.dart' as _i2;
 
 abstract class StoreProduct
     implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
@@ -28,6 +29,8 @@ abstract class StoreProduct
     required this.description,
     required this.isAvailable,
     this.isFavorite,
+    this.colors,
+    this.sizes,
   });
 
   factory StoreProduct({
@@ -43,6 +46,8 @@ abstract class StoreProduct
     required String description,
     required bool isAvailable,
     bool? isFavorite,
+    List<String>? colors,
+    List<String>? sizes,
   }) = _StoreProductImpl;
 
   factory StoreProduct.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -63,6 +68,16 @@ abstract class StoreProduct
       isFavorite: jsonSerialization['isFavorite'] == null
           ? null
           : _i1.BoolJsonExtension.fromJson(jsonSerialization['isFavorite']),
+      colors: jsonSerialization['colors'] == null
+          ? null
+          : _i2.Protocol().deserialize<List<String>>(
+              jsonSerialization['colors'],
+            ),
+      sizes: jsonSerialization['sizes'] == null
+          ? null
+          : _i2.Protocol().deserialize<List<String>>(
+              jsonSerialization['sizes'],
+            ),
     );
   }
 
@@ -95,6 +110,10 @@ abstract class StoreProduct
 
   bool? isFavorite;
 
+  List<String>? colors;
+
+  List<String>? sizes;
+
   @override
   _i1.Table<int?> get table => t;
 
@@ -114,6 +133,8 @@ abstract class StoreProduct
     String? description,
     bool? isAvailable,
     bool? isFavorite,
+    List<String>? colors,
+    List<String>? sizes,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -131,6 +152,8 @@ abstract class StoreProduct
       'description': description,
       'isAvailable': isAvailable,
       if (isFavorite != null) 'isFavorite': isFavorite,
+      if (colors != null) 'colors': colors?.toJson(),
+      if (sizes != null) 'sizes': sizes?.toJson(),
     };
   }
 
@@ -150,6 +173,8 @@ abstract class StoreProduct
       'description': description,
       'isAvailable': isAvailable,
       if (isFavorite != null) 'isFavorite': isFavorite,
+      if (colors != null) 'colors': colors?.toJson(),
+      if (sizes != null) 'sizes': sizes?.toJson(),
     };
   }
 
@@ -199,6 +224,8 @@ class _StoreProductImpl extends StoreProduct {
     required String description,
     required bool isAvailable,
     bool? isFavorite,
+    List<String>? colors,
+    List<String>? sizes,
   }) : super._(
          id: id,
          name: name,
@@ -212,6 +239,8 @@ class _StoreProductImpl extends StoreProduct {
          description: description,
          isAvailable: isAvailable,
          isFavorite: isFavorite,
+         colors: colors,
+         sizes: sizes,
        );
 
   /// Returns a shallow copy of this [StoreProduct]
@@ -231,6 +260,8 @@ class _StoreProductImpl extends StoreProduct {
     String? description,
     bool? isAvailable,
     Object? isFavorite = _Undefined,
+    Object? colors = _Undefined,
+    Object? sizes = _Undefined,
   }) {
     return StoreProduct(
       id: id is int? ? id : this.id,
@@ -247,6 +278,12 @@ class _StoreProductImpl extends StoreProduct {
       description: description ?? this.description,
       isAvailable: isAvailable ?? this.isAvailable,
       isFavorite: isFavorite is bool? ? isFavorite : this.isFavorite,
+      colors: colors is List<String>?
+          ? colors
+          : this.colors?.map((e0) => e0).toList(),
+      sizes: sizes is List<String>?
+          ? sizes
+          : this.sizes?.map((e0) => e0).toList(),
     );
   }
 }
@@ -309,6 +346,18 @@ class StoreProductUpdateTable extends _i1.UpdateTable<StoreProductTable> {
     table.isFavorite,
     value,
   );
+
+  _i1.ColumnValue<List<String>, List<String>> colors(List<String>? value) =>
+      _i1.ColumnValue(
+        table.colors,
+        value,
+      );
+
+  _i1.ColumnValue<List<String>, List<String>> sizes(List<String>? value) =>
+      _i1.ColumnValue(
+        table.sizes,
+        value,
+      );
 }
 
 class StoreProductTable extends _i1.Table<int?> {
@@ -358,6 +407,14 @@ class StoreProductTable extends _i1.Table<int?> {
       'isFavorite',
       this,
     );
+    colors = _i1.ColumnSerializable<List<String>>(
+      'colors',
+      this,
+    );
+    sizes = _i1.ColumnSerializable<List<String>>(
+      'sizes',
+      this,
+    );
   }
 
   late final StoreProductUpdateTable updateTable;
@@ -384,6 +441,10 @@ class StoreProductTable extends _i1.Table<int?> {
 
   late final _i1.ColumnBool isFavorite;
 
+  late final _i1.ColumnSerializable<List<String>> colors;
+
+  late final _i1.ColumnSerializable<List<String>> sizes;
+
   @override
   List<_i1.Column> get columns => [
     id,
@@ -398,6 +459,8 @@ class StoreProductTable extends _i1.Table<int?> {
     description,
     isAvailable,
     isFavorite,
+    colors,
+    sizes,
   ];
 }
 

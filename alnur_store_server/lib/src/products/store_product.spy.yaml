@@ -12,3 +12,5 @@ fields:
   description: String
   isAvailable: bool
   isFavorite: bool?
+  colors: List<String>?
+  sizes: List<String>?

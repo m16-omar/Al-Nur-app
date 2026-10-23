@@ -1,0 +1,8 @@
+class: AiStylistResponse
+fields:
+  reply: String
+  occasion: String?
+  modestyNote: String?
+  recommendedProducts: List<StoreProduct>?
+  suggestedPrompts: List<String>?
+  totalEstimatedCost: double?

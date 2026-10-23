@@ -17,13 +17,15 @@ import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
     as _i3;
 import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
     as _i4;
-import 'categories/store_category.dart' as _i5;
-import 'greetings/greeting.dart' as _i6;
-import 'products/store_product.dart' as _i7;
+import 'ai/ai_stylist.dart' as _i5;
+import 'categories/store_category.dart' as _i6;
+import 'greetings/greeting.dart' as _i7;
+import 'products/store_product.dart' as _i8;
 import 'package:alnur_store_server/src/generated/categories/store_category.dart'
-    as _i8;
-import 'package:alnur_store_server/src/generated/products/store_product.dart'
     as _i9;
+import 'package:alnur_store_server/src/generated/products/store_product.dart'
+    as _i10;
+export 'ai/ai_stylist.dart';
 export 'categories/store_category.dart';
 export 'greetings/greeting.dart';
 export 'products/store_product.dart';
@@ -183,6 +185,18 @@ class Protocol extends _i1.SerializationManagerServer {
           isNullable: true,
           dartType: 'bool?',
         ),
+        _i2.ColumnDefinition(
+          name: 'colors',
+          columnType: _i2.ColumnType.json,
+          isNullable: true,
+          dartType: 'List<String>?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'sizes',
+          columnType: _i2.ColumnType.json,
+          isNullable: true,
+          dartType: 'List<String>?',
+        ),
       ],
       foreignKeys: [],
       indexes: [
@@ -234,33 +248,62 @@ class Protocol extends _i1.SerializationManagerServer {
       }
     }
 
-    if (t == _i5.StoreCategory) {
-      return _i5.StoreCategory.fromJson(data) as T;
+    if (t == _i5.AiStylistResponse) {
+      return _i5.AiStylistResponse.fromJson(data) as T;
     }
-    if (t == _i6.Greeting) {
-      return _i6.Greeting.fromJson(data) as T;
+    if (t == _i6.StoreCategory) {
+      return _i6.StoreCategory.fromJson(data) as T;
     }
-    if (t == _i7.StoreProduct) {
-      return _i7.StoreProduct.fromJson(data) as T;
+    if (t == _i7.Greeting) {
+      return _i7.Greeting.fromJson(data) as T;
     }
-    if (t == _i1.getType<_i5.StoreCategory?>()) {
-      return (data != null ? _i5.StoreCategory.fromJson(data) : null) as T;
+    if (t == _i8.StoreProduct) {
+      return _i8.StoreProduct.fromJson(data) as T;
     }
-    if (t == _i1.getType<_i6.Greeting?>()) {
-      return (data != null ? _i6.Greeting.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i5.AiStylistResponse?>()) {
+      return (data != null ? _i5.AiStylistResponse.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i7.StoreProduct?>()) {
-      return (data != null ? _i7.StoreProduct.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i6.StoreCategory?>()) {
+      return (data != null ? _i6.StoreCategory.fromJson(data) : null) as T;
     }
-    if (t == List<_i8.StoreCategory>) {
+    if (t == _i1.getType<_i7.Greeting?>()) {
+      return (data != null ? _i7.Greeting.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i8.StoreProduct?>()) {
+      return (data != null ? _i8.StoreProduct.fromJson(data) : null) as T;
+    }
+    if (t == List<_i8.StoreProduct>) {
       return (data as List)
-              .map((e) => deserialize<_i8.StoreCategory>(e))
+              .map((e) => deserialize<_i8.StoreProduct>(e))
               .toList()
           as T;
     }
-    if (t == List<_i9.StoreProduct>) {
+    if (t == _i1.getType<List<_i8.StoreProduct>?>()) {
+      return (data != null
+              ? (data as List)
+                    .map((e) => deserialize<_i8.StoreProduct>(e))
+                    .toList()
+              : null)
+          as T;
+    }
+    if (t == List<String>) {
+      return (data as List).map((e) => deserialize<String>(e)).toList() as T;
+    }
+    if (t == _i1.getType<List<String>?>()) {
+      return (data != null
+              ? (data as List).map((e) => deserialize<String>(e)).toList()
+              : null)
+          as T;
+    }
+    if (t == List<_i9.StoreCategory>) {
       return (data as List)
-              .map((e) => deserialize<_i9.StoreProduct>(e))
+              .map((e) => deserialize<_i9.StoreCategory>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_i10.StoreProduct>) {
+      return (data as List)
+              .map((e) => deserialize<_i10.StoreProduct>(e))
               .toList()
           as T;
     }
@@ -278,9 +321,10 @@ class Protocol extends _i1.SerializationManagerServer {
 
   static String? getClassNameForType(Type type) {
     return switch (type) {
-      _i5.StoreCategory => 'StoreCategory',
-      _i6.Greeting => 'Greeting',
-      _i7.StoreProduct => 'StoreProduct',
+      _i5.AiStylistResponse => 'AiStylistResponse',
+      _i6.StoreCategory => 'StoreCategory',
+      _i7.Greeting => 'Greeting',
+      _i8.StoreProduct => 'StoreProduct',
       _ => null,
     };
   }
@@ -295,11 +339,13 @@ class Protocol extends _i1.SerializationManagerServer {
     }
 
     switch (data) {
-      case _i5.StoreCategory():
+      case _i5.AiStylistResponse():
+        return 'AiStylistResponse';
+      case _i6.StoreCategory():
         return 'StoreCategory';
-      case _i6.Greeting():
+      case _i7.Greeting():
         return 'Greeting';
-      case _i7.StoreProduct():
+      case _i8.StoreProduct():
         return 'StoreProduct';
     }
     className = _i2.Protocol().getClassNameForObject(data);
@@ -323,14 +369,17 @@ class Protocol extends _i1.SerializationManagerServer {
     if (dataClassName is! String) {
       return super.deserializeByClassName(data);
     }
+    if (dataClassName == 'AiStylistResponse') {
+      return deserialize<_i5.AiStylistResponse>(data['data']);
+    }
     if (dataClassName == 'StoreCategory') {
-      return deserialize<_i5.StoreCategory>(data['data']);
+      return deserialize<_i6.StoreCategory>(data['data']);
     }
     if (dataClassName == 'Greeting') {
-      return deserialize<_i6.Greeting>(data['data']);
+      return deserialize<_i7.Greeting>(data['data']);
     }
     if (dataClassName == 'StoreProduct') {
-      return deserialize<_i7.StoreProduct>(data['data']);
+      return deserialize<_i8.StoreProduct>(data['data']);
     }
     if (dataClassName.startsWith('serverpod.')) {
       data['className'] = dataClassName.substring(10);
@@ -368,10 +417,10 @@ class Protocol extends _i1.SerializationManagerServer {
       }
     }
     switch (t) {
-      case _i5.StoreCategory:
-        return _i5.StoreCategory.t;
-      case _i7.StoreProduct:
-        return _i7.StoreProduct.t;
+      case _i6.StoreCategory:
+        return _i6.StoreCategory.t;
+      case _i8.StoreProduct:
+        return _i8.StoreProduct.t;
     }
     return null;
   }

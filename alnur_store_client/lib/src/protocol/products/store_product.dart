@@ -12,6 +12,7 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:alnur_store_client/src/protocol/protocol.dart' as _i2;
 
 abstract class StoreProduct implements _i1.SerializableModel {
   StoreProduct._({
@@ -27,6 +28,8 @@ abstract class StoreProduct implements _i1.SerializableModel {
     required this.description,
     required this.isAvailable,
     this.isFavorite,
+    this.colors,
+    this.sizes,
   });
 
   factory StoreProduct({
@@ -42,6 +45,8 @@ abstract class StoreProduct implements _i1.SerializableModel {
     required String description,
     required bool isAvailable,
     bool? isFavorite,
+    List<String>? colors,
+    List<String>? sizes,
   }) = _StoreProductImpl;
 
   factory StoreProduct.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -62,6 +67,16 @@ abstract class StoreProduct implements _i1.SerializableModel {
       isFavorite: jsonSerialization['isFavorite'] == null
           ? null
           : _i1.BoolJsonExtension.fromJson(jsonSerialization['isFavorite']),
+      colors: jsonSerialization['colors'] == null
+          ? null
+          : _i2.Protocol().deserialize<List<String>>(
+              jsonSerialization['colors'],
+            ),
+      sizes: jsonSerialization['sizes'] == null
+          ? null
+          : _i2.Protocol().deserialize<List<String>>(
+              jsonSerialization['sizes'],
+            ),
     );
   }
 
@@ -92,6 +107,10 @@ abstract class StoreProduct implements _i1.SerializableModel {
 
   bool? isFavorite;
 
+  List<String>? colors;
+
+  List<String>? sizes;
+
   /// Returns a shallow copy of this [StoreProduct]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
@@ -108,6 +127,8 @@ abstract class StoreProduct implements _i1.SerializableModel {
     String? description,
     bool? isAvailable,
     bool? isFavorite,
+    List<String>? colors,
+    List<String>? sizes,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -125,6 +146,8 @@ abstract class StoreProduct implements _i1.SerializableModel {
       'description': description,
       'isAvailable': isAvailable,
       if (isFavorite != null) 'isFavorite': isFavorite,
+      if (colors != null) 'colors': colors?.toJson(),
+      if (sizes != null) 'sizes': sizes?.toJson(),
     };
   }
 
@@ -150,6 +173,8 @@ class _StoreProductImpl extends StoreProduct {
     required String description,
     required bool isAvailable,
     bool? isFavorite,
+    List<String>? colors,
+    List<String>? sizes,
   }) : super._(
          id: id,
          name: name,
@@ -163,6 +188,8 @@ class _StoreProductImpl extends StoreProduct {
          description: description,
          isAvailable: isAvailable,
          isFavorite: isFavorite,
+         colors: colors,
+         sizes: sizes,
        );
 
   /// Returns a shallow copy of this [StoreProduct]
@@ -182,6 +209,8 @@ class _StoreProductImpl extends StoreProduct {
     String? description,
     bool? isAvailable,
     Object? isFavorite = _Undefined,
+    Object? colors = _Undefined,
+    Object? sizes = _Undefined,
   }) {
     return StoreProduct(
       id: id is int? ? id : this.id,
@@ -198,6 +227,12 @@ class _StoreProductImpl extends StoreProduct {
       description: description ?? this.description,
       isAvailable: isAvailable ?? this.isAvailable,
       isFavorite: isFavorite is bool? ? isFavorite : this.isFavorite,
+      colors: colors is List<String>?
+          ? colors
+          : this.colors?.map((e0) => e0).toList(),
+      sizes: sizes is List<String>?
+          ? sizes
+          : this.sizes?.map((e0) => e0).toList(),
     );
   }
 }

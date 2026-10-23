@@ -724,88 +724,115 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           
           <!-- Controls Column -->
-          <div class="white-card rounded-2xl p-6 lg:col-span-1 bg-white">
-            <h3 class="text-lg font-bold font-serif text-gray-900 mb-2">AI Engine Controls</h3>
-            <p class="text-xs text-gray-500 mb-6">Tune Al-Nur Stylist personality and modest matching rules</p>
-            
-            <div class="space-y-4 text-xs">
-              <div>
-                <label class="block font-semibold text-gray-700 mb-1.5">Model Engine</label>
-                <select class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-gray-900 text-xs focus:bg-white focus:border-brand-emerald">
-                  <option>Google Gemini 2.0 Flash (Fastest)</option>
-                  <option>Google Gemini 1.5 Pro (Deep Modesty Logic)</option>
-                </select>
-              </div>
-
-              <div>
-                <label class="block font-semibold text-gray-700 mb-1.5">Strict Modesty Filter</label>
-                <div class="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-200">
-                  <span class="text-gray-700 text-xs font-medium">Full Non-Transparent Opaque Policy</span>
-                  <input type="checkbox" checked class="w-4 h-4 accent-brand-emerald">
+          <div class="white-card rounded-2xl p-6 lg:col-span-1 bg-white flex flex-col justify-between">
+            <div>
+              <div class="flex items-center space-x-2.5 mb-2">
+                <div class="w-8 h-8 rounded-xl bg-brand-emerald text-brand-gold flex items-center justify-center font-bold text-sm">
+                  <i data-lucide="sparkles" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <h3 class="text-lg font-bold font-serif text-gray-900">AI Stylist Engine</h3>
+                  <p class="text-[11px] text-gray-500">Islamic Haute Couture Model Config</p>
                 </div>
               </div>
+              <p class="text-xs text-gray-500 mb-6">Tune Al-Nur Stylist personality, Gemini models, and modest matching constraints.</p>
+              
+              <div class="space-y-4 text-xs">
+                <div>
+                  <label class="block font-semibold text-gray-700 mb-1.5">Model Engine</label>
+                  <select id="ai-model-select" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-gray-900 text-xs focus:bg-white focus:border-brand-emerald">
+                    <option value="gemini-2.0-flash">Google Gemini 2.0 Flash (Fastest)</option>
+                    <option value="gemini-1.5-pro">Google Gemini 1.5 Pro (Deep Modesty Logic)</option>
+                    <option value="built-in" selected>Al-Nur Modest Couture Heuristics (Deterministic Zero-Latency)</option>
+                  </select>
+                </div>
 
-              <div>
-                <label class="block font-semibold text-gray-700 mb-1.5">Currency Default</label>
-                <input type="text" value="Nigerian Naira (₦)" disabled class="w-full bg-gray-100 border border-gray-200 rounded-xl px-3 py-2 text-gray-500 text-xs">
+                <div>
+                  <label class="block font-semibold text-gray-700 mb-1.5">Strict Modesty Filter</label>
+                  <div class="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-200">
+                    <span class="text-gray-700 text-xs font-medium">100% Non-Transparent Opaque Policy</span>
+                    <input id="ai-strict-modesty" type="checkbox" checked class="w-4 h-4 accent-brand-emerald">
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block font-semibold text-gray-700 mb-1.5">Currency Default</label>
+                  <input type="text" value="Nigerian Naira (₦)" disabled class="w-full bg-gray-100 border border-gray-200 rounded-xl px-3 py-2 text-gray-500 text-xs font-semibold">
+                </div>
+
+                <div>
+                  <label class="block font-semibold text-gray-700 mb-1.5">Occasion Override</label>
+                  <select id="ai-occasion-override" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-gray-900 text-xs focus:bg-white focus:border-brand-emerald">
+                    <option value="">Auto-Detect from Query (Smart NLP)</option>
+                    <option value="Friday Jumuah Prayer & Gathering">Friday Jumuah Prayer & Gathering</option>
+                    <option value="Eid Celebration & Festive Banquets">Eid Celebration & Banquets</option>
+                    <option value="Nikah Ceremony & Royal Wedding Reception">Nikah Ceremony & Wedding Reception</option>
+                    <option value="Daily Office & Contemporary Modest Workwear">Daily Office & Workwear</option>
+                    <option value="Warm Weather & Breathable Modesty">Warm Weather & Breathable Linen</option>
+                  </select>
+                </div>
               </div>
-
-              <button onclick="alert('AI System Parameters Saved in Serverpod!')" class="w-full emerald-btn py-2.5 rounded-xl text-xs font-bold mt-4">Save Parameters</button>
             </div>
+
+            <button onclick="saveAiParameters()" class="w-full emerald-btn py-2.5 rounded-xl text-xs font-bold mt-6 flex items-center justify-center space-x-1.5">
+              <i data-lucide="check" class="w-4 h-4"></i>
+              <span>Save AI Parameters</span>
+            </button>
           </div>
 
           <!-- Live Playground Column -->
-          <div class="white-card rounded-2xl p-6 lg:col-span-2 flex flex-col justify-between bg-white">
+          <div class="white-card rounded-2xl p-6 lg:col-span-2 flex flex-col justify-between bg-white min-h-[550px]">
             <div>
-              <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center justify-between mb-3">
                 <div>
                   <h3 class="text-lg font-bold font-serif text-gray-900">Interactive Stylist Simulator</h3>
-                  <p class="text-xs text-gray-500">Test how the AI recommends products to users</p>
+                  <p class="text-xs text-gray-500">Live RPC connection to Serverpod <code class="text-brand-emerald font-semibold">/aiAssistant/query</code></p>
                 </div>
-                <span class="px-2.5 py-1 rounded bg-brand-emeraldSurface text-brand-emerald border border-emerald-200 text-[10px] font-bold">WebSocket Streaming Ready</span>
+                <div class="flex items-center space-x-2">
+                  <span id="ai-engine-status" class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold flex items-center space-x-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>Live Serverpod API</span>
+                  </span>
+                  <button onclick="clearAiChat()" class="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition" title="Reset Chat Simulator">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Quick Query Starter Pills -->
+              <div class="mb-3 flex flex-wrap gap-1.5">
+                <button onclick="runQuickAiQuery('What should I wear for Friday Jumuah prayer under 50k?')" class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-medium hover:bg-emerald-100 transition">
+                  🕌 Friday Jumuah under 50k
+                </button>
+                <button onclick="runQuickAiQuery('What do you recommend for a royal wedding or nikah reception?')" class="px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-medium hover:bg-amber-100 transition">
+                  💍 Royal Nikah Wedding Look
+                </button>
+                <button onclick="runQuickAiQuery('I need breathable linen modest wear for hot weather')" class="px-2.5 py-1 rounded-full bg-gray-100 text-gray-800 border border-gray-200 text-[11px] font-medium hover:bg-gray-200 transition">
+                  🌿 Breathable Linen Modesty
+                </button>
+                <button onclick="runQuickAiQuery('Suggest an Emirati white thobe and prayer-safe scent for brothers')" class="px-2.5 py-1 rounded-full bg-blue-50 text-blue-800 border border-blue-200 text-[11px] font-medium hover:bg-blue-100 transition">
+                  🧔 Men's Thobe & Royal Oud
+                </button>
               </div>
 
               <!-- Chat simulator box -->
-              <div class="space-y-3 max-h-72 overflow-y-auto p-4 rounded-xl bg-gray-50 border border-gray-200 text-xs">
-                <div class="flex items-start space-x-2.5">
-                  <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[10px]">U</div>
-                  <div class="bg-white p-3.5 rounded-xl rounded-tl-none border border-gray-200 text-gray-800 shadow-sm">
-                    Assalamu alaykum! I have a Friday Jumuah prayer followed by a family gathering. What modest dress and scent do you recommend under ₦50,000?
-                  </div>
-                </div>
-                <div class="flex items-start space-x-2.5">
-                  <div class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-[10px]"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i></div>
-                  <div class="bg-white p-3.5 rounded-xl rounded-tl-none border border-emerald-200 text-gray-800 space-y-2 shadow-sm">
-                    <p class="font-medium">Wa alaykum assalam wa rahmatullah! For Friday Jumuah prayer with family celebrations, here is an elegant combination:</p>
-                    <div class="p-2.5 bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-between">
-                    <div>
-                      <div class="font-bold text-gray-900">Classic Black Korean Abaya</div>
-                      <div class="text-[10px] text-amber-700 font-medium">₦24,500 • Korean Nida Weave</div>
-                    </div>
-                    <span class="px-2 py-0.5 rounded bg-brand-emerald text-white text-[9px] font-bold">Opaque</span>
-                  </div>
-                  <div class="p-2.5 bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-between">
-                    <div>
-                      <div class="font-bold text-gray-900">Royal Oud Signature Flacon</div>
-                      <div class="text-[10px] text-amber-700 font-medium">₦18,000 • Long-lasting Attar</div>
-                    </div>
-                    <span class="px-2 py-0.5 rounded bg-brand-emerald text-white text-[9px] font-bold">Prayer-Safe</span>
-                  </div>
-                  <p class="text-[11px] text-emerald-700 font-bold">Total: ₦42,500 (Under your ₦50,000 budget!)</p>
-                </div>
+              <div id="ai-chat-box" class="space-y-4 max-h-[380px] overflow-y-auto p-4 rounded-xl bg-gray-50 border border-gray-200 text-xs">
+                <!-- Dynamically populated -->
               </div>
+            </div>
+
+            <!-- Simulation prompt bar -->
+            <div class="mt-4 flex space-x-2">
+              <input id="ai-query-input" type="text" onkeydown="if(event.key === 'Enter') sendAiQuery()" placeholder="Ask customer styling question (e.g. 'bridal abaya in organza under ₦60k')..." class="flex-1 bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-emerald focus:bg-white transition">
+              <button id="ai-send-btn" onclick="sendAiQuery()" class="emerald-btn px-5 py-2.5 rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-sm">
+                <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                <span>Simulate</span>
+              </button>
             </div>
           </div>
 
-          <!-- Simulation prompt bar -->
-          <div class="mt-4 flex space-x-2">
-            <input type="text" placeholder="Type customer test query (e.g. 'bridal veils in gold under ₦40k')..." class="flex-1 bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-emerald focus:bg-white transition">
-            <button onclick="alert('Simulator connected to Gemini Serverpod pipeline!')" class="emerald-btn px-4 py-2.5 rounded-xl text-xs font-bold">Simulate</button>
-          </div>
         </div>
-
-      </div>
-    </section>
+      </section>
 
     <!-- TAB 6: HEALTH & SERVERPOD STATUS -->
     <section id="section-health" class="tab-section hidden">
@@ -909,7 +936,56 @@
           <textarea id="formDescription" rows="3" required placeholder="Handcrafted with pure breathable fabric, elegant embroidery..." class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-emerald focus:bg-white transition"></textarea>
         </div>
 
-        <div class="flex items-center space-x-2 pt-2">
+        <!-- SIZES & COLOURS SPECIFICATION -->
+        <div class="bg-gray-50/80 p-3.5 rounded-xl border border-gray-200 space-y-3.5">
+          <!-- AVAILABLE SIZES -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="font-semibold text-gray-800 flex items-center space-x-1.5">
+                <i data-lucide="ruler" class="w-3.5 h-3.5 text-brand-emerald"></i>
+                <span>Available Sizes</span>
+              </label>
+              <span class="text-[10px] text-gray-500">Click to toggle or type custom</span>
+            </div>
+            
+            <!-- Quick Size Chips -->
+            <div class="flex flex-wrap gap-1.5 mb-2" id="sizeChipsContainer">
+              <!-- Dynamically populated -->
+            </div>
+            
+            <div class="flex items-center space-x-2">
+              <input type="text" id="customSizeInput" placeholder="Add custom size (e.g. 62, XXL, Petite)..." class="flex-1 bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-800 focus:outline-none focus:border-brand-emerald" onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomSize();}">
+              <button type="button" onclick="addCustomSize()" class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg text-xs font-semibold transition">
+                + Add Size
+              </button>
+            </div>
+          </div>
+
+          <!-- AVAILABLE COLOURS -->
+          <div class="pt-3 border-t border-gray-200">
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="font-semibold text-gray-800 flex items-center space-x-1.5">
+                <i data-lucide="palette" class="w-3.5 h-3.5 text-brand-emerald"></i>
+                <span>Available Colours</span>
+              </label>
+              <span class="text-[10px] text-gray-500">Click to toggle or type custom</span>
+            </div>
+
+            <!-- Quick Color Swatches -->
+            <div class="flex flex-wrap gap-1.5 mb-2" id="colorChipsContainer">
+              <!-- Dynamically populated -->
+            </div>
+
+            <div class="flex items-center space-x-2">
+              <input type="text" id="customColorInput" placeholder="Add custom colour (e.g. Lavender, Rose Gold, Teal)..." class="flex-1 bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-800 focus:outline-none focus:border-brand-emerald" onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomColor();}">
+              <button type="button" onclick="addCustomColor()" class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg text-xs font-semibold transition">
+                + Add Colour
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-2 pt-1">
           <input type="checkbox" id="formIsAvailable" checked class="w-4 h-4 accent-brand-emerald">
           <label for="formIsAvailable" class="text-gray-700 font-medium">Available for Immediate Order</label>
         </div>
@@ -1074,9 +1150,9 @@
         lastOrderDate: '2 hours ago',
         isDormantSixMonths: false,
         status: 'Active',
-        isOnline: true,
-        currentActivity: 'Active in Executive Portal',
-        lastSeen: 'Now'
+        isOnline: false,
+        currentActivity: 'Offline',
+        lastSeen: '15 mins ago'
       },
       {
         id: 2,
@@ -1091,9 +1167,9 @@
         lastOrderDate: '3 days ago',
         isDormantSixMonths: false,
         status: 'Active',
-        isOnline: true,
-        currentActivity: 'Viewing Dubai Crepe Abayas',
-        lastSeen: 'Now'
+        isOnline: false,
+        currentActivity: 'Offline',
+        lastSeen: '2 hours ago'
       },
       {
         id: 3,
@@ -1108,9 +1184,9 @@
         lastOrderDate: 'Yesterday',
         isDormantSixMonths: false,
         status: 'Active',
-        isOnline: true,
-        currentActivity: 'Consulting AI Stylist for Jumuah',
-        lastSeen: 'Now'
+        isOnline: false,
+        currentActivity: 'Offline',
+        lastSeen: 'Yesterday'
       },
       {
         id: 4,
@@ -1142,9 +1218,9 @@
         lastOrderDate: '4 days ago',
         isDormantSixMonths: false,
         status: 'Active',
-        isOnline: true,
-        currentActivity: 'Processing Maitama Dispatch',
-        lastSeen: 'Now'
+        isOnline: false,
+        currentActivity: 'Offline',
+        lastSeen: '45 mins ago'
       },
       {
         id: 6,
@@ -1436,22 +1512,44 @@
     // -------------------------------------------------------------
 
     function initUsersData() {
-      const stored = localStorage.getItem('alnur_admin_users_v2');
+      // Clear legacy storage key if present to ensure clean realistic state
+      localStorage.removeItem('alnur_admin_users_v2');
+
+      const stored = localStorage.getItem('alnur_admin_users_v3');
       if (stored) {
         try {
           allUsers = JSON.parse(stored);
+          // Safety check: ensure only realistic number of users are online (< 3)
+          const onlineCount = allUsers.filter(u => u.isOnline).length;
+          if (onlineCount > 2) {
+            allUsers.forEach(u => {
+              if (u.id === 6) {
+                u.isOnline = true;
+                u.currentActivity = 'Browsing Silk Khimars (Cart: ₦0)';
+                u.lastSeen = 'Now';
+              } else {
+                u.isOnline = false;
+                u.currentActivity = 'Offline';
+                if (!u.lastSeen || u.lastSeen === 'Now') {
+                  u.lastSeen = u.id === 1 ? '15 mins ago' : u.id === 2 ? '2 hours ago' : u.id === 3 ? 'Yesterday' : u.id === 5 ? '45 mins ago' : 'Recently';
+                }
+              }
+            });
+            localStorage.setItem('alnur_admin_users_v3', JSON.stringify(allUsers));
+          }
         } catch (e) {
-          allUsers = [...DEFAULT_USERS];
+          allUsers = JSON.parse(JSON.stringify(DEFAULT_USERS));
+          localStorage.setItem('alnur_admin_users_v3', JSON.stringify(allUsers));
         }
       } else {
-        allUsers = [...DEFAULT_USERS];
-        localStorage.setItem('alnur_admin_users_v2', JSON.stringify(allUsers));
+        allUsers = JSON.parse(JSON.stringify(DEFAULT_USERS));
+        localStorage.setItem('alnur_admin_users_v3', JSON.stringify(allUsers));
       }
       updateUserCounters();
     }
 
     function saveUsersData() {
-      localStorage.setItem('alnur_admin_users_v2', JSON.stringify(allUsers));
+      localStorage.setItem('alnur_admin_users_v3', JSON.stringify(allUsers));
       updateUserCounters();
       renderUsersTable();
     }
@@ -1628,20 +1726,23 @@
 
         // Live App Online Presence Badge & Avatar Indicator
         const onlineDot = u.isOnline 
-          ? `<span onclick="toggleUserOnline(${u.id})" class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full ring-2 ring-emerald-400/40 animate-pulse cursor-pointer" title="Online now (Click to toggle offline)"></span>`
-          : `<span onclick="toggleUserOnline(${u.id})" class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-gray-300 border-2 border-white rounded-full cursor-pointer hover:bg-emerald-400 transition" title="Offline (Click to toggle online)"></span>`;
+          ? `<button onclick="toggleUserOnline(${u.id})" class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full ring-2 ring-emerald-400/40 animate-pulse cursor-pointer hover:scale-125 transition" title="Online now (Click to switch Offline)"></button>`
+          : `<button onclick="toggleUserOnline(${u.id})" class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-gray-300 border-2 border-white rounded-full cursor-pointer hover:bg-emerald-400 hover:scale-125 transition" title="Offline (Click to switch Online)"></button>`;
 
         const presenceText = u.isOnline
           ? `<div class="flex items-center space-x-1.5 mt-0.5">
-               <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 animate-pulse">
-                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+               <button onclick="toggleUserOnline(${u.id})" class="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition cursor-pointer" title="Click to switch Offline">
+                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                  <span>Online Now</span>
-               </span>
-               <span class="text-[10px] text-emerald-700 font-semibold truncate max-w-[150px]" title="${u.currentActivity}">${u.currentActivity}</span>
+               </button>
+               <span class="text-[10px] text-emerald-700 font-semibold truncate max-w-[170px]" title="${u.currentActivity}">${u.currentActivity}</span>
              </div>`
-          : `<div class="text-[10px] text-gray-400 mt-0.5 flex items-center space-x-1">
-               <span class="w-1.5 h-1.5 rounded-full bg-gray-300"></span>
-               <span>Offline • Seen ${u.lastSeen || 'recently'}</span>
+          : `<div class="flex items-center space-x-1.5 mt-0.5 text-[10px] text-gray-400">
+               <button onclick="toggleUserOnline(${u.id})" class="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[9px] font-medium bg-gray-100 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 text-gray-500 border border-gray-200 transition cursor-pointer" title="Click to bring Online">
+                 <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                 <span>Offline</span>
+               </button>
+               <span class="text-[10px] text-gray-400">Seen ${u.lastSeen || 'recently'}</span>
              </div>`;
 
         // Activeness Status Badge (Orders Lifecycle)
@@ -1750,6 +1851,7 @@
     // Live App Stream Simulation: Rotates browsing interactions in real time
     function startPresenceSimulation() {
       if (!isPresenceSimulationRunning) return;
+      if (simulationTimer) clearInterval(simulationTimer);
       
       const ACTIVITIES = [
         'Viewing Dubai Gold Abaya',
@@ -1764,8 +1866,9 @@
       simulationTimer = setInterval(() => {
         if (!isPresenceSimulationRunning) return;
         
-        // Randomly update an online user's current activity
         const onlineShoppers = allUsers.filter(u => u.isOnline);
+        
+        // Update activity for currently online shopper
         if (onlineShoppers.length > 0) {
           const randomShopper = onlineShoppers[Math.floor(Math.random() * onlineShoppers.length)];
           const newActivity = ACTIVITIES[Math.floor(Math.random() * ACTIVITIES.length)];
@@ -1774,7 +1877,7 @@
           updateUserCounters();
           renderUsersTable();
         }
-      }, 7000);
+      }, 10000);
     }
 
     function togglePresenceSimulation() {
@@ -2089,6 +2192,9 @@
       const targetTab = document.getElementById('tab-' + tabId);
       if (targetSec) targetSec.classList.remove('hidden');
       if (targetTab) targetTab.classList.add('active');
+      if (tabId === 'ai') {
+        renderAiChat();
+      }
       lucide.createIcons();
     }
 
@@ -2327,6 +2433,12 @@
 
       tbody.innerHTML = filtered.map((p, index) => {
         const units = p.isAvailable ? (p.stockUnits !== undefined ? p.stockUnits : 24) : 0;
+        const pSizes = (p.sizes && p.sizes.length > 0) ? p.sizes : ['54', '56', '58'];
+        const pColors = (p.colors && p.colors.length > 0) ? p.colors : ['Black', 'Emerald'];
+
+        const sizesHtml = pSizes.slice(0, 4).map(s => `<span class="px-1.5 py-0.2 rounded bg-gray-100 text-gray-700 text-[9px] font-mono font-medium">${s}</span>`).join(' ') + (pSizes.length > 4 ? ` <span class="text-[9px] text-gray-400 font-mono">+${pSizes.length - 4}</span>` : '');
+        const colorsHtml = pColors.slice(0, 3).map(c => `<span class="px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 text-[9px] font-medium">${c}</span>`).join(' ') + (pColors.length > 3 ? ` <span class="text-[9px] text-gray-400">+${pColors.length - 3}</span>` : '');
+
         return `
         <tr class="hover:bg-gray-50/70 transition group">
           <td class="py-3.5 px-3 text-center font-mono font-bold text-gray-400 text-xs">
@@ -2341,6 +2453,17 @@
                   <span class="text-[9px] font-mono text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200 font-semibold">SKU: ALN-${String(p.id).padStart(3, '0')}</span>
                 </div>
                 <div class="text-[11px] text-gray-500 line-clamp-1 max-w-xs">${p.description}</div>
+                <div class="flex items-center space-x-2.5 mt-1 text-[9px] text-gray-500">
+                  <div class="flex items-center space-x-1" title="Available Sizes">
+                    <span class="font-bold text-gray-400">Sizes:</span>
+                    ${sizesHtml}
+                  </div>
+                  <span>•</span>
+                  <div class="flex items-center space-x-1" title="Available Colours">
+                    <span class="font-bold text-gray-400">Colours:</span>
+                    ${colorsHtml}
+                  </div>
+                </div>
               </div>
             </div>
           </td>
@@ -2425,11 +2548,113 @@
       lucide.createIcons();
     }
 
+    // ------------------------------------
+    // PRODUCT SIZES & COLOURS MANAGER
+    // ------------------------------------
+    const PRESET_SIZES = ['50', '52', '54', '56', '58', '60', 'S', 'M', 'L', 'XL', 'Free Size'];
+    const PRESET_COLORS = [
+      { name: 'Black', hex: '#111827' },
+      { name: 'Emerald', hex: '#0B291E' },
+      { name: 'Gold', hex: '#D4AF37' },
+      { name: 'Burgundy', hex: '#800020' },
+      { name: 'Navy', hex: '#1E3A8A' },
+      { name: 'Sand', hex: '#D2B48C' },
+      { name: 'White', hex: '#FFFFFF', border: true },
+      { name: 'Plum', hex: '#701A75' },
+      { name: 'Olive', hex: '#4D7C0F' }
+    ];
+
+    let currentSelectedSizes = ['52', '54', '56', '58'];
+    let currentSelectedColors = ['Black', 'Emerald', 'Gold'];
+
+    function renderSizeChips() {
+      const container = document.getElementById('sizeChipsContainer');
+      if (!container) return;
+      const allSizes = Array.from(new Set([...PRESET_SIZES, ...currentSelectedSizes]));
+      container.innerHTML = allSizes.map(size => {
+        const isSelected = currentSelectedSizes.includes(size);
+        return `
+          <button type="button" onclick="toggleSizeSelection('${size}')" class="px-2.5 py-1 rounded-lg text-xs font-semibold transition flex items-center space-x-1 cursor-pointer ${isSelected ? 'bg-brand-emerald text-white shadow-2xs' : 'bg-white text-gray-700 border border-gray-200 hover:border-brand-emerald'}">
+            <span>${size}</span>
+            ${isSelected ? '<i data-lucide="check" class="w-3 h-3 ml-0.5"></i>' : ''}
+          </button>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    function toggleSizeSelection(size) {
+      if (currentSelectedSizes.includes(size)) {
+        currentSelectedSizes = currentSelectedSizes.filter(s => s !== size);
+      } else {
+        currentSelectedSizes.push(size);
+      }
+      renderSizeChips();
+    }
+
+    function addCustomSize() {
+      const input = document.getElementById('customSizeInput');
+      const val = input.value.trim();
+      if (val && !currentSelectedSizes.includes(val)) {
+        currentSelectedSizes.push(val);
+        input.value = '';
+        renderSizeChips();
+      }
+    }
+
+    function renderColorChips() {
+      const container = document.getElementById('colorChipsContainer');
+      if (!container) return;
+      const allColors = [...PRESET_COLORS];
+      currentSelectedColors.forEach(c => {
+        if (!allColors.find(p => p.name.toLowerCase() === c.toLowerCase())) {
+          allColors.push({ name: c, hex: '#4B5563' });
+        }
+      });
+
+      container.innerHTML = allColors.map(c => {
+        const isSelected = currentSelectedColors.includes(c.name);
+        return `
+          <button type="button" onclick="toggleColorSelection('${c.name}')" class="px-2.5 py-1 rounded-lg text-xs font-semibold transition flex items-center space-x-1.5 cursor-pointer ${isSelected ? 'bg-brand-emerald text-white ring-2 ring-brand-gold/60 shadow-2xs' : 'bg-white text-gray-700 border border-gray-200 hover:border-brand-emerald'}">
+            <span class="w-3 h-3 rounded-full shrink-0 ${c.border ? 'border border-gray-300' : ''}" style="background-color: ${c.hex};"></span>
+            <span>${c.name}</span>
+            ${isSelected ? '<i data-lucide="check" class="w-3 h-3 ml-0.5"></i>' : ''}
+          </button>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    function toggleColorSelection(color) {
+      if (currentSelectedColors.includes(color)) {
+        currentSelectedColors = currentSelectedColors.filter(c => c !== color);
+      } else {
+        currentSelectedColors.push(color);
+      }
+      renderColorChips();
+    }
+
+    function addCustomColor() {
+      const input = document.getElementById('customColorInput');
+      const val = input.value.trim();
+      if (val && !currentSelectedColors.includes(val)) {
+        currentSelectedColors.push(val);
+        input.value = '';
+        renderColorChips();
+      }
+    }
+
     function openAddProductModal() {
       document.getElementById('modalTitle').innerText = 'Add Luxury Product';
       document.getElementById('productForm').reset();
       document.getElementById('formProductId').value = '';
       document.getElementById('formImageUrl').value = 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=500&q=80';
+      
+      currentSelectedSizes = ['52', '54', '56', '58'];
+      currentSelectedColors = ['Black', 'Emerald', 'Gold'];
+      renderSizeChips();
+      renderColorChips();
+
       document.getElementById('productModal').classList.remove('hidden');
       lucide.createIcons();
     }
@@ -2448,6 +2673,11 @@
       document.getElementById('formImageUrl').value = prod.imageUrl;
       document.getElementById('formDescription').value = prod.description;
       document.getElementById('formIsAvailable').checked = prod.isAvailable;
+
+      currentSelectedSizes = (Array.isArray(prod.sizes) && prod.sizes.length > 0) ? [...prod.sizes] : ['54', '56', '58'];
+      currentSelectedColors = (Array.isArray(prod.colors) && prod.colors.length > 0) ? [...prod.colors] : ['Black', 'Emerald'];
+      renderSizeChips();
+      renderColorChips();
 
       document.getElementById('productModal').classList.remove('hidden');
       lucide.createIcons();
@@ -2473,7 +2703,9 @@
         imageUrl: document.getElementById('formImageUrl').value.trim(),
         description: document.getElementById('formDescription').value.trim(),
         isAvailable: document.getElementById('formIsAvailable').checked,
-        isFavorite: false
+        isFavorite: false,
+        sizes: currentSelectedSizes.length > 0 ? currentSelectedSizes : ['54', '56', '58'],
+        colors: currentSelectedColors.length > 0 ? currentSelectedColors : ['Black', 'Emerald']
       };
 
       if (isEdit) {
@@ -2562,6 +2794,255 @@
         }
       });
     }
+
+    // ------------------------------------
+    // AI STYLIST ENGINE SIMULATOR
+    // ------------------------------------
+
+    const defaultAiMessages = [
+      {
+        sender: 'user',
+        text: 'Assalamu alaykum! I have a Friday Jumuah prayer followed by a family gathering. What modest dress and scent do you recommend under ₦50,000?'
+      },
+      {
+        sender: 'assistant',
+        occasion: 'Friday Jumuah Prayer & Gathering',
+        modestyNote: '100% Non-Transparent Fabric Policy • Generous A-Line Silhouette • Wrist & Ankle Coverage with Opaque Lining.',
+        reply: 'Wa alaykum assalam wa rahmatullah! ✨\n\nFor **Friday Jumuah Prayer & Gathering**, I have curated a balanced, fully opaque modest ensemble adhering to Islamic couture principles:',
+        recommendedProducts: [
+          {
+            name: 'Classic Black Korean Abaya',
+            price: 24500,
+            description: 'Made from high-grade Korean Nida fabric, offering lightweight modest coverage with deep black finish.',
+            category: 'abayas'
+          },
+          {
+            name: 'Royal Oud Signature Flacon',
+            price: 18000,
+            description: 'Smoky Cambodian oud with a warm amber-vanilla finish. Suitable for Jumuah and festive evenings.',
+            category: 'perfumes'
+          },
+          {
+            name: 'Rose Chiffon Everyday Hijab',
+            price: 7500,
+            description: 'Lightweight, breathable luxury chiffon that drapes gracefully without slipping.',
+            category: 'hijabs'
+          }
+        ],
+        totalEstimatedCost: 50000,
+        suggestedPrompts: [
+          '🌿 Show breathable linen options',
+          '🌸 Pair with long-lasting Royal Oud',
+          '💰 What can I get under ₦30,000?',
+          '🕌 Men\'s Friday thobes & scents'
+        ]
+      }
+    ];
+
+    let aiChatHistory = JSON.parse(JSON.stringify(defaultAiMessages));
+
+    function renderAiChat() {
+      const box = document.getElementById('ai-chat-box');
+      if (!box) return;
+
+      box.innerHTML = aiChatHistory.map(msg => {
+        if (msg.sender === 'user') {
+          return `
+            <div class="flex items-start justify-end space-x-2.5">
+              <div class="bg-brand-emerald text-white p-3.5 rounded-2xl rounded-tr-none shadow-sm max-w-[85%] text-xs leading-relaxed">
+                ${escapeHtml(msg.text)}
+              </div>
+              <div class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-[10px] flex-shrink-0">
+                U
+              </div>
+            </div>
+          `;
+        }
+
+        // Assistant
+        const occasionBadge = msg.occasion ? `
+          <div class="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold mb-2">
+            <i data-lucide="sparkles" class="w-3 h-3 text-amber-600"></i>
+            <span>${escapeHtml(msg.occasion)}</span>
+          </div>
+        ` : '';
+
+        const modestyPill = msg.modestyNote ? `
+          <div class="mt-2.5 p-2 rounded-lg bg-emerald-50/70 border border-emerald-200/60 text-[10.5px] text-emerald-800 flex items-center space-x-1.5 font-medium">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-600 flex-shrink-0"></i>
+            <span>${escapeHtml(msg.modestyNote)}</span>
+          </div>
+        ` : '';
+
+        const productsHtml = (msg.recommendedProducts && msg.recommendedProducts.length > 0) ? `
+          <div class="mt-3 space-y-2">
+            <div class="text-[11px] font-bold text-gray-700">Curated Haute Couture Pieces:</div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+              ${msg.recommendedProducts.map(p => `
+                <div class="p-2.5 bg-gray-50 hover:bg-gray-100/70 rounded-xl border border-gray-200 flex items-center justify-between transition">
+                  <div>
+                    <div class="font-bold text-gray-900">${escapeHtml(p.name)}</div>
+                    <div class="text-[10px] text-brand-emerald font-semibold">₦${Number(p.price).toLocaleString()} • Halal Cut</div>
+                  </div>
+                  <span class="px-2 py-0.5 rounded bg-brand-emerald text-white text-[9px] font-bold">In Stock</span>
+                </div>
+              `).join('')}
+            </div>
+            ${msg.totalEstimatedCost ? `
+              <div class="mt-2 text-right text-[11px] font-bold text-brand-emerald">
+                Total Ensemble: ₦${Number(msg.totalEstimatedCost).toLocaleString()}
+              </div>
+            ` : ''}
+          </div>
+        ` : '';
+
+        const promptsHtml = (msg.suggestedPrompts && msg.suggestedPrompts.length > 0) ? `
+          <div class="mt-3 pt-2.5 border-t border-gray-100 flex flex-wrap gap-1.5">
+            <span class="text-[10px] text-gray-400 font-medium py-0.5">Suggestions:</span>
+            ${msg.suggestedPrompts.map(prompt => `
+              <button onclick="runQuickAiQuery('${escapeHtml(prompt).replace(/'/g, "\\'")}')" class="px-2 py-0.5 rounded-full bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-medium transition">
+                ${escapeHtml(prompt)}
+              </button>
+            `).join('')}
+          </div>
+        ` : '';
+
+        const formattedReply = escapeHtml(msg.reply)
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/\n\n/g, '<br><br>')
+          .replace(/\n• /g, '<br>• ');
+
+        return `
+          <div class="flex items-start space-x-2.5">
+            <div class="w-6 h-6 rounded-full bg-brand-emerald text-brand-gold flex items-center justify-center font-bold text-[10px] flex-shrink-0">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+            </div>
+            <div class="bg-white p-4 rounded-2xl rounded-tl-none border border-gray-200 text-gray-800 shadow-sm max-w-[90%] text-xs">
+              ${occasionBadge}
+              <div class="leading-relaxed text-gray-700">${formattedReply}</div>
+              ${modestyPill}
+              ${productsHtml}
+              ${promptsHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      box.scrollTop = box.scrollHeight;
+      lucide.createIcons();
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    async function sendAiQuery() {
+      const input = document.getElementById('ai-query-input');
+      const query = input.value.trim();
+      if (!query) return;
+
+      input.value = '';
+      runQuickAiQuery(query);
+    }
+
+    async function runQuickAiQuery(queryText) {
+      if (!queryText) return;
+
+      // Add user message to chat
+      aiChatHistory.push({
+        sender: 'user',
+        text: queryText
+      });
+      renderAiChat();
+
+      const box = document.getElementById('ai-chat-box');
+      const typingId = 'typing-' + Date.now();
+      const typingEl = document.createElement('div');
+      typingEl.id = typingId;
+      typingEl.className = 'flex items-start space-x-2.5 animate-pulse';
+      typingEl.innerHTML = `
+        <div class="w-6 h-6 rounded-full bg-brand-emerald text-brand-gold flex items-center justify-center font-bold text-[10px]">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+        </div>
+        <div class="bg-white p-3 rounded-xl rounded-tl-none border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center space-x-2">
+          <span>AI Stylist is curating modest selections from catalog...</span>
+        </div>
+      `;
+      box.appendChild(typingEl);
+      box.scrollTop = box.scrollHeight;
+      lucide.createIcons();
+
+      const occasionOverride = document.getElementById('ai-occasion-override')?.value || undefined;
+
+      try {
+        const res = await fetch(`${API_URL}/aiAssistant/query`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userQuery: queryText,
+            occasion: occasionOverride || undefined
+          })
+        });
+
+        const typingNode = document.getElementById(typingId);
+        if (typingNode) typingNode.remove();
+
+        if (res.ok) {
+          const data = await res.json();
+          aiChatHistory.push({
+            sender: 'assistant',
+            reply: data.reply || 'Here is your modest styling advice.',
+            occasion: data.occasion,
+            modestyNote: data.modestyNote,
+            recommendedProducts: data.recommendedProducts || [],
+            suggestedPrompts: data.suggestedPrompts || [],
+            totalEstimatedCost: data.totalEstimatedCost
+          });
+        } else {
+          aiChatHistory.push({
+            sender: 'assistant',
+            reply: 'Sorry, I encountered an issue connecting to the styling engine. Please verify the Serverpod backend is active.',
+            suggestedPrompts: ['Try again', 'Friday Jumuah ensemble']
+          });
+        }
+      } catch (err) {
+        console.error('AI query error:', err);
+        const typingNode = document.getElementById(typingId);
+        if (typingNode) typingNode.remove();
+
+        aiChatHistory.push({
+          sender: 'assistant',
+          reply: 'Network error communicating with Serverpod API at ' + API_URL + '. Check server console logs.',
+          suggestedPrompts: ['Retry']
+        });
+      }
+
+      renderAiChat();
+    }
+
+    function clearAiChat() {
+      aiChatHistory = JSON.parse(JSON.stringify(defaultAiMessages));
+      renderAiChat();
+      showToast('Chat history reset.');
+    }
+
+    function saveAiParameters() {
+      const model = document.getElementById('ai-model-select').value;
+      const strict = document.getElementById('ai-strict-modesty').checked;
+      const occasion = document.getElementById('ai-occasion-override').value;
+      localStorage.setItem('alnur_ai_config', JSON.stringify({ model, strict, occasion }));
+      showToast('AI Model parameters saved in session!');
+    }
+
+    // Call renderAiChat on tab switch or document load
+    document.addEventListener('DOMContentLoaded', () => {
+      renderAiChat();
+    });
   </script>
 </body>
 </html>

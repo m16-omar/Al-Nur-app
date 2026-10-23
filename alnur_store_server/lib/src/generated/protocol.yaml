@@ -1,3 +1,5 @@
+aiAssistant:
+  - query:
 emailIdp:
   - login:
   - startRegistration:
