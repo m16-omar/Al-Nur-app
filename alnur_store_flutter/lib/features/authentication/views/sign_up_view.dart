@@ -9,6 +9,7 @@ import '../../../shared/widgets/app_text_field.dart';
 import '../controllers/auth_controller.dart';
 import '../widgets/auth_header.dart';
 import '../widgets/social_auth_buttons.dart';
+import '../../onboarding/services/onboarding_preferences.dart';
 
 class SignUpView extends ConsumerStatefulWidget {
   const SignUpView({super.key});
@@ -72,27 +73,36 @@ class _SignUpViewState extends ConsumerState<SignUpView> {
         );
 
     if (success && mounted) {
+      await OnboardingPreferences.saveUserName(name);
+      await OnboardingPreferences.saveUserEmail(email);
+      await OnboardingPreferences.setOnboardingCompleted(completed: true);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Account created! Ahlan wa Sahlan, $name.'),
+            backgroundColor: AppColors.primary,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        context.go(AppRoutes.home);
+      }
+    }
+  }
+
+  void _handleContinueAsGuest() async {
+    await OnboardingPreferences.setOnboardingCompleted(completed: true);
+    ref.read(authControllerProvider.notifier).continueAsGuest();
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Account created! Ahlan wa Sahlan, $name.'),
+        const SnackBar(
+          content: Text('Ahlan wa Sahlan! Browsing as Guest.'),
           backgroundColor: AppColors.primary,
-          duration: const Duration(seconds: 2),
+          duration: Duration(seconds: 2),
         ),
       );
       context.go(AppRoutes.home);
     }
-  }
-
-  void _handleContinueAsGuest() {
-    ref.read(authControllerProvider.notifier).continueAsGuest();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Ahlan wa Sahlan! Browsing as Guest.'),
-        backgroundColor: AppColors.primary,
-        duration: Duration(seconds: 2),
-      ),
-    );
-    context.go(AppRoutes.home);
   }
 
   @override

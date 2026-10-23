@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../authentication/controllers/auth_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../onboarding/services/onboarding_preferences.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -265,6 +266,18 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                 title: 'Help Center & WhatsApp Concierge',
                 subtitle: 'Direct line to our personal shopping team',
                 onTap: () => _showConciergeModal(),
+              ),
+              _buildListTile(
+                icon: Icons.auto_stories_outlined,
+                title: 'Al-Nur Brand & Onboarding Story',
+                subtitle: 'Replay the 3-step luxury modest experience',
+                onTap: () => context.push(AppRoutes.onboarding),
+              ),
+              _buildListTile(
+                icon: Icons.restart_alt_rounded,
+                title: 'Reset First-Time User Experience',
+                subtitle: 'Clear saved state to test initial onboarding',
+                onTap: () => _showResetOnboardingDialog(),
               ),
             ]),
 
@@ -1096,6 +1109,51 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
               }
             },
             child: const Text('Sign Out'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showResetOnboardingDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.restart_alt_rounded, color: AppColors.primary),
+            SizedBox(width: 8),
+            Text('Reset First-Time State?'),
+          ],
+        ),
+        content: const Text(
+          'This will clear your completed onboarding status and saved credentials so you can experience the first-time user onboarding from the splash screen.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await OnboardingPreferences.resetForFirstTimeUser();
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('First-time user experience reset. Launching Onboarding...'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+                context.go(AppRoutes.splash);
+              }
+            },
+            child: const Text('Reset & Launch'),
           ),
         ],
       ),

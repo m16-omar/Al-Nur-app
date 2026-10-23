@@ -11,6 +11,8 @@ import '../controllers/auth_controller.dart';
 import '../widgets/auth_header.dart';
 import '../widgets/social_auth_buttons.dart';
 
+import '../../onboarding/services/onboarding_preferences.dart';
+
 class LoginView extends ConsumerStatefulWidget {
   const LoginView({super.key});
 
@@ -22,6 +24,30 @@ class _LoginViewState extends ConsumerState<LoginView> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  String? _savedUserName;
+  bool _isReturningUser = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadReturningUserData();
+  }
+
+  Future<void> _loadReturningUserData() async {
+    final completed = await OnboardingPreferences.hasCompletedOnboarding();
+    final name = await OnboardingPreferences.getSavedUserName();
+    final email = await OnboardingPreferences.getSavedUserEmail();
+
+    if (mounted) {
+      setState(() {
+        _isReturningUser = completed;
+        _savedUserName = name;
+        if (email != null && email.isNotEmpty) {
+          _emailController.text = email;
+        }
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -41,27 +67,38 @@ class _LoginViewState extends ConsumerState<LoginView> {
 
     if (success && mounted) {
       final user = ref.read(authControllerProvider).user;
+      final name = user?.name ?? _savedUserName ?? 'Member';
+
+      await OnboardingPreferences.saveUserName(name);
+      await OnboardingPreferences.saveUserEmail(email);
+      await OnboardingPreferences.setOnboardingCompleted(completed: true);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Assalamu Alaikum! Welcome back, $name.'),
+            backgroundColor: AppColors.primary,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        context.go(AppRoutes.home);
+      }
+    }
+  }
+
+  void _handleContinueAsGuest() async {
+    await OnboardingPreferences.setOnboardingCompleted(completed: true);
+    ref.read(authControllerProvider.notifier).continueAsGuest();
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Assalamu Alaikum! Welcome back, ${user?.name ?? 'Member'}.'),
+        const SnackBar(
+          content: Text('Ahlan wa Sahlan! Browsing as Guest.'),
           backgroundColor: AppColors.primary,
-          duration: const Duration(seconds: 2),
+          duration: Duration(seconds: 2),
         ),
       );
       context.go(AppRoutes.home);
     }
-  }
-
-  void _handleContinueAsGuest() {
-    ref.read(authControllerProvider.notifier).continueAsGuest();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Ahlan wa Sahlan! Browsing as Guest.'),
-        backgroundColor: AppColors.primary,
-        duration: Duration(seconds: 2),
-      ),
-    );
-    context.go(AppRoutes.home);
   }
 
   @override
@@ -83,7 +120,67 @@ class _LoginViewState extends ConsumerState<LoginView> {
                 title: 'Welcome Back',
                 subtitle: 'Sign in to access your curated modest collections',
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 20),
+
+              // Returning User Personalized Pill
+              if (_isReturningUser || _savedUserName != null) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFBF4E6),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.gold.withValues(alpha: 0.5)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: AppColors.gold.withValues(alpha: 0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.star_rounded, color: AppColors.goldDark, size: 16),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _savedUserName != null
+                                  ? 'Assalamu Alaikum, $_savedUserName'
+                                  : 'Assalamu Alaikum! (Returning Shopper)',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const Text(
+                              'Welcome back to your curated modest collections',
+                              style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                            ),
+                          ],
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _savedUserName = null;
+                            _isReturningUser = false;
+                            _emailController.clear();
+                            _passwordController.clear();
+                          });
+                        },
+                        style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                        child: const Text('Switch', style: TextStyle(fontSize: 11, color: AppColors.primary)),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ] else
+                const SizedBox(height: 12),
 
               // Error Message Banner (if any)
               if (authState.errorMessage != null) ...[

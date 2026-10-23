@@ -6,6 +6,8 @@ import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../widgets/animated_3d_logo.dart';
 
+import '../../onboarding/services/onboarding_preferences.dart';
+
 class SplashView extends StatefulWidget {
   const SplashView({super.key});
 
@@ -31,11 +33,28 @@ class _SplashViewState extends State<SplashView> with SingleTickerProviderStateM
     );
     _fadeController.forward();
 
-    _navigationTimer = Timer(const Duration(milliseconds: 2800), () {
+    _navigationTimer = Timer(const Duration(milliseconds: 2600), () {
+      _routeUser();
+    });
+  }
+
+  Future<void> _routeUser() async {
+    _navigationTimer?.cancel();
+    if (!mounted) return;
+
+    final hasCompleted = await OnboardingPreferences.hasCompletedOnboarding();
+    if (!mounted) return;
+
+    if (!hasCompleted) {
+      // First-time user workflow: show the luxury onboarding walkthrough
+      await OnboardingPreferences.recordFirstLaunchIfNeeded();
       if (mounted) {
         context.go(AppRoutes.onboarding);
       }
-    });
+    } else {
+      // Returning user workflow: skip onboarding and launch straight into the store
+      context.go(AppRoutes.home);
+    }
   }
 
   @override
@@ -46,8 +65,7 @@ class _SplashViewState extends State<SplashView> with SingleTickerProviderStateM
   }
 
   void _skipSplash() {
-    _navigationTimer?.cancel();
-    context.go(AppRoutes.onboarding);
+    _routeUser();
   }
 
   @override
