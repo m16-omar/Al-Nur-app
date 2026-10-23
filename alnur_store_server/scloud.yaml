@@ -1,2 +1,2 @@
-project: alnur-store
-project_id: alnur-store
+project:
+  projectId: alnur-store
