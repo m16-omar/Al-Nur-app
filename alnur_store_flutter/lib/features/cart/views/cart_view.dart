@@ -10,12 +10,16 @@ import '../models/cart_item_model.dart';
 
 class CartView extends ConsumerStatefulWidget {
   final bool isModal;
+  final bool isEmbeddedTab;
   final VoidCallback? onClose;
+  final VoidCallback? onBackToHome;
 
   const CartView({
     super.key,
     this.isModal = false,
+    this.isEmbeddedTab = false,
     this.onClose,
+    this.onBackToHome,
   });
 
   @override
@@ -220,10 +224,17 @@ class _CartViewState extends ConsumerState<CartView> {
                 icon: const Icon(Icons.close_rounded, color: AppColors.textPrimary),
                 onPressed: widget.onClose ?? () => Navigator.pop(context),
               )
-            : IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.primary, size: 20),
-                onPressed: () => context.canPop() ? context.pop() : context.go(AppRoutes.home),
-              ),
+            : widget.isEmbeddedTab
+                ? (widget.onBackToHome != null
+                    ? IconButton(
+                        icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.primary, size: 20),
+                        onPressed: widget.onBackToHome,
+                      )
+                    : null)
+                : IconButton(
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.primary, size: 20),
+                    onPressed: () => context.canPop() ? context.pop() : context.go(AppRoutes.home),
+                  ),
         title: Row(
           children: [
             const Icon(Icons.shopping_bag_outlined, color: AppColors.primary, size: 22),
@@ -320,6 +331,8 @@ class _CartViewState extends ConsumerState<CartView> {
                 onPressed: () {
                   if (widget.isModal && widget.onClose != null) {
                     widget.onClose!();
+                  } else if (widget.isEmbeddedTab && widget.onBackToHome != null) {
+                    widget.onBackToHome!();
                   } else {
                     context.go(AppRoutes.home);
                   }
@@ -613,13 +626,21 @@ class _CartViewState extends ConsumerState<CartView> {
 
   Widget _buildBottomCheckoutBar(CartState cartState) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
-      decoration: const BoxDecoration(
+      padding: EdgeInsets.fromLTRB(20, 12, 20, widget.isEmbeddedTab ? 104 : 24),
+      decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: AppColors.border)),
+        border: const Border(top: BorderSide(color: AppColors.border)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
+          ),
+        ],
       ),
       child: SafeArea(
         top: false,
+        bottom: !widget.isEmbeddedTab,
         child: SizedBox(
           width: double.infinity,
           height: 52,

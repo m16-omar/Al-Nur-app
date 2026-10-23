@@ -98,7 +98,10 @@ class _HomeViewState extends ConsumerState<HomeView> {
                   onOpenCart: () => setState(() => _currentNavIndex = 3),
                 ),
                 const AiChatView(isEmbeddedTab: true),
-                const CartView(),
+                CartView(
+                  isEmbeddedTab: true,
+                  onBackToHome: () => setState(() => _currentNavIndex = 0),
+                ),
                 ProfileView(
                   onNavigateToOrders: () => context.push(AppRoutes.orders),
                   onOpenCart: () => setState(() => _currentNavIndex = 3),
