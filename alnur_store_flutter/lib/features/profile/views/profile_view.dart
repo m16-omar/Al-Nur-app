@@ -1161,13 +1161,13 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
   void _showSignOutDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Sign Out of Al-Nur?'),
         content: const Text('Are you sure you want to log out of your Al-Nur account?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogCtx),
             child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
           ),
           ElevatedButton(
@@ -1176,11 +1176,9 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
               foregroundColor: Colors.white,
             ),
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(dialogCtx);
               await ref.read(authControllerProvider.notifier).logout();
-              if (context.mounted) {
-                context.go(AppRoutes.login);
-              }
+              appRouter.go(AppRoutes.login);
             },
             child: const Text('Sign Out'),
           ),
