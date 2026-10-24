@@ -1,5 +1,5 @@
 class ApiConstants {
-  static const String defaultLocalhost = 'http://localhost:8080';
+  static const String defaultLocalhost = 'https://alnur-store.api.serverpod.space';
   static const Duration timeoutDuration = Duration(seconds: 30);
 
   // Endpoints
