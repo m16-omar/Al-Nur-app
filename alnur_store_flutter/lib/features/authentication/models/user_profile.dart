@@ -16,9 +16,12 @@ class UserProfile {
   factory UserProfile.guest() {
     return const UserProfile(
       id: 'guest_user',
-      name: 'Guest Shopper',
-      email: 'guest@alnur.store',
+      name: '',
+      email: '',
       isGuest: true,
     );
   }
+
+  bool get hasName => name.trim().isNotEmpty;
+  bool get hasEmail => email.trim().isNotEmpty;
 }

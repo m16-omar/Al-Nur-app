@@ -55,6 +55,9 @@ class OnboardingPreferences {
     }
   }
 
+  static const String _keySavedUserPhone = 'alnur_saved_user_phone';
+  static const String _keyIsGuest = 'alnur_is_guest';
+
   /// Saves the active or returning user's email address.
   static Future<void> saveUserEmail(String email) async {
     try {
@@ -73,6 +76,53 @@ class OnboardingPreferences {
     }
   }
 
+  /// Saves the user's phone number.
+  static Future<void> saveUserPhone(String phone) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_keySavedUserPhone, phone);
+    } catch (_) {}
+  }
+
+  /// Retrieves the saved user phone if previously stored.
+  static Future<String?> getSavedUserPhone() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_keySavedUserPhone);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Sets whether the app is currently browsing in guest mode.
+  static Future<void> setGuestMode(bool isGuest) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_keyIsGuest, isGuest);
+    } catch (_) {}
+  }
+
+  /// Returns true if the user is in guest mode. Defaults to true if no saved credentials exist.
+  static Future<bool> isGuestMode() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getBool(_keyIsGuest) ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Clears user credentials and marks as guest on logout.
+  static Future<void> clearAuthData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_keySavedUserName);
+      await prefs.remove(_keySavedUserEmail);
+      await prefs.remove(_keySavedUserPhone);
+      await prefs.setBool(_keyIsGuest, true);
+    } catch (_) {}
+  }
+
   /// Clears onboarding preferences to allow re-testing first-time flow.
   static Future<void> resetForFirstTimeUser() async {
     try {
@@ -80,6 +130,8 @@ class OnboardingPreferences {
       await prefs.remove(_keyHasCompletedOnboarding);
       await prefs.remove(_keySavedUserName);
       await prefs.remove(_keySavedUserEmail);
+      await prefs.remove(_keySavedUserPhone);
+      await prefs.remove(_keyIsGuest);
     } catch (_) {}
   }
 }

@@ -2,6 +2,7 @@ import 'package:serverpod_auth_idp_flutter/serverpod_auth_idp_flutter.dart' hide
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../main.dart';
+import '../../onboarding/services/onboarding_preferences.dart';
 import '../models/user_profile.dart';
 
 class AuthState {
@@ -24,7 +25,7 @@ class AuthState {
   });
 
   bool get isAuthenticated => user != null && !user!.isGuest;
-  bool get isGuest => user?.isGuest ?? false;
+  bool get isGuest => user == null || user!.isGuest;
 
   AuthState copyWith({
     bool? isLoading,
@@ -56,19 +57,51 @@ class AuthController extends Notifier<AuthState> {
     return const AuthState();
   }
 
-  void _checkInitialAuth() {
+  Future<void> _checkInitialAuth() async {
     try {
+      final isGuest = await OnboardingPreferences.isGuestMode();
+      if (isGuest) {
+        state = state.copyWith(user: UserProfile.guest());
+        return;
+      }
+
+      final savedEmail = await OnboardingPreferences.getSavedUserEmail();
+      final savedName = await OnboardingPreferences.getSavedUserName();
+      final savedPhone = await OnboardingPreferences.getSavedUserPhone();
+
+      if (savedEmail != null && savedEmail.isNotEmpty) {
+        state = state.copyWith(
+          user: UserProfile(
+            id: client.auth.authInfo?.authUserId.toString() ?? 'usr_saved',
+            name: (savedName != null && savedName.isNotEmpty)
+                ? savedName
+                : (savedEmail.contains('@') ? savedEmail.split('@').first : savedEmail),
+            email: savedEmail,
+            phone: savedPhone,
+            isGuest: false,
+          ),
+        );
+        return;
+      }
+
       if (client.auth.isAuthenticated) {
         final authInfo = client.auth.authInfo;
         state = state.copyWith(
           user: UserProfile(
             id: authInfo?.authUserId.toString() ?? 'usr_authenticated',
-            name: 'Al-Nur Member',
-            email: 'member@alnur.store',
+            name: savedName ?? 'Al-Nur Member',
+            email: savedEmail ?? 'member@alnur.store',
+            phone: savedPhone,
+            isGuest: false,
           ),
         );
+        return;
       }
-    } catch (_) {}
+
+      state = state.copyWith(user: UserProfile.guest());
+    } catch (_) {
+      state = state.copyWith(user: UserProfile.guest());
+    }
   }
 
   void toggleRememberMe(bool? value) {
@@ -102,12 +135,19 @@ class AuthController extends Notifier<AuthState> {
 
       await client.auth.updateSignedInUser(authSuccess);
 
-      final displayName = cleanEmail.contains('@')
-          ? cleanEmail.split('@').first
-          : cleanEmail;
+      final savedName = await OnboardingPreferences.getSavedUserName();
+      final displayName = (savedName != null && savedName.isNotEmpty)
+          ? savedName
+          : (cleanEmail.contains('@')
+              ? cleanEmail.split('@').first
+              : cleanEmail);
       final capitalized = displayName.isNotEmpty
           ? '${displayName[0].toUpperCase()}${displayName.substring(1)}'
           : 'Al-Nur Member';
+
+      await OnboardingPreferences.saveUserEmail(cleanEmail);
+      await OnboardingPreferences.saveUserName(capitalized);
+      await OnboardingPreferences.setGuestMode(false);
 
       state = state.copyWith(
         isLoading: false,
@@ -125,12 +165,19 @@ class AuthController extends Notifier<AuthState> {
 
       // 2. Fallback: If in offline mode, demo mode, or network error, validate credentials gracefully
       if (cleanPassword.length >= 6) {
-        final displayName = cleanEmail.contains('@')
-            ? cleanEmail.split('@').first
-            : cleanEmail;
+        final savedName = await OnboardingPreferences.getSavedUserName();
+        final displayName = (savedName != null && savedName.isNotEmpty)
+            ? savedName
+            : (cleanEmail.contains('@')
+                ? cleanEmail.split('@').first
+                : cleanEmail);
         final capitalized = displayName.isNotEmpty
             ? '${displayName[0].toUpperCase()}${displayName.substring(1)}'
             : 'Al-Nur Member';
+
+        await OnboardingPreferences.saveUserEmail(cleanEmail);
+        await OnboardingPreferences.saveUserName(capitalized);
+        await OnboardingPreferences.setGuestMode(false);
 
         state = state.copyWith(
           isLoading: false,
@@ -185,6 +232,11 @@ class AuthController extends Notifier<AuthState> {
     try {
       // Attempt Serverpod email registration
       final requestId = await client.emailIdp.startRegistration(email: cleanEmail);
+      await OnboardingPreferences.saveUserName(cleanName);
+      await OnboardingPreferences.saveUserEmail(cleanEmail);
+      await OnboardingPreferences.saveUserPhone(phone.trim());
+      await OnboardingPreferences.setGuestMode(false);
+
       state = state.copyWith(
         isLoading: false,
         shouldShowWelcomePopup: true,
@@ -201,6 +253,11 @@ class AuthController extends Notifier<AuthState> {
     } catch (e) {
       debugPrint('[AuthController] Serverpod registration notice: $e');
       // Direct registration fallback for seamless demo flow
+      await OnboardingPreferences.saveUserName(cleanName);
+      await OnboardingPreferences.saveUserEmail(cleanEmail);
+      await OnboardingPreferences.saveUserPhone(phone.trim());
+      await OnboardingPreferences.setGuestMode(false);
+
       state = state.copyWith(
         isLoading: false,
         errorMessage: null,
@@ -216,8 +273,37 @@ class AuthController extends Notifier<AuthState> {
     }
   }
 
+  /// Updates personal profile information for real authenticated user
+  Future<void> updateUserProfile({
+    required String name,
+    required String email,
+    String? phone,
+  }) async {
+    final cleanName = name.trim();
+    final cleanEmail = email.trim();
+    final cleanPhone = phone?.trim();
+
+    await OnboardingPreferences.saveUserName(cleanName);
+    await OnboardingPreferences.saveUserEmail(cleanEmail);
+    if (cleanPhone != null && cleanPhone.isNotEmpty) {
+      await OnboardingPreferences.saveUserPhone(cleanPhone);
+    }
+    await OnboardingPreferences.setGuestMode(false);
+
+    state = state.copyWith(
+      user: UserProfile(
+        id: state.user?.id ?? 'usr_${DateTime.now().millisecondsSinceEpoch}',
+        name: cleanName,
+        email: cleanEmail,
+        phone: cleanPhone,
+        isGuest: false,
+      ),
+    );
+  }
+
   /// Sets guest profile
-  void continueAsGuest() {
+  Future<void> continueAsGuest() async {
+    await OnboardingPreferences.setGuestMode(true);
     state = state.copyWith(
       isLoading: false,
       shouldShowWelcomePopup: true,
@@ -241,7 +327,11 @@ class AuthController extends Notifier<AuthState> {
     try {
       await client.auth.signOutDevice();
     } catch (_) {}
-    state = const AuthState();
+    await OnboardingPreferences.clearAuthData();
+    state = state.copyWith(
+      user: UserProfile.guest(),
+      errorMessage: null,
+    );
   }
 }
 

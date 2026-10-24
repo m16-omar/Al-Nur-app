@@ -24,9 +24,9 @@ class ProfileView extends ConsumerStatefulWidget {
 }
 
 class _ProfileViewState extends ConsumerState<ProfileView> {
-  String _userName = 'Amina Al-Mansoor';
-  String _userEmail = 'amina.mansoor@example.com';
-  String _userPhone = '+234 803 987 6543';
+  String _userName = '';
+  String _userEmail = '';
+  String _userPhone = '';
   String _selectedCurrency = 'NGN (₦)';
   bool _notificationsEnabled = true;
   bool _jumuahRemindersEnabled = true;
@@ -45,9 +45,20 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
     final cartState = ref.watch(cartControllerProvider);
     final cartCount = cartState.totalCount;
     final user = authState.user;
-    final displayName = user != null && user.name.isNotEmpty ? user.name : _userName;
-    final displayEmail = user != null && user.email.isNotEmpty ? user.email : _userEmail;
     final isGuest = authState.isGuest;
+    final isAuthenticated = authState.isAuthenticated;
+
+    // Real user data when authenticated; empty when guest (no fake email or username)
+    final displayName = isAuthenticated && user != null && user.name.isNotEmpty
+        ? user.name
+        : (isGuest ? '' : _userName);
+    final displayEmail = isAuthenticated && user != null && user.email.isNotEmpty
+        ? user.email
+        : (isGuest ? '' : _userEmail);
+    final displayPhone = isAuthenticated && user != null && user.phone != null && user.phone!.isNotEmpty
+        ? user.phone!
+        : _userPhone;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -99,80 +110,148 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
               ),
               child: Column(
                 children: [
-                  Stack(
-                    alignment: Alignment.bottomRight,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(3),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: AppColors.gold, width: 2),
-                        ),
-                        child: const CircleAvatar(
-                          radius: 40,
-                          backgroundColor: AppColors.primaryContainer,
-                          backgroundImage: NetworkImage(
-                            'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80',
-                          ),
+                  if (isGuest) ...[
+                    // Elegant Guest Avatar
+                    Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 2),
+                      ),
+                      child: const CircleAvatar(
+                        radius: 40,
+                        backgroundColor: AppColors.primaryContainer,
+                        child: Icon(
+                          Icons.person_outline_rounded,
+                          size: 42,
+                          color: AppColors.primary,
                         ),
                       ),
-                      GestureDetector(
-                        onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Opening photo picker to update avatar...')),
-                          );
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: const BoxDecoration(
-                            color: AppColors.primary,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 14),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Guest Shopper',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Sign in to sync your bag, orders & modesty rewards',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                    ),
+                    const SizedBox(height: 14),
+                    GestureDetector(
+                      onTap: () => context.push(AppRoutes.login),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.25),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
                         ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.login_rounded, color: Colors.white, size: 16),
+                            SizedBox(width: 6),
+                            Text(
+                              'Sign In / Register',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ] else ...[
+                    // Authenticated User Avatar with Initials / Real Info
+                    Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(3),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: AppColors.gold, width: 2),
+                          ),
+                          child: CircleAvatar(
+                            radius: 40,
+                            backgroundColor: AppColors.primary,
+                            child: Text(
+                              displayName.isNotEmpty ? displayName[0].toUpperCase() : 'A',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => _showEditProfileModal(displayName, displayEmail, displayPhone),
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: const BoxDecoration(
+                              color: AppColors.primary,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.edit_rounded, color: Colors.white, size: 14),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      displayName.isNotEmpty ? displayName : 'Al-Nur Member',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    if (displayEmail.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        displayEmail,
+                        style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    displayName,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    displayEmail,
-                    style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
-                  ),
-                  const SizedBox(height: 10),
-                  // VIP or Guest Badge
-                  GestureDetector(
-                    onTap: isGuest ? () => context.go(AppRoutes.login) : null,
-                    child: Container(
+                    const SizedBox(height: 10),
+                    Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                       decoration: BoxDecoration(
-                        color: isGuest ? AppColors.surfaceMuted : AppColors.goldLight,
+                        color: AppColors.goldLight,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: isGuest ? AppColors.border : AppColors.gold.withValues(alpha: 0.4),
+                          color: AppColors.gold.withValues(alpha: 0.4),
                         ),
                       ),
-                      child: Row(
+                      child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            isGuest ? Icons.person_outline_rounded : Icons.workspace_premium_rounded,
-                            color: isGuest ? AppColors.primary : AppColors.goldDark,
+                            Icons.workspace_premium_rounded,
+                            color: AppColors.goldDark,
                             size: 16,
                           ),
-                          const SizedBox(width: 6),
+                          SizedBox(width: 6),
                           Text(
-                            isGuest ? 'Guest Shopper (Tap to Sign In)' : 'Gold VIP Modesty Member',
+                            'Gold VIP Modesty Member',
                             style: TextStyle(
-                              color: isGuest ? AppColors.primary : AppColors.goldDark,
+                              color: AppColors.goldDark,
                               fontWeight: FontWeight.w700,
                               fontSize: 12,
                             ),
@@ -180,7 +259,7 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                         ],
                       ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
@@ -203,17 +282,22 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                 Expanded(
                   child: _buildMetricTile(
                     icon: Icons.inventory_2_outlined,
-                    count: '12',
+                    count: isGuest ? '0' : '12',
                     label: 'Orders',
                     color: AppColors.primaryDark,
-                    onTap: widget.onNavigateToOrders ?? () => context.push(AppRoutes.orders),
+                    onTap: isGuest
+                        ? () => _showGuestPrompt(
+                              title: 'Modesty Orders',
+                              message: 'Sign in or create an account to view and track your modest fashion orders.',
+                            )
+                        : (widget.onNavigateToOrders ?? () => context.push(AppRoutes.orders)),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: _buildMetricTile(
                     icon: Icons.favorite_border_rounded,
-                    count: '8',
+                    count: isGuest ? '0' : '8',
                     label: 'Favorites',
                     color: const Color(0xFFE11D48),
                     onTap: () => _showWishlistModal(),
@@ -223,10 +307,15 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                 Expanded(
                   child: _buildMetricTile(
                     icon: Icons.stars_rounded,
-                    count: '3,450',
+                    count: isGuest ? '0' : '3,450',
                     label: 'Al-Nur Pts',
                     color: AppColors.goldDark,
-                    onTap: () => _showPointsModal(),
+                    onTap: isGuest
+                        ? () => _showGuestPrompt(
+                              title: 'Al-Nur Loyalty Points',
+                              message: 'Join Al-Nur Loyalty! Sign in to earn modesty points on every modest wear purchase.',
+                            )
+                        : () => _showPointsModal(),
                   ),
                 ),
               ],
@@ -265,19 +354,31 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
               _buildListTile(
                 icon: Icons.person_outline_rounded,
                 title: 'Personal Information',
-                subtitle: 'Name, phone number, and modesty sizing',
-                onTap: () => _showEditProfileModal(),
+                subtitle: isGuest
+                    ? 'Sign in to save your personal details'
+                    : (displayPhone.isNotEmpty ? displayPhone : 'Name, phone number, and modesty sizing'),
+                onTap: isGuest
+                    ? () => _showGuestPrompt(
+                          title: 'Personal Information',
+                          message: 'Please sign in or create an account to save your name, contact phone, and custom modesty sizing.',
+                        )
+                    : () => _showEditProfileModal(displayName, displayEmail, displayPhone),
               ),
               _buildListTile(
                 icon: Icons.location_on_outlined,
                 title: 'Saved Delivery Addresses',
-                subtitle: 'Lekki Phase 1, Lagos & Maitama, Abuja',
-                onTap: () => _showAddressesModal(),
+                subtitle: isGuest ? 'Sign in to save delivery addresses' : 'Lekki Phase 1, Lagos & Maitama, Abuja',
+                onTap: isGuest
+                    ? () => _showGuestPrompt(
+                          title: 'Delivery Addresses',
+                          message: 'Please sign in to save your preferred delivery addresses for fast 1-tap checkout.',
+                        )
+                    : () => _showAddressesModal(),
               ),
               _buildListTile(
                 icon: Icons.payment_outlined,
                 title: 'Payment & Cards',
-                subtitle: 'Mastercard ending in 4018',
+                subtitle: 'Mastercard & Selar Halal Gateway',
                 onTap: () => _showPaymentModal(),
               ),
             ]),
@@ -348,24 +449,40 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
 
             const SizedBox(height: 24),
 
-            // Sign Out Button
+            // Action Button (Sign In for Guest, Sign Out for Authenticated)
             SizedBox(
               width: double.infinity,
-              child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.error,
-                  side: const BorderSide(color: Color(0xFFFCA5A5)),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  backgroundColor: const Color(0xFFFEF2F2),
-                ),
-                icon: const Icon(Icons.logout_rounded, size: 18),
-                label: const Text(
-                  'Sign Out of Al-Nur Store',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-                ),
-                onPressed: () => _showSignOutDialog(),
-              ),
+              child: isGuest
+                  ? ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        elevation: 1,
+                      ),
+                      icon: const Icon(Icons.login_rounded, size: 18),
+                      label: const Text(
+                        'Sign In or Create Account',
+                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                      ),
+                      onPressed: () => context.push(AppRoutes.login),
+                    )
+                  : OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.error,
+                        side: const BorderSide(color: Color(0xFFFCA5A5)),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        backgroundColor: const Color(0xFFFEF2F2),
+                      ),
+                      icon: const Icon(Icons.logout_rounded, size: 18),
+                      label: const Text(
+                        'Sign Out of Al-Nur Store',
+                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                      ),
+                      onPressed: () => _showSignOutDialog(),
+                    ),
             ),
           ],
         ),
@@ -528,17 +645,90 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
     );
   }
 
-  void _showEditProfileModal() {
-    final nameCtrl = TextEditingController(text: _userName);
-    final emailCtrl = TextEditingController(text: _userEmail);
-    final phoneCtrl = TextEditingController(text: _userPhone);
+  void _showGuestPrompt({required String title, required String message}) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                color: AppColors.primaryContainer,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.lock_outline_rounded, color: AppColors.primary, size: 32),
+            ),
+            const SizedBox(height: 16),
+            Text(title, style: AppTextStyles.productTitle.copyWith(fontSize: 18)),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.4),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Stay as Guest', style: TextStyle(color: AppColors.textSecondary)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      context.push(AppRoutes.login);
+                    },
+                    child: const Text('Sign In', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showEditProfileModal(String currentName, String currentEmail, String currentPhone) {
+    final nameCtrl = TextEditingController(text: currentName);
+    final emailCtrl = TextEditingController(text: currentEmail);
+    final phoneCtrl = TextEditingController(text: currentPhone);
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      builder: (modalCtx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(modalCtx).viewInsets.bottom),
         child: Container(
           decoration: const BoxDecoration(
             color: Colors.white,
@@ -595,19 +785,34 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  onPressed: () {
+                  onPressed: () async {
+                    final newName = nameCtrl.text.trim();
+                    final newEmail = emailCtrl.text.trim();
+                    final newPhone = phoneCtrl.text.trim();
+
                     setState(() {
-                      _userName = nameCtrl.text;
-                      _userEmail = emailCtrl.text;
-                      _userPhone = phoneCtrl.text;
+                      _userName = newName;
+                      _userEmail = newEmail;
+                      _userPhone = newPhone;
                     });
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Profile information updated successfully!'),
-                        backgroundColor: AppColors.primary,
-                      ),
-                    );
+
+                    await ref.read(authControllerProvider.notifier).updateUserProfile(
+                          name: newName,
+                          email: newEmail,
+                          phone: newPhone,
+                        );
+
+                    if (modalCtx.mounted) {
+                      Navigator.pop(modalCtx);
+                    }
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Profile information updated successfully!'),
+                          backgroundColor: AppColors.primary,
+                        ),
+                      );
+                    }
                   },
                   child: const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.w700)),
                 ),
