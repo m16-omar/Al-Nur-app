@@ -57,8 +57,8 @@ class _CartViewState extends ConsumerState<CartView> {
       // Restriction: Guest users must sign in to proceed with checkout
       _showGuestRestrictionDialog(cartState);
     } else {
-      // Authenticated member: proceed with order
-      _showOrderConfirmationDialog(cartState);
+      // Authenticated member: proceed with Selar Payment Gateway
+      context.push(AppRoutes.selarCheckout);
     }
   }
 
@@ -142,65 +142,6 @@ class _CartViewState extends ConsumerState<CartView> {
               child: const Text(
                 'Continue Browsing as Guest',
                 style: TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showOrderConfirmationDialog(CartState cartState) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        contentPadding: const EdgeInsets.all(24),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: const BoxDecoration(
-                color: Color(0xFFDCFCE7),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.check_circle_rounded, color: Color(0xFF16A34A), size: 36),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Alhamdulillah! Order Placed',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Your modest wear order of ${_formatNaira(cartState.grandTotal)} has been received. Our master tailors are inspecting custom sizing for dispatch.',
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  elevation: 0,
-                ),
-                onPressed: () async {
-                  Navigator.pop(ctx);
-                  await ref.read(cartControllerProvider.notifier).clearCart();
-                  if (mounted) {
-                    if (widget.isModal && widget.onClose != null) {
-                      widget.onClose!();
-                    }
-                    context.go(AppRoutes.home);
-                  }
-                },
-                child: const Text('Return to Home', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -657,7 +598,7 @@ class _CartViewState extends ConsumerState<CartView> {
                 const Icon(Icons.lock_outline_rounded, color: Colors.white, size: 18),
                 const SizedBox(width: 8),
                 Text(
-                  'Proceed to Halal Checkout • ${_formatNaira(cartState.grandTotal)}',
+                  'Pay with Selar • ${_formatNaira(cartState.grandTotal)}',
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,

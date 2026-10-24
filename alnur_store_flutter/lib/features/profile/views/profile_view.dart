@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../cart/controllers/cart_controller.dart';
 import '../../onboarding/services/onboarding_preferences.dart';
+import '../../cart/services/selar_payment_service.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -740,6 +741,73 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
             const SizedBox(height: 16),
             Text('Saved Payment Methods', style: AppTextStyles.productTitle.copyWith(fontSize: 18)),
             const SizedBox(height: 14),
+            // Selar Gateway Configuration Card
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceMuted,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 18),
+                          SizedBox(width: 6),
+                          Text(
+                            'Selar Halal Gateway',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primary),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDCFCE7),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text('ACTIVE', style: TextStyle(color: Color(0xFF16A34A), fontSize: 9, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  FutureBuilder<String>(
+                    future: SelarPaymentService.getStoreUrl(),
+                    builder: (context, snapshot) {
+                      final url = snapshot.data ?? SelarPaymentService.defaultStoreUrl;
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Store Link: $url',
+                              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          InkWell(
+                            onTap: () {
+                              Navigator.pop(context);
+                              _showEditSelarUrlDialog();
+                            },
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                              child: Text('Edit', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -795,6 +863,74 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showEditSelarUrlDialog() async {
+    final currentUrl = await SelarPaymentService.getStoreUrl();
+    final textController = TextEditingController(text: currentUrl);
+
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.link_rounded, color: AppColors.primary),
+            SizedBox(width: 8),
+            Text('Selar Store Link', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Enter your Selar checkout or merchant store link (e.g. https://selar.com/m/yourname):',
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: textController,
+              decoration: InputDecoration(
+                hintText: 'https://selar.com/m/alnur',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              final newUrl = textController.text.trim();
+              if (newUrl.isNotEmpty) {
+                await SelarPaymentService.setStoreUrl(newUrl);
+                if (ctx.mounted) {
+                  Navigator.pop(ctx);
+                }
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Selar link updated: $newUrl')),
+                  );
+                  setState(() {});
+                }
+              }
+            },
+            child: const Text('Save Link'),
+          ),
+        ],
       ),
     );
   }
