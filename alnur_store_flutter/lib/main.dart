@@ -12,6 +12,7 @@ late String serverUrl;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   serverUrl = await getServerUrl();
+  debugPrint("🚀 Al-Nur Store connected to Serverpod Cloud: $serverUrl");
 
   client = Client(serverUrl)
     ..connectivityMonitor = FlutterConnectivityMonitor()
