@@ -53,6 +53,15 @@ class SearchBarWidget extends StatelessWidget {
                     color: AppColors.textSecondary,
                     size: 22,
                   ),
+                  suffixIcon: controller != null && controller!.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.textSecondary),
+                          onPressed: () {
+                            controller?.clear();
+                            onChanged?.call('');
+                          },
+                        )
+                      : null,
                   contentPadding: const EdgeInsets.symmetric(vertical: 12),
                   border: InputBorder.none,
                 ),
@@ -63,26 +72,29 @@ class SearchBarWidget extends StatelessWidget {
           const SizedBox(width: 10),
 
           // Green Voice Search Button
-          GestureDetector(
-            onTap: onVoiceTap,
-            child: Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.mic_none_rounded,
-                color: Colors.white,
-                size: 22,
+          Tooltip(
+            message: 'Voice Search',
+            child: GestureDetector(
+              onTap: onVoiceTap,
+              child: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.35),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.mic_none_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
               ),
             ),
           ),

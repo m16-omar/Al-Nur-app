@@ -31,6 +31,30 @@ class HomeState {
     this.isLoading = false,
   });
 
+  List<ProductModel> get allProducts {
+    final map = <String, ProductModel>{};
+    for (final p in [
+      ...featuredProducts,
+      ...abayasProducts,
+      ...hijabsProducts,
+      ...jalabiasProducts,
+      ...thobesProducts,
+    ]) {
+      map[p.id] = p;
+    }
+    return map.values.toList();
+  }
+
+  List<ProductModel> get filteredSearchResults {
+    if (searchQuery.trim().isEmpty) return [];
+    final q = searchQuery.toLowerCase().trim();
+    return allProducts.where((p) {
+      return p.name.toLowerCase().contains(q) ||
+          p.description.toLowerCase().contains(q) ||
+          p.categoryId.toLowerCase().contains(q);
+    }).toList();
+  }
+
   HomeState copyWith({
     List<CategoryModel>? categories,
     String? selectedCategoryId,

@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/models/product_model.dart';
+import '../../../shared/widgets/product_card.dart';
 import '../../ai_assistant/views/ai_chat_view.dart';
 import '../../authentication/controllers/auth_controller.dart';
 import '../../cart/controllers/cart_controller.dart';
@@ -17,6 +19,7 @@ import '../widgets/featured_products.dart';
 import '../widgets/hero_banner.dart';
 import '../widgets/home_header.dart';
 import '../widgets/search_bar_widget.dart';
+import '../widgets/voice_search_modal.dart';
 import '../widgets/welcome_user_dialog.dart';
 
 class HomeView extends ConsumerStatefulWidget {
@@ -37,6 +40,7 @@ class HomeView extends ConsumerStatefulWidget {
 
 class _HomeViewState extends ConsumerState<HomeView> {
   int _currentNavIndex = 0;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -44,6 +48,25 @@ class _HomeViewState extends ConsumerState<HomeView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkWelcomePopup();
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _openVoiceSearchModal(BuildContext context) {
+    VoiceSearchModal.show(
+      context,
+      initialQuery: _searchController.text,
+      onSearchSubmitted: (query) {
+        setState(() {
+          _searchController.text = query;
+        });
+        ref.read(homeControllerProvider.notifier).updateSearchQuery(query);
+      },
+    );
   }
 
   void _checkWelcomePopup() {
@@ -140,122 +163,271 @@ class _HomeViewState extends ConsumerState<HomeView> {
             ),
           ),
 
-        // Search Bar
+        // Search Bar with Voice Microphone Action
         SliverToBoxAdapter(
           child: SearchBarWidget(
+            controller: _searchController,
             onChanged: (val) => homeController.updateSearchQuery(val),
-            onVoiceTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Listening for voice search...'),
-                  duration: Duration(seconds: 2),
+            onVoiceTap: () => _openVoiceSearchModal(context),
+          ),
+        ),
+
+        if (homeState.searchQuery.trim().isNotEmpty) ...[
+          // Search Results Header Banner
+          SliverToBoxAdapter(
+            child: _buildSearchResultsHeader(context, homeState, homeController),
+          ),
+          // Search Results Grid or Empty State
+          if (homeState.filteredSearchResults.isNotEmpty)
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              sliver: SliverGrid(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 0.65,
+                  crossAxisSpacing: 14,
+                  mainAxisSpacing: 16,
                 ),
-              );
-            },
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final product = homeState.filteredSearchResults[index];
+                    return ProductCard(
+                      product: product,
+                      onTap: () => _showProductDetailsModal(context, product),
+                      onFavoriteToggle: () => homeController.toggleFavorite(product),
+                    );
+                  },
+                  childCount: homeState.filteredSearchResults.length,
+                ),
+              ),
+            )
+          else
+            SliverToBoxAdapter(
+              child: _buildSearchEmptyState(context, homeState.searchQuery, homeController),
+            ),
+          const SliverToBoxAdapter(
+            child: SizedBox(height: 120),
           ),
-        ),
-
-        // Welcome Gift Voucher Pill Banner
-        SliverToBoxAdapter(
-          child: _buildWelcomeVoucherBanner(userName),
-        ),
-
-        // Hero Banner
-        SliverToBoxAdapter(
-          child: HeroBanner(
-            onShopNowTap: () {
-              setState(() => _currentNavIndex = 1);
-            },
+        ] else ...[
+          // Welcome Gift Voucher Pill Banner
+          SliverToBoxAdapter(
+            child: _buildWelcomeVoucherBanner(userName),
           ),
-        ),
 
-        // Category Section
-        SliverToBoxAdapter(
-          child: CategorySection(
-            categories: homeState.categories,
-            selectedCategoryId: homeState.selectedCategoryId,
-            onCategorySelected: (cat) {
-              homeController.selectCategory(cat);
-              setState(() => _currentNavIndex = 1);
-            },
+          // Hero Banner
+          SliverToBoxAdapter(
+            child: HeroBanner(
+              onShopNowTap: () {
+                setState(() => _currentNavIndex = 1);
+              },
+            ),
           ),
-        ),
 
-        // AI Assistant Banner
-        SliverToBoxAdapter(
-          child: AiAssistantBanner(
-            onChatTap: () => setState(() => _currentNavIndex = 2),
+          // Category Section
+          SliverToBoxAdapter(
+            child: CategorySection(
+              categories: homeState.categories,
+              selectedCategoryId: homeState.selectedCategoryId,
+              onCategorySelected: (cat) {
+                homeController.selectCategory(cat);
+                setState(() => _currentNavIndex = 1);
+              },
+            ),
           ),
-        ),
 
-        // Featured Products Section
-        SliverToBoxAdapter(
-          child: FeaturedProductsSection(
-            title: 'Featured Products',
-            products: homeState.featuredProducts,
-            onProductTap: (product) => _showProductDetailsModal(context, product),
-            onFavoriteToggle: (product) => homeController.toggleFavorite(product),
-            onViewAllTap: () => setState(() => _currentNavIndex = 1),
+          // AI Assistant Banner
+          SliverToBoxAdapter(
+            child: AiAssistantBanner(
+              onChatTap: () => setState(() => _currentNavIndex = 2),
+            ),
           ),
-        ),
 
-        const SliverToBoxAdapter(child: SizedBox(height: 16)),
-
-        // Al-Nur Abayas Section
-        SliverToBoxAdapter(
-          child: FeaturedProductsSection(
-            title: 'Al-Nur Abayas',
-            products: homeState.abayasProducts,
-            onProductTap: (product) => _showProductDetailsModal(context, product),
-            onFavoriteToggle: (product) => homeController.toggleFavorite(product),
-            onViewAllTap: () => setState(() => _currentNavIndex = 1),
+          // Featured Products Section
+          SliverToBoxAdapter(
+            child: FeaturedProductsSection(
+              title: 'Featured Products',
+              products: homeState.featuredProducts,
+              onProductTap: (product) => _showProductDetailsModal(context, product),
+              onFavoriteToggle: (product) => homeController.toggleFavorite(product),
+              onViewAllTap: () => setState(() => _currentNavIndex = 1),
+            ),
           ),
-        ),
 
-        const SliverToBoxAdapter(child: SizedBox(height: 16)),
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-        // Al-Nur Hijabs Section
-        SliverToBoxAdapter(
-          child: FeaturedProductsSection(
-            title: 'Al-Nur Hijabs',
-            products: homeState.hijabsProducts,
-            onProductTap: (product) => _showProductDetailsModal(context, product),
-            onFavoriteToggle: (product) => homeController.toggleFavorite(product),
-            onViewAllTap: () => setState(() => _currentNavIndex = 1),
+          // Al-Nur Abayas Section
+          SliverToBoxAdapter(
+            child: FeaturedProductsSection(
+              title: 'Al-Nur Abayas',
+              products: homeState.abayasProducts,
+              onProductTap: (product) => _showProductDetailsModal(context, product),
+              onFavoriteToggle: (product) => homeController.toggleFavorite(product),
+              onViewAllTap: () => setState(() => _currentNavIndex = 1),
+            ),
           ),
-        ),
 
-        const SliverToBoxAdapter(child: SizedBox(height: 16)),
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-        // Al-Nur Jalabias Section
-        SliverToBoxAdapter(
-          child: FeaturedProductsSection(
-            title: 'Al-Nur Jalabias',
-            products: homeState.jalabiasProducts,
-            onProductTap: (product) => _showProductDetailsModal(context, product),
-            onFavoriteToggle: (product) => homeController.toggleFavorite(product),
-            onViewAllTap: () => setState(() => _currentNavIndex = 1),
+          // Al-Nur Hijabs Section
+          SliverToBoxAdapter(
+            child: FeaturedProductsSection(
+              title: 'Al-Nur Hijabs',
+              products: homeState.hijabsProducts,
+              onProductTap: (product) => _showProductDetailsModal(context, product),
+              onFavoriteToggle: (product) => homeController.toggleFavorite(product),
+              onViewAllTap: () => setState(() => _currentNavIndex = 1),
+            ),
           ),
-        ),
 
-        const SliverToBoxAdapter(child: SizedBox(height: 16)),
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-        // Al-Nur Thobes & Jubbahs Section
-        SliverToBoxAdapter(
-          child: FeaturedProductsSection(
-            title: 'Al-Nur Thobes & Jubbahs',
-            products: homeState.thobesProducts,
-            onProductTap: (product) => _showProductDetailsModal(context, product),
-            onFavoriteToggle: (product) => homeController.toggleFavorite(product),
-            onViewAllTap: () => setState(() => _currentNavIndex = 1),
+          // Al-Nur Jalabias Section
+          SliverToBoxAdapter(
+            child: FeaturedProductsSection(
+              title: 'Al-Nur Jalabias',
+              products: homeState.jalabiasProducts,
+              onProductTap: (product) => _showProductDetailsModal(context, product),
+              onFavoriteToggle: (product) => homeController.toggleFavorite(product),
+              onViewAllTap: () => setState(() => _currentNavIndex = 1),
+            ),
           ),
-        ),
 
-        // Bottom Padding for floating nav bar
-        const SliverToBoxAdapter(
-          child: SizedBox(height: 110),
-        ),
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
+          // Al-Nur Thobes & Jubbahs Section
+          SliverToBoxAdapter(
+            child: FeaturedProductsSection(
+              title: 'Al-Nur Thobes & Jubbahs',
+              products: homeState.thobesProducts,
+              onProductTap: (product) => _showProductDetailsModal(context, product),
+              onFavoriteToggle: (product) => homeController.toggleFavorite(product),
+              onViewAllTap: () => setState(() => _currentNavIndex = 1),
+            ),
+          ),
+
+          // Bottom Padding for floating nav bar
+          const SliverToBoxAdapter(
+            child: SizedBox(height: 110),
+          ),
+        ],
       ],
+      ),
+    );
+  }
+
+  Widget _buildSearchResultsHeader(BuildContext context, HomeState homeState, HomeController homeController) {
+    final query = homeState.searchQuery;
+    final count = homeState.filteredSearchResults.length;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.mic_rounded, size: 14, color: AppColors.primary),
+                    const SizedBox(width: 5),
+                    Text(
+                      '"$query"',
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              TextButton.icon(
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.textSecondary,
+                  padding: EdgeInsets.zero,
+                  visualDensity: VisualDensity.compact,
+                ),
+                icon: const Icon(Icons.close_rounded, size: 16),
+                label: const Text('Clear', style: TextStyle(fontSize: 12)),
+                onPressed: () {
+                  setState(() {
+                    _searchController.clear();
+                  });
+                  homeController.updateSearchQuery('');
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            count > 0 ? 'Found $count modest piece${count == 1 ? '' : 's'}' : 'No matches found',
+            style: AppTextStyles.productTitle.copyWith(fontSize: 18),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchEmptyState(BuildContext context, String query, HomeController homeController) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: const BoxDecoration(
+              color: AppColors.surfaceMuted,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.search_off_rounded,
+              color: AppColors.textSecondary,
+              size: 40,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No matching modest wear found for "$query"',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Try speaking broader categories like "Abaya", "Silk Hijab", "Thobe", or "Oud Perfume".',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            icon: const Icon(Icons.mic_none_rounded, size: 18),
+            label: const Text('Try Another Voice Search'),
+            onPressed: () => _openVoiceSearchModal(context),
+          ),
+        ],
       ),
     );
   }

@@ -40,6 +40,7 @@ dependencies:
   shared_preferences: ^2.5.5
   webview_flutter: ^4.14.1
   url_launcher: ^6.3.2
+  speech_to_text: ^7.4.0
 
 dev_dependencies:
   flutter_lints: '>=3.0.0 <7.0.0'

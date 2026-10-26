@@ -66,5 +66,9 @@
 			</array>
 		</dict>
 	</dict>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Al-Nur Store requires microphone access to enable voice search for modest wear and fragrances.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Al-Nur Store uses speech recognition to transcribe your voice queries into product searches.</string>
 </dict>
 </plist>
