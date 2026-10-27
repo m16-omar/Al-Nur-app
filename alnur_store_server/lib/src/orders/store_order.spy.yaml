@@ -1,0 +1,20 @@
+class: StoreOrder
+table: store_order
+fields:
+  orderRef: String
+  customerEmail: String
+  customerName: String
+  customerPhone: String
+  shippingAddress: String
+  totalAmount: double
+  paymentStatus: String
+  fulfillmentStatus: String
+  idempotencyKey: String?
+  paymentReference: String?
+  itemsJson: String
+  createdAt: DateTime
+  updatedAt: DateTime
+indexes:
+  store_order_ref_idx:
+    fields: orderRef
+    unique: true

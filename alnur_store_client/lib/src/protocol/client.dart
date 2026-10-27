@@ -21,9 +21,10 @@ import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
 import 'package:alnur_store_client/src/protocol/categories/store_category.dart'
     as _i6;
 import 'package:alnur_store_client/src/protocol/greetings/greeting.dart' as _i7;
+import 'package:alnur_store_client/src/protocol/orders/store_order.dart' as _i8;
 import 'package:alnur_store_client/src/protocol/products/store_product.dart'
-    as _i8;
-import 'protocol.dart' as _i9;
+    as _i9;
+import 'protocol.dart' as _i10;
 
 /// {@category Endpoint}
 class EndpointAiAssistant extends _i1.EndpointRef {
@@ -322,6 +323,71 @@ class EndpointGreeting extends _i1.EndpointRef {
       );
 }
 
+/// Endpoint for handling orders, checkout, and payment fulfillment with
+/// enterprise idempotency guarantees.
+/// {@category Endpoint}
+class EndpointOrder extends _i1.EndpointRef {
+  EndpointOrder(_i1.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'order';
+
+  /// Places a customer order with strict enterprise idempotency protection.
+  ///
+  /// If the same [idempotencyKey] is sent multiple times (e.g. user double-taps
+  /// checkout button or network retry occurs), the existing order is safely returned
+  /// without double-charging or creating duplicate orders in the database.
+  _i2.Future<_i8.StoreOrder> createOrder({
+    required String? idempotencyKey,
+    required String customerEmail,
+    required String customerName,
+    required String customerPhone,
+    required String shippingAddress,
+    required double totalAmount,
+    required String itemsJson,
+    String? paymentReference,
+  }) => caller.callServerEndpoint<_i8.StoreOrder>(
+    'order',
+    'createOrder',
+    {
+      'idempotencyKey': idempotencyKey,
+      'customerEmail': customerEmail,
+      'customerName': customerName,
+      'customerPhone': customerPhone,
+      'shippingAddress': shippingAddress,
+      'totalAmount': totalAmount,
+      'itemsJson': itemsJson,
+      'paymentReference': paymentReference,
+    },
+  );
+
+  /// Retrieves orders from PostgreSQL, optionally filtered by customer email.
+  _i2.Future<List<_i8.StoreOrder>> getOrders({String? customerEmail}) =>
+      caller.callServerEndpoint<List<_i8.StoreOrder>>(
+        'order',
+        'getOrders',
+        {'customerEmail': customerEmail},
+      );
+
+  /// Processes payment gateway webhooks (Selar, Paystack, Flutterwave) idempotently.
+  /// Prevents double-crediting or duplicate status notifications.
+  _i2.Future<_i8.StoreOrder?> processPaymentWebhook({
+    required String paymentReference,
+    required String orderRef,
+    required String status,
+    String? idempotencyKey,
+  }) => caller.callServerEndpoint<_i8.StoreOrder?>(
+    'order',
+    'processPaymentWebhook',
+    {
+      'paymentReference': paymentReference,
+      'orderRef': orderRef,
+      'status': status,
+      'idempotencyKey': idempotencyKey,
+    },
+  );
+}
+
 /// {@category Endpoint}
 class EndpointProduct extends _i1.EndpointRef {
   EndpointProduct(_i1.EndpointCaller caller) : super(caller);
@@ -331,10 +397,10 @@ class EndpointProduct extends _i1.EndpointRef {
 
   /// Fetches products, filtering optionally by categoryId and search query.
   /// Seeds initial Al-Nur catalog products if empty.
-  _i2.Future<List<_i8.StoreProduct>> getProducts({
+  _i2.Future<List<_i9.StoreProduct>> getProducts({
     String? categoryId,
     String? search,
-  }) => caller.callServerEndpoint<List<_i8.StoreProduct>>(
+  }) => caller.callServerEndpoint<List<_i9.StoreProduct>>(
     'product',
     'getProducts',
     {
@@ -344,32 +410,37 @@ class EndpointProduct extends _i1.EndpointRef {
   );
 
   /// Fetches a single product by its database ID.
-  _i2.Future<_i8.StoreProduct?> getProductById(int id) =>
-      caller.callServerEndpoint<_i8.StoreProduct?>(
+  _i2.Future<_i9.StoreProduct?> getProductById(int id) =>
+      caller.callServerEndpoint<_i9.StoreProduct?>(
         'product',
         'getProductById',
         {'id': id},
       );
 
   /// Toggles favorite status on a product.
-  _i2.Future<_i8.StoreProduct?> toggleFavorite(int productId) =>
-      caller.callServerEndpoint<_i8.StoreProduct?>(
+  _i2.Future<_i9.StoreProduct?> toggleFavorite(int productId) =>
+      caller.callServerEndpoint<_i9.StoreProduct?>(
         'product',
         'toggleFavorite',
         {'productId': productId},
       );
 
-  /// Creates a new product in the store database.
-  _i2.Future<_i8.StoreProduct> createProduct(_i8.StoreProduct product) =>
-      caller.callServerEndpoint<_i8.StoreProduct>(
-        'product',
-        'createProduct',
-        {'product': product},
-      );
+  /// Creates a new product in the store database with optional idempotency protection.
+  _i2.Future<_i9.StoreProduct> createProduct(
+    _i9.StoreProduct product, {
+    String? idempotencyKey,
+  }) => caller.callServerEndpoint<_i9.StoreProduct>(
+    'product',
+    'createProduct',
+    {
+      'product': product,
+      'idempotencyKey': idempotencyKey,
+    },
+  );
 
   /// Updates an existing product.
-  _i2.Future<_i8.StoreProduct> updateProduct(_i8.StoreProduct product) =>
-      caller.callServerEndpoint<_i8.StoreProduct>(
+  _i2.Future<_i9.StoreProduct> updateProduct(_i9.StoreProduct product) =>
+      caller.callServerEndpoint<_i9.StoreProduct>(
         'product',
         'updateProduct',
         {'product': product},
@@ -414,7 +485,7 @@ class Client extends _i1.ServerpodClientShared {
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
          host,
-         _i9.Protocol(),
+         _i10.Protocol(),
          securityContext: securityContext,
          streamingConnectionTimeout: streamingConnectionTimeout,
          connectionTimeout: connectionTimeout,
@@ -428,6 +499,7 @@ class Client extends _i1.ServerpodClientShared {
     jwtRefresh = EndpointJwtRefresh(this);
     category = EndpointCategory(this);
     greeting = EndpointGreeting(this);
+    order = EndpointOrder(this);
     product = EndpointProduct(this);
     modules = Modules(this);
   }
@@ -442,6 +514,8 @@ class Client extends _i1.ServerpodClientShared {
 
   late final EndpointGreeting greeting;
 
+  late final EndpointOrder order;
+
   late final EndpointProduct product;
 
   late final Modules modules;
@@ -453,6 +527,7 @@ class Client extends _i1.ServerpodClientShared {
     'jwtRefresh': jwtRefresh,
     'category': category,
     'greeting': greeting,
+    'order': order,
     'product': product,
   };
 

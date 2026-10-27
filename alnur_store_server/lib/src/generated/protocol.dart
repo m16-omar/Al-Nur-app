@@ -20,14 +20,20 @@ import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
 import 'ai/ai_stylist.dart' as _i5;
 import 'categories/store_category.dart' as _i6;
 import 'greetings/greeting.dart' as _i7;
-import 'products/store_product.dart' as _i8;
+import 'idempotency/idempotency_record.dart' as _i8;
+import 'orders/store_order.dart' as _i9;
+import 'products/store_product.dart' as _i10;
 import 'package:alnur_store_server/src/generated/categories/store_category.dart'
-    as _i9;
+    as _i11;
+import 'package:alnur_store_server/src/generated/orders/store_order.dart'
+    as _i12;
 import 'package:alnur_store_server/src/generated/products/store_product.dart'
-    as _i10;
+    as _i13;
 export 'ai/ai_stylist.dart';
 export 'categories/store_category.dart';
 export 'greetings/greeting.dart';
+export 'idempotency/idempotency_record.dart';
+export 'orders/store_order.dart';
 export 'products/store_product.dart';
 
 class Protocol extends _i1.SerializationManagerServer {
@@ -38,6 +44,111 @@ class Protocol extends _i1.SerializationManagerServer {
   static final Protocol _instance = Protocol._();
 
   static final List<_i2.TableDefinition> targetTableDefinitions = [
+    _i2.TableDefinition(
+      name: 'idempotency_record',
+      dartName: 'IdempotencyRecord',
+      schema: 'public',
+      module: 'alnur_store',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'idempotency_record_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'key',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'endpoint',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'requestHash',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'status',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'responseJson',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'statusCode',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: true,
+          dartType: 'int?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'errorMessage',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'createdAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+        _i2.ColumnDefinition(
+          name: 'lockedAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: true,
+          dartType: 'DateTime?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'expiresAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'idempotency_record_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'idempotency_record_key_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'key',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
     _i2.TableDefinition(
       name: 'store_category',
       dartName: 'StoreCategory',
@@ -102,6 +213,129 @@ class Protocol extends _i1.SerializationManagerServer {
           type: 'btree',
           isUnique: true,
           isPrimary: true,
+        ),
+      ],
+      managed: true,
+    ),
+    _i2.TableDefinition(
+      name: 'store_order',
+      dartName: 'StoreOrder',
+      schema: 'public',
+      module: 'alnur_store',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'store_order_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'orderRef',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'customerEmail',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'customerName',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'customerPhone',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'shippingAddress',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'totalAmount',
+          columnType: _i2.ColumnType.doublePrecision,
+          isNullable: false,
+          dartType: 'double',
+        ),
+        _i2.ColumnDefinition(
+          name: 'paymentStatus',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'fulfillmentStatus',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'idempotencyKey',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'paymentReference',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'itemsJson',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'createdAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+        _i2.ColumnDefinition(
+          name: 'updatedAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'store_order_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'store_order_ref_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'orderRef',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
         ),
       ],
       managed: true,
@@ -257,8 +491,14 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i7.Greeting) {
       return _i7.Greeting.fromJson(data) as T;
     }
-    if (t == _i8.StoreProduct) {
-      return _i8.StoreProduct.fromJson(data) as T;
+    if (t == _i8.IdempotencyRecord) {
+      return _i8.IdempotencyRecord.fromJson(data) as T;
+    }
+    if (t == _i9.StoreOrder) {
+      return _i9.StoreOrder.fromJson(data) as T;
+    }
+    if (t == _i10.StoreProduct) {
+      return _i10.StoreProduct.fromJson(data) as T;
     }
     if (t == _i1.getType<_i5.AiStylistResponse?>()) {
       return (data != null ? _i5.AiStylistResponse.fromJson(data) : null) as T;
@@ -269,19 +509,25 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i1.getType<_i7.Greeting?>()) {
       return (data != null ? _i7.Greeting.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i8.StoreProduct?>()) {
-      return (data != null ? _i8.StoreProduct.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i8.IdempotencyRecord?>()) {
+      return (data != null ? _i8.IdempotencyRecord.fromJson(data) : null) as T;
     }
-    if (t == List<_i8.StoreProduct>) {
+    if (t == _i1.getType<_i9.StoreOrder?>()) {
+      return (data != null ? _i9.StoreOrder.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i10.StoreProduct?>()) {
+      return (data != null ? _i10.StoreProduct.fromJson(data) : null) as T;
+    }
+    if (t == List<_i10.StoreProduct>) {
       return (data as List)
-              .map((e) => deserialize<_i8.StoreProduct>(e))
+              .map((e) => deserialize<_i10.StoreProduct>(e))
               .toList()
           as T;
     }
-    if (t == _i1.getType<List<_i8.StoreProduct>?>()) {
+    if (t == _i1.getType<List<_i10.StoreProduct>?>()) {
       return (data != null
               ? (data as List)
-                    .map((e) => deserialize<_i8.StoreProduct>(e))
+                    .map((e) => deserialize<_i10.StoreProduct>(e))
                     .toList()
               : null)
           as T;
@@ -295,15 +541,19 @@ class Protocol extends _i1.SerializationManagerServer {
               : null)
           as T;
     }
-    if (t == List<_i9.StoreCategory>) {
+    if (t == List<_i11.StoreCategory>) {
       return (data as List)
-              .map((e) => deserialize<_i9.StoreCategory>(e))
+              .map((e) => deserialize<_i11.StoreCategory>(e))
               .toList()
           as T;
     }
-    if (t == List<_i10.StoreProduct>) {
+    if (t == List<_i12.StoreOrder>) {
+      return (data as List).map((e) => deserialize<_i12.StoreOrder>(e)).toList()
+          as T;
+    }
+    if (t == List<_i13.StoreProduct>) {
       return (data as List)
-              .map((e) => deserialize<_i10.StoreProduct>(e))
+              .map((e) => deserialize<_i13.StoreProduct>(e))
               .toList()
           as T;
     }
@@ -324,7 +574,9 @@ class Protocol extends _i1.SerializationManagerServer {
       _i5.AiStylistResponse => 'AiStylistResponse',
       _i6.StoreCategory => 'StoreCategory',
       _i7.Greeting => 'Greeting',
-      _i8.StoreProduct => 'StoreProduct',
+      _i8.IdempotencyRecord => 'IdempotencyRecord',
+      _i9.StoreOrder => 'StoreOrder',
+      _i10.StoreProduct => 'StoreProduct',
       _ => null,
     };
   }
@@ -345,7 +597,11 @@ class Protocol extends _i1.SerializationManagerServer {
         return 'StoreCategory';
       case _i7.Greeting():
         return 'Greeting';
-      case _i8.StoreProduct():
+      case _i8.IdempotencyRecord():
+        return 'IdempotencyRecord';
+      case _i9.StoreOrder():
+        return 'StoreOrder';
+      case _i10.StoreProduct():
         return 'StoreProduct';
     }
     className = _i2.Protocol().getClassNameForObject(data);
@@ -378,8 +634,14 @@ class Protocol extends _i1.SerializationManagerServer {
     if (dataClassName == 'Greeting') {
       return deserialize<_i7.Greeting>(data['data']);
     }
+    if (dataClassName == 'IdempotencyRecord') {
+      return deserialize<_i8.IdempotencyRecord>(data['data']);
+    }
+    if (dataClassName == 'StoreOrder') {
+      return deserialize<_i9.StoreOrder>(data['data']);
+    }
     if (dataClassName == 'StoreProduct') {
-      return deserialize<_i8.StoreProduct>(data['data']);
+      return deserialize<_i10.StoreProduct>(data['data']);
     }
     if (dataClassName.startsWith('serverpod.')) {
       data['className'] = dataClassName.substring(10);
@@ -419,8 +681,12 @@ class Protocol extends _i1.SerializationManagerServer {
     switch (t) {
       case _i6.StoreCategory:
         return _i6.StoreCategory.t;
-      case _i8.StoreProduct:
-        return _i8.StoreProduct.t;
+      case _i8.IdempotencyRecord:
+        return _i8.IdempotencyRecord.t;
+      case _i9.StoreOrder:
+        return _i9.StoreOrder.t;
+      case _i10.StoreProduct:
+        return _i10.StoreProduct.t;
     }
     return null;
   }

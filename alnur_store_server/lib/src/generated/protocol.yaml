@@ -17,6 +17,10 @@ category:
   - deleteCategory:
 greeting:
   - hello:
+order:
+  - createOrder:
+  - getOrders:
+  - processPaymentWebhook:
 product:
   - getProducts:
   - getProductById:

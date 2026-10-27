@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:serverpod/serverpod.dart';
 import '../generated/protocol.dart';
+import '../idempotency/idempotency_manager.dart';
 
 class ProductEndpoint extends Endpoint {
   /// Fetches products, filtering optionally by categoryId and search query.
@@ -48,12 +50,27 @@ class ProductEndpoint extends Endpoint {
     return await StoreProduct.db.updateRow(session, updated);
   }
 
-  /// Creates a new product in the store database.
+  /// Creates a new product in the store database with optional idempotency protection.
   Future<StoreProduct> createProduct(
     Session session,
-    StoreProduct product,
-  ) async {
-    return await StoreProduct.db.insertRow(session, product);
+    StoreProduct product, {
+    String? idempotencyKey,
+  }) async {
+    return await IdempotencyManager.run<StoreProduct>(
+      session: session,
+      idempotencyKey: idempotencyKey,
+      endpoint: 'product.createProduct',
+      requestData: {
+        'name': product.name,
+        'slug': product.slug,
+        'categoryId': product.categoryId,
+        'price': product.price,
+      },
+      action: () async => await StoreProduct.db.insertRow(session, product),
+      toJson: (p) => jsonEncode(p.toJson()),
+      fromJson: (j) =>
+          StoreProduct.fromJson(jsonDecode(j) as Map<String, dynamic>),
+    );
   }
 
   /// Updates an existing product.

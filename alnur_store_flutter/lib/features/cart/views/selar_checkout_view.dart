@@ -1,3 +1,5 @@
+import 'dart:convert';
+import '../../../main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -107,6 +109,38 @@ class _SelarCheckoutViewState extends ConsumerState<SelarCheckoutView> {
   Future<void> _handlePaymentSuccess() async {
     final cartState = ref.read(cartControllerProvider);
     final totalPaid = cartState.grandTotal;
+    final authState = ref.read(authControllerProvider);
+    final user = authState.user;
+
+    final customerEmail = user != null && user.email.isNotEmpty ? user.email : 'guest@alnurstore.com';
+    final customerName = user != null && user.name.isNotEmpty ? user.name : 'Al-Nur Valued Guest';
+    final customerPhone = user?.phone ?? '';
+
+    // Register order in backend Serverpod with Idempotency Key protection
+    try {
+      final itemsSummary = jsonEncode(cartState.items.map((i) => {
+        'id': i.product.id,
+        'name': i.product.name,
+        'quantity': i.quantity,
+        'price': i.product.price,
+        'selectedSize': i.selectedSize,
+        'selectedColor': i.selectedColor,
+      }).toList());
+
+      await client.order.createOrder(
+        idempotencyKey: 'checkout-$_orderId',
+        customerEmail: customerEmail,
+        customerName: customerName,
+        customerPhone: customerPhone,
+        shippingAddress: 'Lagos, Nigeria',
+        totalAmount: totalPaid,
+        itemsJson: itemsSummary,
+        paymentReference: _orderId,
+      );
+      debugPrint('[Checkout] Idempotent order confirmed in backend: $_orderId');
+    } catch (e) {
+      debugPrint('[Checkout] Backend order creation note: $e');
+    }
 
     // Clear the cart upon successful transaction
     await ref.read(cartControllerProvider.notifier).clearCart();

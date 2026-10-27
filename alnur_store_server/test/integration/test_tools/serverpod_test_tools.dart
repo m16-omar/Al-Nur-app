@@ -21,8 +21,10 @@ import 'package:alnur_store_server/src/generated/categories/store_category.dart'
     as _i6;
 import 'package:alnur_store_server/src/generated/greetings/greeting.dart'
     as _i7;
-import 'package:alnur_store_server/src/generated/products/store_product.dart'
+import 'package:alnur_store_server/src/generated/orders/store_order.dart'
     as _i8;
+import 'package:alnur_store_server/src/generated/products/store_product.dart'
+    as _i9;
 import 'package:alnur_store_server/src/generated/protocol.dart';
 import 'package:alnur_store_server/src/generated/endpoints.dart';
 export 'package:serverpod_test/serverpod_test_public_exports.dart';
@@ -147,6 +149,8 @@ class TestEndpoints {
 
   late final _GreetingEndpoint greeting;
 
+  late final _OrderEndpoint order;
+
   late final _ProductEndpoint product;
 }
 
@@ -174,6 +178,10 @@ class _InternalTestEndpoints extends TestEndpoints
       serializationManager,
     );
     greeting = _GreetingEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    order = _OrderEndpoint(
       endpoints,
       serializationManager,
     );
@@ -697,6 +705,134 @@ class _GreetingEndpoint {
   }
 }
 
+class _OrderEndpoint {
+  _OrderEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
+  _i3.Future<_i8.StoreOrder> createOrder(
+    _i1.TestSessionBuilder sessionBuilder, {
+    required String? idempotencyKey,
+    required String customerEmail,
+    required String customerName,
+    required String customerPhone,
+    required String shippingAddress,
+    required double totalAmount,
+    required String itemsJson,
+    String? paymentReference,
+  }) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'order',
+            method: 'createOrder',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'order',
+          methodName: 'createOrder',
+          parameters: _i1.testObjectToJson({
+            'idempotencyKey': idempotencyKey,
+            'customerEmail': customerEmail,
+            'customerName': customerName,
+            'customerPhone': customerPhone,
+            'shippingAddress': shippingAddress,
+            'totalAmount': totalAmount,
+            'itemsJson': itemsJson,
+            'paymentReference': paymentReference,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<_i8.StoreOrder>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<List<_i8.StoreOrder>> getOrders(
+    _i1.TestSessionBuilder sessionBuilder, {
+    String? customerEmail,
+  }) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'order',
+            method: 'getOrders',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'order',
+          methodName: 'getOrders',
+          parameters: _i1.testObjectToJson({'customerEmail': customerEmail}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<List<_i8.StoreOrder>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<_i8.StoreOrder?> processPaymentWebhook(
+    _i1.TestSessionBuilder sessionBuilder, {
+    required String paymentReference,
+    required String orderRef,
+    required String status,
+    String? idempotencyKey,
+  }) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'order',
+            method: 'processPaymentWebhook',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'order',
+          methodName: 'processPaymentWebhook',
+          parameters: _i1.testObjectToJson({
+            'paymentReference': paymentReference,
+            'orderRef': orderRef,
+            'status': status,
+            'idempotencyKey': idempotencyKey,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<_i8.StoreOrder?>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
 class _ProductEndpoint {
   _ProductEndpoint(
     this._endpointDispatch,
@@ -707,7 +843,7 @@ class _ProductEndpoint {
 
   final _i2.SerializationManager _serializationManager;
 
-  _i3.Future<List<_i8.StoreProduct>> getProducts(
+  _i3.Future<List<_i9.StoreProduct>> getProducts(
     _i1.TestSessionBuilder sessionBuilder, {
     String? categoryId,
     String? search,
@@ -734,7 +870,7 @@ class _ProductEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<List<_i8.StoreProduct>>);
+                as _i3.Future<List<_i9.StoreProduct>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -742,7 +878,7 @@ class _ProductEndpoint {
     });
   }
 
-  _i3.Future<_i8.StoreProduct?> getProductById(
+  _i3.Future<_i9.StoreProduct?> getProductById(
     _i1.TestSessionBuilder sessionBuilder,
     int id,
   ) async {
@@ -765,7 +901,7 @@ class _ProductEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i8.StoreProduct?>);
+                as _i3.Future<_i9.StoreProduct?>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -773,7 +909,7 @@ class _ProductEndpoint {
     });
   }
 
-  _i3.Future<_i8.StoreProduct?> toggleFavorite(
+  _i3.Future<_i9.StoreProduct?> toggleFavorite(
     _i1.TestSessionBuilder sessionBuilder,
     int productId,
   ) async {
@@ -796,7 +932,7 @@ class _ProductEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i8.StoreProduct?>);
+                as _i3.Future<_i9.StoreProduct?>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -804,10 +940,11 @@ class _ProductEndpoint {
     });
   }
 
-  _i3.Future<_i8.StoreProduct> createProduct(
+  _i3.Future<_i9.StoreProduct> createProduct(
     _i1.TestSessionBuilder sessionBuilder,
-    _i8.StoreProduct product,
-  ) async {
+    _i9.StoreProduct product, {
+    String? idempotencyKey,
+  }) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
           (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
@@ -819,7 +956,10 @@ class _ProductEndpoint {
           createSessionCallback: (_) => _localUniqueSession,
           endpointPath: 'product',
           methodName: 'createProduct',
-          parameters: _i1.testObjectToJson({'product': product}),
+          parameters: _i1.testObjectToJson({
+            'product': product,
+            'idempotencyKey': idempotencyKey,
+          }),
           serializationManager: _serializationManager,
         );
         var _localReturnValue =
@@ -827,7 +967,7 @@ class _ProductEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i8.StoreProduct>);
+                as _i3.Future<_i9.StoreProduct>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -835,9 +975,9 @@ class _ProductEndpoint {
     });
   }
 
-  _i3.Future<_i8.StoreProduct> updateProduct(
+  _i3.Future<_i9.StoreProduct> updateProduct(
     _i1.TestSessionBuilder sessionBuilder,
-    _i8.StoreProduct product,
+    _i9.StoreProduct product,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -858,7 +998,7 @@ class _ProductEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i8.StoreProduct>);
+                as _i3.Future<_i9.StoreProduct>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();

@@ -1,0 +1,17 @@
+class: IdempotencyRecord
+table: idempotency_record
+fields:
+  key: String
+  endpoint: String
+  requestHash: String
+  status: String
+  responseJson: String?
+  statusCode: int?
+  errorMessage: String?
+  createdAt: DateTime
+  lockedAt: DateTime?
+  expiresAt: DateTime
+indexes:
+  idempotency_record_key_idx:
+    fields: key
+    unique: true

@@ -17,15 +17,16 @@ import '../auth/email_idp_endpoint.dart' as _i3;
 import '../auth/jwt_refresh_endpoint.dart' as _i4;
 import '../categories/category_endpoint.dart' as _i5;
 import '../greetings/greeting_endpoint.dart' as _i6;
-import '../products/product_endpoint.dart' as _i7;
+import '../orders/order_endpoint.dart' as _i7;
+import '../products/product_endpoint.dart' as _i8;
 import 'package:alnur_store_server/src/generated/categories/store_category.dart'
-    as _i8;
-import 'package:alnur_store_server/src/generated/products/store_product.dart'
     as _i9;
-import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
+import 'package:alnur_store_server/src/generated/products/store_product.dart'
     as _i10;
-import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
+import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
     as _i11;
+import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
+    as _i12;
 
 class Endpoints extends _i1.EndpointDispatch {
   @override
@@ -61,7 +62,13 @@ class Endpoints extends _i1.EndpointDispatch {
           'greeting',
           null,
         ),
-      'product': _i7.ProductEndpoint()
+      'order': _i7.OrderEndpoint()
+        ..initialize(
+          server,
+          'order',
+          null,
+        ),
+      'product': _i8.ProductEndpoint()
         ..initialize(
           server,
           'product',
@@ -334,7 +341,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'category': _i1.ParameterDescription(
               name: 'category',
-              type: _i1.getType<_i8.StoreCategory>(),
+              type: _i1.getType<_i9.StoreCategory>(),
               nullable: false,
             ),
           },
@@ -393,6 +400,127 @@ class Endpoints extends _i1.EndpointDispatch {
         ),
       },
     );
+    connectors['order'] = _i1.EndpointConnector(
+      name: 'order',
+      endpoint: endpoints['order']!,
+      methodConnectors: {
+        'createOrder': _i1.MethodConnector(
+          name: 'createOrder',
+          params: {
+            'idempotencyKey': _i1.ParameterDescription(
+              name: 'idempotencyKey',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+            'customerEmail': _i1.ParameterDescription(
+              name: 'customerEmail',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'customerName': _i1.ParameterDescription(
+              name: 'customerName',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'customerPhone': _i1.ParameterDescription(
+              name: 'customerPhone',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'shippingAddress': _i1.ParameterDescription(
+              name: 'shippingAddress',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'totalAmount': _i1.ParameterDescription(
+              name: 'totalAmount',
+              type: _i1.getType<double>(),
+              nullable: false,
+            ),
+            'itemsJson': _i1.ParameterDescription(
+              name: 'itemsJson',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'paymentReference': _i1.ParameterDescription(
+              name: 'paymentReference',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['order'] as _i7.OrderEndpoint).createOrder(
+                session,
+                idempotencyKey: params['idempotencyKey'],
+                customerEmail: params['customerEmail'],
+                customerName: params['customerName'],
+                customerPhone: params['customerPhone'],
+                shippingAddress: params['shippingAddress'],
+                totalAmount: params['totalAmount'],
+                itemsJson: params['itemsJson'],
+                paymentReference: params['paymentReference'],
+              ),
+        ),
+        'getOrders': _i1.MethodConnector(
+          name: 'getOrders',
+          params: {
+            'customerEmail': _i1.ParameterDescription(
+              name: 'customerEmail',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['order'] as _i7.OrderEndpoint).getOrders(
+                session,
+                customerEmail: params['customerEmail'],
+              ),
+        ),
+        'processPaymentWebhook': _i1.MethodConnector(
+          name: 'processPaymentWebhook',
+          params: {
+            'paymentReference': _i1.ParameterDescription(
+              name: 'paymentReference',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'orderRef': _i1.ParameterDescription(
+              name: 'orderRef',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'status': _i1.ParameterDescription(
+              name: 'status',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'idempotencyKey': _i1.ParameterDescription(
+              name: 'idempotencyKey',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['order'] as _i7.OrderEndpoint)
+                  .processPaymentWebhook(
+                    session,
+                    paymentReference: params['paymentReference'],
+                    orderRef: params['orderRef'],
+                    status: params['status'],
+                    idempotencyKey: params['idempotencyKey'],
+                  ),
+        ),
+      },
+    );
     connectors['product'] = _i1.EndpointConnector(
       name: 'product',
       endpoint: endpoints['product']!,
@@ -416,7 +544,7 @@ class Endpoints extends _i1.EndpointDispatch {
                 _i1.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['product'] as _i7.ProductEndpoint).getProducts(
+                  (endpoints['product'] as _i8.ProductEndpoint).getProducts(
                     session,
                     categoryId: params['categoryId'],
                     search: params['search'],
@@ -436,7 +564,7 @@ class Endpoints extends _i1.EndpointDispatch {
                 _i1.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['product'] as _i7.ProductEndpoint).getProductById(
+                  (endpoints['product'] as _i8.ProductEndpoint).getProductById(
                     session,
                     params['id'],
                   ),
@@ -455,7 +583,7 @@ class Endpoints extends _i1.EndpointDispatch {
                 _i1.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['product'] as _i7.ProductEndpoint).toggleFavorite(
+                  (endpoints['product'] as _i8.ProductEndpoint).toggleFavorite(
                     session,
                     params['productId'],
                   ),
@@ -465,8 +593,13 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'product': _i1.ParameterDescription(
               name: 'product',
-              type: _i1.getType<_i9.StoreProduct>(),
+              type: _i1.getType<_i10.StoreProduct>(),
               nullable: false,
+            ),
+            'idempotencyKey': _i1.ParameterDescription(
+              name: 'idempotencyKey',
+              type: _i1.getType<String?>(),
+              nullable: true,
             ),
           },
           call:
@@ -474,9 +607,10 @@ class Endpoints extends _i1.EndpointDispatch {
                 _i1.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['product'] as _i7.ProductEndpoint).createProduct(
+                  (endpoints['product'] as _i8.ProductEndpoint).createProduct(
                     session,
                     params['product'],
+                    idempotencyKey: params['idempotencyKey'],
                   ),
         ),
         'updateProduct': _i1.MethodConnector(
@@ -484,7 +618,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'product': _i1.ParameterDescription(
               name: 'product',
-              type: _i1.getType<_i9.StoreProduct>(),
+              type: _i1.getType<_i10.StoreProduct>(),
               nullable: false,
             ),
           },
@@ -493,7 +627,7 @@ class Endpoints extends _i1.EndpointDispatch {
                 _i1.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['product'] as _i7.ProductEndpoint).updateProduct(
+                  (endpoints['product'] as _i8.ProductEndpoint).updateProduct(
                     session,
                     params['product'],
                   ),
@@ -512,16 +646,16 @@ class Endpoints extends _i1.EndpointDispatch {
                 _i1.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['product'] as _i7.ProductEndpoint).deleteProduct(
+                  (endpoints['product'] as _i8.ProductEndpoint).deleteProduct(
                     session,
                     params['id'],
                   ),
         ),
       },
     );
-    modules['serverpod_auth_idp'] = _i10.Endpoints()
+    modules['serverpod_auth_idp'] = _i11.Endpoints()
       ..initializeEndpoints(server);
-    modules['serverpod_auth_core'] = _i11.Endpoints()
+    modules['serverpod_auth_core'] = _i12.Endpoints()
       ..initializeEndpoints(server);
   }
 }
