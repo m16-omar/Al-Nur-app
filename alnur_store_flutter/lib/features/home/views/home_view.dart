@@ -90,6 +90,45 @@ class _HomeViewState extends ConsumerState<HomeView> {
     );
   }
 
+  void _showSignOutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Sign Out of Al-Nur?'),
+        content: const Text(
+          'Are you sure you want to sign out? You will browse as a guest until you sign in again.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () async {
+              Navigator.pop(dialogCtx);
+              await ref.read(authControllerProvider.notifier).logout();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Signed out successfully. Browsing as Guest.'),
+                    backgroundColor: AppColors.primary,
+                  ),
+                );
+              }
+            },
+            child: const Text('Sign Out'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final homeState = ref.watch(homeControllerProvider);
@@ -114,7 +153,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
             IndexedStack(
               index: _currentNavIndex,
               children: [
-                _buildHomeContent(homeState, homeController, authState.user?.name),
+                _buildHomeContent(homeState, homeController, authState),
                 CategoriesView(
                   onBackToHome: () => setState(() => _currentNavIndex = 0),
                   onOpenAiChat: () => setState(() => _currentNavIndex = 2),
@@ -145,7 +184,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
     );
   }
 
-  Widget _buildHomeContent(HomeState homeState, HomeController homeController, String? userName) {
+  Widget _buildHomeContent(HomeState homeState, HomeController homeController, AuthState authState) {
     return RefreshIndicator(
       onRefresh: () => homeController.refreshHomeData(),
       color: AppColors.primary,
@@ -160,6 +199,14 @@ class _HomeViewState extends ConsumerState<HomeView> {
               hasUnreadNotifications: homeState.hasUnreadNotifications,
               onCartTap: widget.onOpenCart ?? () => _showCartModal(context),
               onNotificationTap: widget.onOpenNotifications ?? () => _showNotificationsModal(context),
+              onProfileTap: () => setState(() => _currentNavIndex = 4),
+              onAddressesTap: () => setState(() => _currentNavIndex = 4),
+              onOrdersTap: () => context.push(AppRoutes.orders),
+              userName: authState.user?.name,
+              userEmail: authState.user?.email,
+              userAvatarUrl: authState.user?.avatarUrl,
+              isGuest: authState.isGuest,
+              onSignOutTap: () => _showSignOutDialog(context),
             ),
           ),
 
@@ -211,7 +258,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
         ] else ...[
           // Welcome Gift Voucher Pill Banner
           SliverToBoxAdapter(
-            child: _buildWelcomeVoucherBanner(userName),
+            child: _buildWelcomeVoucherBanner(authState.user?.name),
           ),
 
           // Hero Banner

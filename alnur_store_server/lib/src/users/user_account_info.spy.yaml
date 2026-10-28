@@ -1,0 +1,13 @@
+class: UserAccountInfo
+table: user_account_info
+fields:
+  userEmail: String
+  fullName: String
+  phoneNumber: String?
+  avatarUrl: String?
+  preferredCurrency: String?
+  bio: String?
+indexes:
+  user_account_email_idx:
+    fields: userEmail
+    unique: true

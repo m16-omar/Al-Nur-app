@@ -357,7 +357,7 @@ class AiAssistantEndpoint extends Endpoint {
 You are the Al-Nur Luxury Islamic Haute Couture AI Stylist.
 A customer is asking for modest fashion advice: "$query".
 Detected Occasion: $occasion
-Customer Budget: ${budget != null ? '₦' + budget.toStringAsFixed(0) : 'Flexible'}
+Customer Budget: ${budget != null ? '₦${budget.toStringAsFixed(0)}' : 'Flexible'}
 Recommended Products from catalog:
 $catalogContext
 

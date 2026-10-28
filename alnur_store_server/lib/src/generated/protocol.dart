@@ -24,12 +24,16 @@ import 'idempotency/idempotency_record.dart' as _i8;
 import 'orders/store_order.dart' as _i9;
 import 'products/store_product.dart' as _i10;
 import 'storage/upload_result.dart' as _i11;
+import 'users/user_account_info.dart' as _i12;
+import 'users/user_address.dart' as _i13;
 import 'package:alnur_store_server/src/generated/categories/store_category.dart'
-    as _i12;
-import 'package:alnur_store_server/src/generated/orders/store_order.dart'
-    as _i13;
-import 'package:alnur_store_server/src/generated/products/store_product.dart'
     as _i14;
+import 'package:alnur_store_server/src/generated/orders/store_order.dart'
+    as _i15;
+import 'package:alnur_store_server/src/generated/products/store_product.dart'
+    as _i16;
+import 'package:alnur_store_server/src/generated/users/user_address.dart'
+    as _i17;
 export 'ai/ai_stylist.dart';
 export 'categories/store_category.dart';
 export 'greetings/greeting.dart';
@@ -37,6 +41,8 @@ export 'idempotency/idempotency_record.dart';
 export 'orders/store_order.dart';
 export 'products/store_product.dart';
 export 'storage/upload_result.dart';
+export 'users/user_account_info.dart';
+export 'users/user_address.dart';
 
 class Protocol extends _i1.SerializationManagerServer {
   Protocol._();
@@ -452,6 +458,198 @@ class Protocol extends _i1.SerializationManagerServer {
       ],
       managed: true,
     ),
+    _i2.TableDefinition(
+      name: 'user_account_info',
+      dartName: 'UserAccountInfo',
+      schema: 'public',
+      module: 'alnur_store',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'user_account_info_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'userEmail',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'fullName',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'phoneNumber',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'avatarUrl',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'preferredCurrency',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'bio',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'user_account_info_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'user_account_email_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'userEmail',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _i2.TableDefinition(
+      name: 'user_address',
+      dartName: 'UserAddress',
+      schema: 'public',
+      module: 'alnur_store',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'user_address_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'userEmail',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'title',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'recipientName',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'phoneNumber',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'streetAddress',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'city',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'state',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'country',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'postalCode',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'isDefault',
+          columnType: _i2.ColumnType.boolean,
+          isNullable: false,
+          dartType: 'bool',
+        ),
+        _i2.ColumnDefinition(
+          name: 'additionalInstructions',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'user_address_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'user_address_email_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'userEmail',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
     ..._i3.Protocol.targetTableDefinitions,
     ..._i4.Protocol.targetTableDefinitions,
     ..._i2.Protocol.targetTableDefinitions,
@@ -505,6 +703,12 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i11.StorageUploadResult) {
       return _i11.StorageUploadResult.fromJson(data) as T;
     }
+    if (t == _i12.UserAccountInfo) {
+      return _i12.UserAccountInfo.fromJson(data) as T;
+    }
+    if (t == _i13.UserAddress) {
+      return _i13.UserAddress.fromJson(data) as T;
+    }
     if (t == _i1.getType<_i5.AiStylistResponse?>()) {
       return (data != null ? _i5.AiStylistResponse.fromJson(data) : null) as T;
     }
@@ -526,6 +730,12 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i1.getType<_i11.StorageUploadResult?>()) {
       return (data != null ? _i11.StorageUploadResult.fromJson(data) : null)
           as T;
+    }
+    if (t == _i1.getType<_i12.UserAccountInfo?>()) {
+      return (data != null ? _i12.UserAccountInfo.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i13.UserAddress?>()) {
+      return (data != null ? _i13.UserAddress.fromJson(data) : null) as T;
     }
     if (t == List<_i10.StoreProduct>) {
       return (data as List)
@@ -550,19 +760,25 @@ class Protocol extends _i1.SerializationManagerServer {
               : null)
           as T;
     }
-    if (t == List<_i12.StoreCategory>) {
+    if (t == List<_i14.StoreCategory>) {
       return (data as List)
-              .map((e) => deserialize<_i12.StoreCategory>(e))
+              .map((e) => deserialize<_i14.StoreCategory>(e))
               .toList()
           as T;
     }
-    if (t == List<_i13.StoreOrder>) {
-      return (data as List).map((e) => deserialize<_i13.StoreOrder>(e)).toList()
+    if (t == List<_i15.StoreOrder>) {
+      return (data as List).map((e) => deserialize<_i15.StoreOrder>(e)).toList()
           as T;
     }
-    if (t == List<_i14.StoreProduct>) {
+    if (t == List<_i16.StoreProduct>) {
       return (data as List)
-              .map((e) => deserialize<_i14.StoreProduct>(e))
+              .map((e) => deserialize<_i16.StoreProduct>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_i17.UserAddress>) {
+      return (data as List)
+              .map((e) => deserialize<_i17.UserAddress>(e))
               .toList()
           as T;
     }
@@ -587,6 +803,8 @@ class Protocol extends _i1.SerializationManagerServer {
       _i9.StoreOrder => 'StoreOrder',
       _i10.StoreProduct => 'StoreProduct',
       _i11.StorageUploadResult => 'StorageUploadResult',
+      _i12.UserAccountInfo => 'UserAccountInfo',
+      _i13.UserAddress => 'UserAddress',
       _ => null,
     };
   }
@@ -615,6 +833,10 @@ class Protocol extends _i1.SerializationManagerServer {
         return 'StoreProduct';
       case _i11.StorageUploadResult():
         return 'StorageUploadResult';
+      case _i12.UserAccountInfo():
+        return 'UserAccountInfo';
+      case _i13.UserAddress():
+        return 'UserAddress';
     }
     className = _i2.Protocol().getClassNameForObject(data);
     if (className != null) {
@@ -657,6 +879,12 @@ class Protocol extends _i1.SerializationManagerServer {
     }
     if (dataClassName == 'StorageUploadResult') {
       return deserialize<_i11.StorageUploadResult>(data['data']);
+    }
+    if (dataClassName == 'UserAccountInfo') {
+      return deserialize<_i12.UserAccountInfo>(data['data']);
+    }
+    if (dataClassName == 'UserAddress') {
+      return deserialize<_i13.UserAddress>(data['data']);
     }
     if (dataClassName.startsWith('serverpod.')) {
       data['className'] = dataClassName.substring(10);
@@ -702,6 +930,10 @@ class Protocol extends _i1.SerializationManagerServer {
         return _i9.StoreOrder.t;
       case _i10.StoreProduct:
         return _i10.StoreProduct.t;
+      case _i12.UserAccountInfo:
+        return _i12.UserAccountInfo.t;
+      case _i13.UserAddress:
+        return _i13.UserAddress.t;
     }
     return null;
   }

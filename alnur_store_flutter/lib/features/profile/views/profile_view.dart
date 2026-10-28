@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:alnur_store_client/alnur_store_client.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../authentication/controllers/auth_controller.dart';
 import 'package:flutter/material.dart';
@@ -8,15 +10,20 @@ import '../../cart/services/selar_payment_service.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../main.dart';
 
 class ProfileView extends ConsumerStatefulWidget {
   final VoidCallback? onNavigateToOrders;
   final VoidCallback? onOpenCart;
+  final bool isStandalonePage;
+  final bool initialOpenAddresses;
 
   const ProfileView({
     super.key,
     this.onNavigateToOrders,
     this.onOpenCart,
+    this.isStandalonePage = false,
+    this.initialOpenAddresses = false,
   });
 
   @override
@@ -27,9 +34,128 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
   String _userName = '';
   String _userEmail = '';
   String _userPhone = '';
+  String _userAvatarUrl = '';
+  String _userBio = '';
   String _selectedCurrency = 'NGN (₦)';
   bool _notificationsEnabled = true;
   bool _jumuahRemindersEnabled = true;
+  List<UserAddress> _addresses = [];
+  bool _isLoadingAddresses = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadProfileAndAddresses();
+      if (widget.initialOpenAddresses) {
+        _showAddressesModal();
+      }
+    });
+  }
+
+  Future<void> _loadProfileAndAddresses() async {
+    final authState = ref.read(authControllerProvider);
+    final user = authState.user;
+    if (user != null && !user.isGuest) {
+      if (mounted) {
+        setState(() {
+          _userName = user.name;
+          _userEmail = user.email;
+          _userPhone = user.phone ?? '';
+          _userAvatarUrl = user.avatarUrl ?? '';
+          _userBio = user.bio ?? '';
+          _selectedCurrency = user.preferredCurrency ?? 'NGN (₦)';
+        });
+      }
+      await _loadAddresses();
+    }
+  }
+
+  Future<void> _loadAddresses() async {
+    try {
+      final cachedJson = await OnboardingPreferences.getCachedAddresses();
+      if (cachedJson != null && cachedJson.isNotEmpty) {
+        final decoded = jsonDecode(cachedJson) as List;
+        final list = decoded
+            .map((item) => UserAddress.fromJson(Map<String, dynamic>.from(item)))
+            .toList();
+        if (mounted && list.isNotEmpty) {
+          setState(() {
+            _addresses = list;
+          });
+        }
+      }
+    } catch (_) {}
+
+    final authState = ref.read(authControllerProvider);
+    final user = authState.user;
+    if (user == null || user.isGuest || user.email.isEmpty) {
+      return;
+    }
+
+    if (mounted) setState(() => _isLoadingAddresses = true);
+
+    try {
+      final serverList = await client.user.getAddresses(email: user.email);
+      if (serverList.isNotEmpty) {
+        if (mounted) {
+          setState(() {
+            _addresses = serverList;
+          });
+        }
+        await _cacheAddresses(serverList);
+      } else if (_addresses.isEmpty) {
+        final seed1 = UserAddress(
+          userEmail: user.email,
+          title: 'Primary Residence (Lekki)',
+          recipientName: user.name.isNotEmpty ? user.name : 'Al-Nur Member',
+          phoneNumber: user.phone?.isNotEmpty == true ? user.phone! : '+234 803 987 6543',
+          streetAddress: 'Plot 14, Admiralty Way, Lekki Phase 1',
+          city: 'Lekki / Lagos Island',
+          state: 'Lagos',
+          country: 'Nigeria',
+          postalCode: '105102',
+          isDefault: true,
+          additionalInstructions: 'Call at the security gate upon arrival',
+        );
+        final seed2 = UserAddress(
+          userEmail: user.email,
+          title: 'Abuja Office (FCT)',
+          recipientName: user.name.isNotEmpty ? user.name : 'Al-Nur Member',
+          phoneNumber: user.phone?.isNotEmpty == true ? user.phone! : '+234 802 111 2233',
+          streetAddress: 'No. 8, Gana Street, Maitama',
+          city: 'Abuja',
+          state: 'Abuja FCT',
+          country: 'Nigeria',
+          postalCode: '900271',
+          isDefault: false,
+          additionalInstructions: 'Deliver to 2nd floor reception desk',
+        );
+
+        final s1 = await client.user.saveAddress(address: seed1);
+        final s2 = await client.user.saveAddress(address: seed2);
+        if (mounted) {
+          setState(() {
+            _addresses = [s1, s2];
+          });
+        }
+        await _cacheAddresses(_addresses);
+      }
+    } catch (e) {
+      debugPrint('Address sync error: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoadingAddresses = false);
+      }
+    }
+  }
+
+  Future<void> _cacheAddresses(List<UserAddress> addresses) async {
+    try {
+      final jsonList = addresses.map((a) => a.toJson()).toList();
+      await OnboardingPreferences.saveCachedAddresses(jsonEncode(jsonList));
+    } catch (_) {}
+  }
 
   void _navigateToCart() {
     if (widget.onOpenCart != null) {
@@ -58,12 +184,30 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
     final displayPhone = isAuthenticated && user != null && user.phone != null && user.phone!.isNotEmpty
         ? user.phone!
         : _userPhone;
+    final displayAvatar = isAuthenticated && user != null && user.avatarUrl != null && user.avatarUrl!.isNotEmpty
+        ? user.avatarUrl!
+        : _userAvatarUrl;
+    final displayBio = isAuthenticated && user != null && user.bio != null && user.bio!.isNotEmpty
+        ? user.bio!
+        : _userBio;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0.5,
+        leading: widget.isStandalonePage
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+                onPressed: () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go(AppRoutes.home);
+                  }
+                },
+              )
+            : null,
         title: Text(
           'My Profile & Preferences',
           style: AppTextStyles.productTitle.copyWith(fontSize: 18),
@@ -89,10 +233,13 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
-        child: Column(
-          children: [
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 880),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
+            child: Column(
+              children: [
             // User Header Card
             Container(
               padding: const EdgeInsets.all(20),
@@ -181,27 +328,33 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                     Stack(
                       alignment: Alignment.bottomRight,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(3),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: AppColors.gold, width: 2),
-                          ),
-                          child: CircleAvatar(
-                            radius: 40,
-                            backgroundColor: AppColors.primary,
-                            child: Text(
-                              displayName.isNotEmpty ? displayName[0].toUpperCase() : 'A',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                              ),
+                        GestureDetector(
+                          onTap: () => _showEditProfileModal(displayName, displayEmail, displayPhone, displayAvatar, displayBio, _selectedCurrency),
+                          child: Container(
+                            padding: const EdgeInsets.all(3),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: AppColors.gold, width: 2),
+                            ),
+                            child: CircleAvatar(
+                              radius: 40,
+                              backgroundColor: AppColors.primary,
+                              child: displayAvatar.isNotEmpty
+                                  ? ClipOval(
+                                      child: Image.network(
+                                        displayAvatar,
+                                        width: 80,
+                                        height: 80,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) => _buildAvatarFallback(displayName),
+                                      ),
+                                    )
+                                  : _buildAvatarFallback(displayName),
                             ),
                           ),
                         ),
                         GestureDetector(
-                          onTap: () => _showEditProfileModal(displayName, displayEmail, displayPhone),
+                          onTap: () => _showEditProfileModal(displayName, displayEmail, displayPhone, displayAvatar, displayBio, _selectedCurrency),
                           child: Container(
                             padding: const EdgeInsets.all(6),
                             decoration: const BoxDecoration(
@@ -227,6 +380,16 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                       Text(
                         displayEmail,
                         style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                      ),
+                    ],
+                    if (displayBio.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        displayBio,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontStyle: FontStyle.italic),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                     const SizedBox(height: 10),
@@ -356,18 +519,40 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                 title: 'Personal Information',
                 subtitle: isGuest
                     ? 'Sign in to save your personal details'
-                    : (displayPhone.isNotEmpty ? displayPhone : 'Name, phone number, and modesty sizing'),
+                    : (displayName.isNotEmpty ? '$displayName • ${displayPhone.isNotEmpty ? displayPhone : displayEmail}' : 'Name, phone number, bio & currency'),
                 onTap: isGuest
                     ? () => _showGuestPrompt(
                           title: 'Personal Information',
                           message: 'Please sign in or create an account to save your name, contact phone, and custom modesty sizing.',
                         )
-                    : () => _showEditProfileModal(displayName, displayEmail, displayPhone),
+                    : () => _showEditProfileModal(displayName, displayEmail, displayPhone, displayAvatar, displayBio, _selectedCurrency),
               ),
               _buildListTile(
                 icon: Icons.location_on_outlined,
                 title: 'Saved Delivery Addresses',
-                subtitle: isGuest ? 'Sign in to save delivery addresses' : 'Lekki Phase 1, Lagos & Maitama, Abuja',
+                subtitle: isGuest
+                    ? 'Sign in to save delivery addresses'
+                    : (_addresses.isNotEmpty
+                        ? '${_addresses.length} saved address${_addresses.length == 1 ? '' : 'es'} (Default: ${_addresses.firstWhere((a) => a.isDefault, orElse: () => _addresses.first).title})'
+                        : 'Add your home or office address'),
+                trailingWidget: _addresses.isNotEmpty
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryContainer,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
+                        ),
+                        child: Text(
+                          '${_addresses.length} saved',
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      )
+                    : null,
                 onTap: isGuest
                     ? () => _showGuestPrompt(
                           title: 'Delivery Addresses',
@@ -487,7 +672,9 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
           ],
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 
   Widget _buildSectionHeader(String title) {
@@ -718,106 +905,256 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
     );
   }
 
-  void _showEditProfileModal(String currentName, String currentEmail, String currentPhone) {
+  Widget _buildAvatarFallback(String name) {
+    final initial = name.isNotEmpty ? name[0].toUpperCase() : 'A';
+    return Text(
+      initial,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 28,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+  }
+
+  void _showEditProfileModal(
+    String currentName,
+    String currentEmail,
+    String currentPhone,
+    String currentAvatar,
+    String currentBio,
+    String currentCurrency,
+  ) {
     final nameCtrl = TextEditingController(text: currentName);
     final emailCtrl = TextEditingController(text: currentEmail);
     final phoneCtrl = TextEditingController(text: currentPhone);
+    final avatarCtrl = TextEditingController(text: currentAvatar);
+    final bioCtrl = TextEditingController(text: currentBio);
+    String selectedCurrency = currentCurrency.isNotEmpty ? currentCurrency : 'NGN';
+    String previewAvatar = currentAvatar;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (modalCtx) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(modalCtx).viewInsets.bottom),
-        child: Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
-                ),
+      builder: (modalCtx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(modalCtx).viewInsets.bottom),
+          child: Center(
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 580),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
-              const SizedBox(height: 16),
-              Text('Edit Personal Profile', style: AppTextStyles.productTitle.copyWith(fontSize: 18)),
-              const SizedBox(height: 16),
-              TextField(
-                controller: nameCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Full Name',
-                  prefixIcon: Icon(Icons.person_outline_rounded, color: AppColors.primary),
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: emailCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Email Address',
-                  prefixIcon: Icon(Icons.email_outlined, color: AppColors.primary),
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: phoneCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Phone Number',
-                  prefixIcon: Icon(Icons.phone_outlined, color: AppColors.primary),
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: () async {
-                    final newName = nameCtrl.text.trim();
-                    final newEmail = emailCtrl.text.trim();
-                    final newPhone = phoneCtrl.text.trim();
+              padding: const EdgeInsets.all(22),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        const Icon(Icons.badge_outlined, color: AppColors.primary, size: 22),
+                        const SizedBox(width: 8),
+                        Text('Edit Account Information', style: AppTextStyles.productTitle.copyWith(fontSize: 18)),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
 
-                    setState(() {
-                      _userName = newName;
-                      _userEmail = newEmail;
-                      _userPhone = newPhone;
-                    });
+                    // Avatar Preview
+                    Center(
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(3),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: AppColors.gold, width: 2),
+                            ),
+                            child: CircleAvatar(
+                              radius: 36,
+                              backgroundColor: AppColors.primary,
+                              child: previewAvatar.isNotEmpty
+                                  ? ClipOval(
+                                      child: Image.network(
+                                        previewAvatar,
+                                        width: 72,
+                                        height: 72,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) => _buildAvatarFallback(currentName),
+                                      ),
+                                    )
+                                  : _buildAvatarFallback(currentName),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text('Profile Photo / Avatar', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
 
-                    await ref.read(authControllerProvider.notifier).updateUserProfile(
-                          name: newName,
-                          email: newEmail,
-                          phone: newPhone,
-                        );
+                    TextField(
+                      controller: nameCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Full Name',
+                        prefixIcon: Icon(Icons.person_outline_rounded, color: AppColors.primary),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
 
-                    if (modalCtx.mounted) {
-                      Navigator.pop(modalCtx);
-                    }
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Profile information updated successfully!'),
-                          backgroundColor: AppColors.primary,
+                    TextField(
+                      controller: emailCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Email Address',
+                        prefixIcon: Icon(Icons.email_outlined, color: AppColors.primary),
+                        border: OutlineInputBorder(),
+                        helperText: 'Account identification email',
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    TextField(
+                      controller: phoneCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Phone Number',
+                        prefixIcon: Icon(Icons.phone_outlined, color: AppColors.primary),
+                        border: OutlineInputBorder(),
+                        hintText: '+234 803 123 4567',
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    TextField(
+                      controller: avatarCtrl,
+                      onChanged: (val) {
+                        setModalState(() {
+                          previewAvatar = val.trim();
+                        });
+                      },
+                      decoration: InputDecoration(
+                        labelText: 'Avatar Image URL (Cloudflare R2 or Web link)',
+                        prefixIcon: const Icon(Icons.image_outlined, color: AppColors.primary),
+                        border: const OutlineInputBorder(),
+                        hintText: 'https://...',
+                        suffixIcon: previewAvatar.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear_rounded, size: 18),
+                                onPressed: () {
+                                  avatarCtrl.clear();
+                                  setModalState(() => previewAvatar = '');
+                                },
+                              )
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    TextField(
+                      controller: bioCtrl,
+                      maxLines: 2,
+                      decoration: const InputDecoration(
+                        labelText: 'Modesty Profile & Sizing Notes',
+                        prefixIcon: Icon(Icons.straighten_rounded, color: AppColors.primary),
+                        border: OutlineInputBorder(),
+                        hintText: 'e.g. Standard Abaya Size 56, prefers chiffon hijabs',
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Currency Selector
+                    InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'Preferred Store Currency',
+                        prefixIcon: Icon(Icons.currency_exchange_rounded, color: AppColors.primary),
+                        border: OutlineInputBorder(),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: selectedCurrency.contains('USD') ? 'USD' : (selectedCurrency.contains('GBP') ? 'GBP' : (selectedCurrency.contains('SAR') ? 'SAR' : (selectedCurrency.contains('EUR') ? 'EUR' : (selectedCurrency.contains('AED') ? 'AED' : 'NGN')))),
+                          isDense: true,
+                          isExpanded: true,
+                          items: const [
+                            DropdownMenuItem(value: 'NGN', child: Text('NGN (₦) - Nigerian Naira')),
+                            DropdownMenuItem(value: 'USD', child: Text('USD (\$) - US Dollar')),
+                            DropdownMenuItem(value: 'GBP', child: Text('GBP (£) - British Pound')),
+                            DropdownMenuItem(value: 'EUR', child: Text('EUR (€) - Euro')),
+                            DropdownMenuItem(value: 'SAR', child: Text('SAR (﷼) - Saudi Riyal')),
+                            DropdownMenuItem(value: 'AED', child: Text('AED (د.إ) - UAE Dirham')),
+                          ],
+                          onChanged: (val) {
+                            if (val != null) {
+                              setModalState(() => selectedCurrency = val);
+                            }
+                          },
                         ),
-                      );
-                    }
-                  },
-                  child: const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.w700)),
+                      ),
+                    ),
+
+                    const SizedBox(height: 22),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: () async {
+                          final newName = nameCtrl.text.trim();
+                          final newEmail = emailCtrl.text.trim();
+                          final newPhone = phoneCtrl.text.trim();
+                          final newAvatar = avatarCtrl.text.trim();
+                          final newBio = bioCtrl.text.trim();
+
+                          setState(() {
+                            _userName = newName;
+                            _userEmail = newEmail;
+                            _userPhone = newPhone;
+                            _userAvatarUrl = newAvatar;
+                            _userBio = newBio;
+                            _selectedCurrency = selectedCurrency;
+                          });
+
+                          await ref.read(authControllerProvider.notifier).updateUserProfile(
+                                name: newName,
+                                email: newEmail,
+                                phone: newPhone,
+                                avatarUrl: newAvatar,
+                                preferredCurrency: selectedCurrency,
+                                bio: newBio,
+                              );
+
+                          if (modalCtx.mounted) {
+                            Navigator.pop(modalCtx);
+                          }
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Profile information updated & synced!'),
+                                backgroundColor: AppColors.primary,
+                              ),
+                            );
+                          }
+                        },
+                        child: const Text('Save Profile Changes', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -829,97 +1166,711 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.65,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
-              ),
+      builder: (modalCtx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 640),
+            height: MediaQuery.of(context).size.height * 0.78,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
             ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Delivery Addresses', style: AppTextStyles.productTitle.copyWith(fontSize: 18)),
-                TextButton.icon(
-                  icon: const Icon(Icons.add, size: 16, color: AppColors.primary),
-                  label: const Text('Add New', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Address form opened')),
-                    );
-                  },
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                  ),
                 ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Delivery Addresses', style: AppTextStyles.productTitle.copyWith(fontSize: 18)),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${_addresses.length} saved location${_addresses.length == 1 ? '' : 's'}',
+                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      icon: const Icon(Icons.add_rounded, size: 16),
+                      label: const Text('Add Address', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      onPressed: () {
+                        _showAddressFormModal(onSaved: () {
+                          setModalState(() {});
+                        });
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+
+                if (_isLoadingAddresses && _addresses.isEmpty)
+                  const Expanded(
+                    child: Center(
+                      child: CircularProgressIndicator(color: AppColors.primary),
+                    ),
+                  )
+                else if (_addresses.isEmpty)
+                  Expanded(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: const BoxDecoration(
+                              color: AppColors.primaryContainer,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.location_off_rounded, color: AppColors.primary, size: 36),
+                          ),
+                          const SizedBox(height: 14),
+                          const Text(
+                            'No Delivery Addresses Saved',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary),
+                          ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            'Add your residence or office address for fast 1-tap checkout.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                            icon: const Icon(Icons.add_location_alt_outlined, size: 16),
+                            label: const Text('Add Your First Address'),
+                            onPressed: () {
+                              _showAddressFormModal(onSaved: () {
+                                setModalState(() {});
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: () async {
+                        await _loadAddresses();
+                        setModalState(() {});
+                      },
+                      color: AppColors.primary,
+                      child: ListView.separated(
+                        itemCount: _addresses.length,
+                        separatorBuilder: (context, index) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final item = _addresses[index];
+                          return _buildAddressCard(
+                            address: item,
+                            onSetDefault: () async {
+                              await _setDefaultAddress(item);
+                              setModalState(() {});
+                            },
+                            onEdit: () {
+                              _showAddressFormModal(
+                                existingAddress: item,
+                                onSaved: () {
+                                  setModalState(() {});
+                                },
+                              );
+                            },
+                            onDelete: () async {
+                              await _deleteAddress(item);
+                              setModalState(() {});
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ),
               ],
             ),
-            const SizedBox(height: 12),
-            _buildAddressCard(
-              title: 'Primary Residence (Lagos)',
-              address: 'Plot 14, Admiralty Way, Lekki Phase 1, Lagos State',
-              phone: '+234 803 987 6543',
-              isDefault: true,
-            ),
-            const SizedBox(height: 12),
-            _buildAddressCard(
-              title: 'Abuja Office (FCT)',
-              address: 'No. 8, Gana Street, Maitama, Abuja FCT',
-              phone: '+234 802 111 2233',
-              isDefault: false,
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildAddressCard({
-    required String title,
-    required String address,
-    required String phone,
-    required bool isDefault,
+    required UserAddress address,
+    required VoidCallback onSetDefault,
+    required VoidCallback onEdit,
+    required VoidCallback onDelete,
   }) {
+    final isDefault = address.isDefault;
+
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDefault ? AppColors.primaryContainer.withValues(alpha: 0.3) : Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: isDefault ? AppColors.primary : AppColors.border),
+        color: isDefault ? AppColors.primaryContainer.withValues(alpha: 0.35) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDefault ? AppColors.primary : AppColors.border,
+          width: isDefault ? 1.5 : 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header Row: Title & Default Tag
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: isDefault ? AppColors.primary : AppColors.surfaceMuted,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      address.title.toLowerCase().contains('office') || address.title.toLowerCase().contains('work')
+                          ? Icons.business_rounded
+                          : Icons.home_rounded,
+                      color: isDefault ? Colors.white : AppColors.primary,
+                      size: 15,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    address.title,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
+                  ),
+                ],
+              ),
               if (isDefault)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Text('DEFAULT', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.check_circle_rounded, color: Colors.white, size: 12),
+                      SizedBox(width: 4),
+                      Text('DEFAULT', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
                 ),
             ],
           ),
+
+          const SizedBox(height: 10),
+
+          // Recipient & Phone
+          Row(
+            children: [
+              const Icon(Icons.person_outline_rounded, size: 14, color: AppColors.textSecondary),
+              const SizedBox(width: 6),
+              Text(
+                address.recipientName,
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textPrimary),
+              ),
+              const SizedBox(width: 12),
+              const Icon(Icons.phone_outlined, size: 14, color: AppColors.textSecondary),
+              const SizedBox(width: 6),
+              Text(
+                address.phoneNumber,
+                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              ),
+            ],
+          ),
+
           const SizedBox(height: 6),
-          Text(address, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-          const SizedBox(height: 3),
-          Text(phone, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+
+          // Full Street Address
+          Text(
+            '${address.streetAddress}, ${address.city}, ${address.state}${address.postalCode != null && address.postalCode!.isNotEmpty ? ' (${address.postalCode})' : ''}, ${address.country ?? 'Nigeria'}',
+            style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.3),
+          ),
+
+          if (address.additionalInstructions != null && address.additionalInstructions!.trim().isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceMuted,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline_rounded, size: 13, color: AppColors.primary),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      address.additionalInstructions!,
+                      style: const TextStyle(fontSize: 11, color: AppColors.textSecondary, fontStyle: FontStyle.italic),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 10),
+            child: Divider(color: AppColors.border, height: 1),
+          ),
+
+          // Action Buttons
+          Row(
+            children: [
+              if (!isDefault)
+                TextButton.icon(
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  icon: const Icon(Icons.check_circle_outline_rounded, size: 16),
+                  label: const Text('Set as Default', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  onPressed: onSetDefault,
+                )
+              else
+                const Row(
+                  children: [
+                    Icon(Icons.verified_rounded, size: 14, color: AppColors.accentGreen),
+                    SizedBox(width: 4),
+                    Text('Active Delivery Target', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.accentGreen)),
+                  ],
+                ),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, size: 18, color: AppColors.textSecondary),
+                tooltip: 'Edit Address',
+                onPressed: onEdit,
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.error),
+                tooltip: 'Delete Address',
+                onPressed: onDelete,
+              ),
+            ],
+          ),
         ],
       ),
     );
+  }
+
+  void _showAddressFormModal({UserAddress? existingAddress, VoidCallback? onSaved}) {
+    final titleCtrl = TextEditingController(text: existingAddress?.title ?? 'Home');
+    final nameCtrl = TextEditingController(
+      text: existingAddress?.recipientName ?? (_userName.isNotEmpty ? _userName : ref.read(authControllerProvider).user?.name ?? ''),
+    );
+    final phoneCtrl = TextEditingController(
+      text: existingAddress?.phoneNumber ?? (_userPhone.isNotEmpty ? _userPhone : ref.read(authControllerProvider).user?.phone ?? ''),
+    );
+    final streetCtrl = TextEditingController(text: existingAddress?.streetAddress ?? '');
+    final cityCtrl = TextEditingController(text: existingAddress?.city ?? '');
+    final stateCtrl = TextEditingController(text: existingAddress?.state ?? 'Lagos');
+    final postalCtrl = TextEditingController(text: existingAddress?.postalCode ?? '');
+    final notesCtrl = TextEditingController(text: existingAddress?.additionalInstructions ?? '');
+    bool isDefault = existingAddress?.isDefault ?? (_addresses.isEmpty);
+
+    final formKey = GlobalKey<FormState>();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (formCtx) => StatefulBuilder(
+        builder: (ctx, setFormState) => Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(formCtx).viewInsets.bottom),
+          child: Center(
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 580),
+              height: MediaQuery.of(context).size.height * 0.85,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              padding: const EdgeInsets.all(22),
+              child: Form(
+                key: formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          existingAddress != null ? 'Edit Delivery Address' : 'New Delivery Address',
+                          style: AppTextStyles.productTitle.copyWith(fontSize: 18),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded),
+                          onPressed: () => Navigator.pop(formCtx),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Address Label', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
+                            const SizedBox(height: 6),
+                            Wrap(
+                              spacing: 8,
+                              children: ['Home', 'Office', 'Family House', 'Villa', 'Apartment'].map((label) {
+                                final isSelected = titleCtrl.text.trim() == label;
+                                return ChoiceChip(
+                                  label: Text(label, style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+                                  selected: isSelected,
+                                  selectedColor: AppColors.primaryContainer,
+                                  onSelected: (val) {
+                                    if (val) {
+                                      setFormState(() => titleCtrl.text = label);
+                                    }
+                                  },
+                                );
+                              }).toList(),
+                            ),
+                            const SizedBox(height: 12),
+
+                            TextFormField(
+                              controller: titleCtrl,
+                              decoration: const InputDecoration(
+                                labelText: 'Custom Title',
+                                prefixIcon: Icon(Icons.label_outline_rounded, color: AppColors.primary),
+                                border: OutlineInputBorder(),
+                              ),
+                              validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+                            ),
+                            const SizedBox(height: 14),
+
+                            TextFormField(
+                              controller: nameCtrl,
+                              decoration: const InputDecoration(
+                                labelText: 'Recipient Full Name',
+                                prefixIcon: Icon(Icons.person_outline_rounded, color: AppColors.primary),
+                                border: OutlineInputBorder(),
+                              ),
+                              validator: (v) => v == null || v.trim().isEmpty ? 'Please enter recipient name' : null,
+                            ),
+                            const SizedBox(height: 14),
+
+                            TextFormField(
+                              controller: phoneCtrl,
+                              decoration: const InputDecoration(
+                                labelText: 'Contact Phone Number',
+                                prefixIcon: Icon(Icons.phone_outlined, color: AppColors.primary),
+                                border: OutlineInputBorder(),
+                                hintText: '+234 803 123 4567',
+                              ),
+                              validator: (v) => v == null || v.trim().isEmpty ? 'Please enter contact phone' : null,
+                            ),
+                            const SizedBox(height: 14),
+
+                            TextFormField(
+                              controller: streetCtrl,
+                              decoration: const InputDecoration(
+                                labelText: 'Street Address (House No, Street, Estate)',
+                                prefixIcon: Icon(Icons.location_on_outlined, color: AppColors.primary),
+                                border: OutlineInputBorder(),
+                              ),
+                              validator: (v) => v == null || v.trim().isEmpty ? 'Please enter street address' : null,
+                            ),
+                            const SizedBox(height: 14),
+
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: cityCtrl,
+                                    decoration: const InputDecoration(
+                                      labelText: 'City / Area',
+                                      prefixIcon: Icon(Icons.location_city_rounded, color: AppColors.primary),
+                                      border: OutlineInputBorder(),
+                                      hintText: 'e.g. Lekki, Ikeja, Wuse',
+                                    ),
+                                    validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: postalCtrl,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Postal Code (Optional)',
+                                      prefixIcon: Icon(Icons.markunread_mailbox_outlined, color: AppColors.primary),
+                                      border: OutlineInputBorder(),
+                                      hintText: '105102',
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
+
+                            const Text('State', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
+                            const SizedBox(height: 6),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              children: ['Lagos', 'Abuja FCT', 'Kano', 'Rivers', 'Oyo', 'Kaduna', 'Ogun', 'Enugu'].map((st) {
+                                final isSelected = stateCtrl.text.trim() == st;
+                                return ChoiceChip(
+                                  label: Text(st, style: TextStyle(fontSize: 11, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+                                  selected: isSelected,
+                                  selectedColor: AppColors.primaryContainer,
+                                  onSelected: (val) {
+                                    if (val) {
+                                      setFormState(() => stateCtrl.text = st);
+                                    }
+                                  },
+                                );
+                              }).toList(),
+                            ),
+                            const SizedBox(height: 8),
+
+                            TextFormField(
+                              controller: stateCtrl,
+                              decoration: const InputDecoration(
+                                labelText: 'State Name',
+                                prefixIcon: Icon(Icons.map_outlined, color: AppColors.primary),
+                                border: OutlineInputBorder(),
+                              ),
+                              validator: (v) => v == null || v.trim().isEmpty ? 'Please specify state' : null,
+                            ),
+                            const SizedBox(height: 14),
+
+                            TextFormField(
+                              controller: notesCtrl,
+                              maxLines: 2,
+                              decoration: const InputDecoration(
+                                labelText: 'Delivery Instructions (Optional)',
+                                prefixIcon: Icon(Icons.note_alt_outlined, color: AppColors.primary),
+                                border: OutlineInputBorder(),
+                                hintText: 'e.g. Leave with gate security, call when outside',
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+
+                            SwitchListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: const Text('Set as Default Delivery Address', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              subtitle: const Text('Used automatically during 1-tap checkout', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                              value: isDefault,
+                              activeTrackColor: AppColors.primary,
+                              onChanged: (val) => setFormState(() => isDefault = val),
+                            ),
+                            const SizedBox(height: 20),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: () async {
+                          if (!formKey.currentState!.validate()) return;
+
+                          final userEmail = ref.read(authControllerProvider).user?.email ?? _userEmail;
+                          final newAddress = UserAddress(
+                            id: existingAddress?.id,
+                            userEmail: userEmail,
+                            title: titleCtrl.text.trim(),
+                            recipientName: nameCtrl.text.trim(),
+                            phoneNumber: phoneCtrl.text.trim(),
+                            streetAddress: streetCtrl.text.trim(),
+                            city: cityCtrl.text.trim(),
+                            state: stateCtrl.text.trim(),
+                            postalCode: postalCtrl.text.trim(),
+                            country: 'Nigeria',
+                            isDefault: isDefault,
+                            additionalInstructions: notesCtrl.text.trim(),
+                          );
+
+                          Navigator.pop(formCtx);
+                          await _saveAddress(newAddress);
+                          onSaved?.call();
+                        },
+                        child: Text(
+                          existingAddress != null ? 'Update Address' : 'Save New Address',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _saveAddress(UserAddress address) async {
+    try {
+      final saved = await client.user.saveAddress(address: address);
+      await _loadAddresses();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Delivery address "${saved.title}" saved successfully!'),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error saving address: $e');
+      final idx = _addresses.indexWhere((a) => a.id == address.id && address.id != null);
+      if (idx >= 0) {
+        _addresses[idx] = address;
+      } else {
+        _addresses.insert(0, address);
+      }
+      if (address.isDefault) {
+        for (var i = 0; i < _addresses.length; i++) {
+          if (_addresses[i] != address) {
+            _addresses[i] = _addresses[i].copyWith(isDefault: false);
+          }
+        }
+      }
+      await _cacheAddresses(_addresses);
+      setState(() {});
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Address saved locally (offline mode).'),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _setDefaultAddress(UserAddress address) async {
+    final userEmail = ref.read(authControllerProvider).user?.email ?? _userEmail;
+    if (address.id != null && userEmail.isNotEmpty) {
+      try {
+        await client.user.setDefaultAddress(id: address.id!, email: userEmail);
+      } catch (e) {
+        debugPrint('Error setting default address on server: $e');
+      }
+    }
+
+    setState(() {
+      _addresses = _addresses.map((a) {
+        return a.copyWith(isDefault: a.id == address.id || (address.id == null && a.title == address.title));
+      }).toList();
+    });
+    await _cacheAddresses(_addresses);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('"${address.title}" is now your default delivery address.'),
+          backgroundColor: AppColors.primary,
+        ),
+      );
+    }
+  }
+
+  Future<void> _deleteAddress(UserAddress address) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dlgCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Delete Delivery Address?'),
+        content: Text('Are you sure you want to remove "${address.title}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dlgCtx, false),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () => Navigator.pop(dlgCtx, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final userEmail = ref.read(authControllerProvider).user?.email ?? _userEmail;
+      if (address.id != null && userEmail.isNotEmpty) {
+        try {
+          await client.user.deleteAddress(id: address.id!, email: userEmail);
+        } catch (e) {
+          debugPrint('Error deleting address on server: $e');
+        }
+      }
+
+      setState(() {
+        _addresses.removeWhere((a) => (address.id != null && a.id == address.id) || a.title == address.title);
+        if (_addresses.isNotEmpty && !_addresses.any((a) => a.isDefault)) {
+          _addresses[0] = _addresses[0].copyWith(isDefault: true);
+        }
+      });
+      await _cacheAddresses(_addresses);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Delivery address removed.'),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+      }
+    }
   }
 
   void _showPaymentModal() {

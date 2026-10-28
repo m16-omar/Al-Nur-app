@@ -20,14 +20,19 @@ import '../greetings/greeting_endpoint.dart' as _i6;
 import '../orders/order_endpoint.dart' as _i7;
 import '../products/product_endpoint.dart' as _i8;
 import '../storage/storage_endpoint.dart' as _i9;
+import '../users/user_endpoint.dart' as _i10;
 import 'package:alnur_store_server/src/generated/categories/store_category.dart'
-    as _i10;
-import 'package:alnur_store_server/src/generated/products/store_product.dart'
     as _i11;
-import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
+import 'package:alnur_store_server/src/generated/products/store_product.dart'
     as _i12;
-import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
+import 'package:alnur_store_server/src/generated/users/user_account_info.dart'
     as _i13;
+import 'package:alnur_store_server/src/generated/users/user_address.dart'
+    as _i14;
+import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
+    as _i15;
+import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
+    as _i16;
 
 class Endpoints extends _i1.EndpointDispatch {
   @override
@@ -79,6 +84,12 @@ class Endpoints extends _i1.EndpointDispatch {
         ..initialize(
           server,
           'storage',
+          null,
+        ),
+      'user': _i10.UserEndpoint()
+        ..initialize(
+          server,
+          'user',
           null,
         ),
     };
@@ -348,7 +359,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'category': _i1.ParameterDescription(
               name: 'category',
-              type: _i1.getType<_i10.StoreCategory>(),
+              type: _i1.getType<_i11.StoreCategory>(),
               nullable: false,
             ),
           },
@@ -600,7 +611,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'product': _i1.ParameterDescription(
               name: 'product',
-              type: _i1.getType<_i11.StoreProduct>(),
+              type: _i1.getType<_i12.StoreProduct>(),
               nullable: false,
             ),
             'idempotencyKey': _i1.ParameterDescription(
@@ -625,7 +636,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'product': _i1.ParameterDescription(
               name: 'product',
-              type: _i1.getType<_i11.StoreProduct>(),
+              type: _i1.getType<_i12.StoreProduct>(),
               nullable: false,
             ),
           },
@@ -875,9 +886,136 @@ class Endpoints extends _i1.EndpointDispatch {
         ),
       },
     );
-    modules['serverpod_auth_idp'] = _i12.Endpoints()
+    connectors['user'] = _i1.EndpointConnector(
+      name: 'user',
+      endpoint: endpoints['user']!,
+      methodConnectors: {
+        'getProfile': _i1.MethodConnector(
+          name: 'getProfile',
+          params: {
+            'email': _i1.ParameterDescription(
+              name: 'email',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['user'] as _i10.UserEndpoint).getProfile(
+                session,
+                email: params['email'],
+              ),
+        ),
+        'updateProfile': _i1.MethodConnector(
+          name: 'updateProfile',
+          params: {
+            'info': _i1.ParameterDescription(
+              name: 'info',
+              type: _i1.getType<_i13.UserAccountInfo>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['user'] as _i10.UserEndpoint).updateProfile(
+                session,
+                info: params['info'],
+              ),
+        ),
+        'getAddresses': _i1.MethodConnector(
+          name: 'getAddresses',
+          params: {
+            'email': _i1.ParameterDescription(
+              name: 'email',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['user'] as _i10.UserEndpoint).getAddresses(
+                session,
+                email: params['email'],
+              ),
+        ),
+        'saveAddress': _i1.MethodConnector(
+          name: 'saveAddress',
+          params: {
+            'address': _i1.ParameterDescription(
+              name: 'address',
+              type: _i1.getType<_i14.UserAddress>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['user'] as _i10.UserEndpoint).saveAddress(
+                session,
+                address: params['address'],
+              ),
+        ),
+        'setDefaultAddress': _i1.MethodConnector(
+          name: 'setDefaultAddress',
+          params: {
+            'id': _i1.ParameterDescription(
+              name: 'id',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'email': _i1.ParameterDescription(
+              name: 'email',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['user'] as _i10.UserEndpoint).setDefaultAddress(
+                    session,
+                    id: params['id'],
+                    email: params['email'],
+                  ),
+        ),
+        'deleteAddress': _i1.MethodConnector(
+          name: 'deleteAddress',
+          params: {
+            'id': _i1.ParameterDescription(
+              name: 'id',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'email': _i1.ParameterDescription(
+              name: 'email',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['user'] as _i10.UserEndpoint).deleteAddress(
+                session,
+                id: params['id'],
+                email: params['email'],
+              ),
+        ),
+      },
+    );
+    modules['serverpod_auth_idp'] = _i15.Endpoints()
       ..initializeEndpoints(server);
-    modules['serverpod_auth_core'] = _i13.Endpoints()
+    modules['serverpod_auth_core'] = _i16.Endpoints()
       ..initializeEndpoints(server);
   }
 }

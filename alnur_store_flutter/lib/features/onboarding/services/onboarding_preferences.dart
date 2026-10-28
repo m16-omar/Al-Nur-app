@@ -112,6 +112,83 @@ class OnboardingPreferences {
     }
   }
 
+  static const String _keySavedUserAvatar = 'alnur_saved_user_avatar';
+  static const String _keySavedUserBio = 'alnur_saved_user_bio';
+  static const String _keySavedUserCurrency = 'alnur_saved_user_currency';
+  static const String _keyCachedAddresses = 'alnur_cached_addresses_json';
+
+  /// Saves the user's avatar URL.
+  static Future<void> saveUserAvatar(String avatarUrl) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_keySavedUserAvatar, avatarUrl);
+    } catch (_) {}
+  }
+
+  /// Retrieves the saved avatar URL.
+  static Future<String?> getSavedUserAvatar() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_keySavedUserAvatar);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Saves the user's bio.
+  static Future<void> saveUserBio(String bio) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_keySavedUserBio, bio);
+    } catch (_) {}
+  }
+
+  /// Retrieves the saved bio.
+  static Future<String?> getSavedUserBio() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_keySavedUserBio);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Saves the preferred currency code (e.g. NGN, USD, GBP, SAR).
+  static Future<void> saveUserCurrency(String currency) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_keySavedUserCurrency, currency);
+    } catch (_) {}
+  }
+
+  /// Retrieves the preferred currency code.
+  static Future<String?> getSavedUserCurrency() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_keySavedUserCurrency);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Saves serialized address list for offline resilience.
+  static Future<void> saveCachedAddresses(String jsonStr) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_keyCachedAddresses, jsonStr);
+    } catch (_) {}
+  }
+
+  /// Retrieves serialized cached addresses.
+  static Future<String?> getCachedAddresses() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_keyCachedAddresses);
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Clears user credentials and marks as guest on logout.
   static Future<void> clearAuthData() async {
     try {
@@ -119,6 +196,10 @@ class OnboardingPreferences {
       await prefs.remove(_keySavedUserName);
       await prefs.remove(_keySavedUserEmail);
       await prefs.remove(_keySavedUserPhone);
+      await prefs.remove(_keySavedUserAvatar);
+      await prefs.remove(_keySavedUserBio);
+      await prefs.remove(_keySavedUserCurrency);
+      await prefs.remove(_keyCachedAddresses);
       await prefs.setBool(_keyIsGuest, true);
     } catch (_) {}
   }
@@ -131,6 +212,10 @@ class OnboardingPreferences {
       await prefs.remove(_keySavedUserName);
       await prefs.remove(_keySavedUserEmail);
       await prefs.remove(_keySavedUserPhone);
+      await prefs.remove(_keySavedUserAvatar);
+      await prefs.remove(_keySavedUserBio);
+      await prefs.remove(_keySavedUserCurrency);
+      await prefs.remove(_keyCachedAddresses);
       await prefs.remove(_keyIsGuest);
     } catch (_) {}
   }

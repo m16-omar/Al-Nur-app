@@ -1,0 +1,17 @@
+class: UserAddress
+table: user_address
+fields:
+  userEmail: String
+  title: String
+  recipientName: String
+  phoneNumber: String
+  streetAddress: String
+  city: String
+  state: String
+  country: String?
+  postalCode: String?
+  isDefault: bool
+  additionalInstructions: String?
+indexes:
+  user_address_email_idx:
+    fields: userEmail

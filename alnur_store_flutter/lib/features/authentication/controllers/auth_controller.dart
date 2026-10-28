@@ -1,3 +1,4 @@
+import 'package:alnur_store_client/alnur_store_client.dart';
 import 'package:serverpod_auth_idp_flutter/serverpod_auth_idp_flutter.dart' hide UserProfile;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -68,6 +69,9 @@ class AuthController extends Notifier<AuthState> {
       final savedEmail = await OnboardingPreferences.getSavedUserEmail();
       final savedName = await OnboardingPreferences.getSavedUserName();
       final savedPhone = await OnboardingPreferences.getSavedUserPhone();
+      final savedAvatar = await OnboardingPreferences.getSavedUserAvatar();
+      final savedBio = await OnboardingPreferences.getSavedUserBio();
+      final savedCurrency = await OnboardingPreferences.getSavedUserCurrency();
 
       if (savedEmail != null && savedEmail.isNotEmpty) {
         state = state.copyWith(
@@ -78,23 +82,34 @@ class AuthController extends Notifier<AuthState> {
                 : (savedEmail.contains('@') ? savedEmail.split('@').first : savedEmail),
             email: savedEmail,
             phone: savedPhone,
+            avatarUrl: savedAvatar,
+            bio: savedBio,
+            preferredCurrency: savedCurrency ?? 'NGN',
             isGuest: false,
           ),
         );
+
+        // Background sync with Serverpod backend
+        _syncServerProfile(savedEmail);
         return;
       }
 
       if (client.auth.isAuthenticated) {
         final authInfo = client.auth.authInfo;
+        final userEmail = savedEmail ?? 'member@alnur.store';
         state = state.copyWith(
           user: UserProfile(
             id: authInfo?.authUserId.toString() ?? 'usr_authenticated',
             name: savedName ?? 'Al-Nur Member',
-            email: savedEmail ?? 'member@alnur.store',
+            email: userEmail,
             phone: savedPhone,
+            avatarUrl: savedAvatar,
+            bio: savedBio,
+            preferredCurrency: savedCurrency ?? 'NGN',
             isGuest: false,
           ),
         );
+        _syncServerProfile(userEmail);
         return;
       }
 
@@ -102,6 +117,39 @@ class AuthController extends Notifier<AuthState> {
     } catch (_) {
       state = state.copyWith(user: UserProfile.guest());
     }
+  }
+
+  Future<void> _syncServerProfile(String email) async {
+    try {
+      final serverProfile = await client.user.getProfile(email: email);
+      if (serverProfile.fullName.isNotEmpty) {
+        await OnboardingPreferences.saveUserName(serverProfile.fullName);
+      }
+      if (serverProfile.phoneNumber != null && serverProfile.phoneNumber!.isNotEmpty) {
+        await OnboardingPreferences.saveUserPhone(serverProfile.phoneNumber!);
+      }
+      if (serverProfile.avatarUrl != null && serverProfile.avatarUrl!.isNotEmpty) {
+        await OnboardingPreferences.saveUserAvatar(serverProfile.avatarUrl!);
+      }
+      if (serverProfile.bio != null && serverProfile.bio!.isNotEmpty) {
+        await OnboardingPreferences.saveUserBio(serverProfile.bio!);
+      }
+      if (serverProfile.preferredCurrency != null && serverProfile.preferredCurrency!.isNotEmpty) {
+        await OnboardingPreferences.saveUserCurrency(serverProfile.preferredCurrency!);
+      }
+
+      if (state.user != null && !state.user!.isGuest) {
+        state = state.copyWith(
+          user: state.user!.copyWith(
+            name: serverProfile.fullName.isNotEmpty ? serverProfile.fullName : state.user!.name,
+            phone: serverProfile.phoneNumber ?? state.user!.phone,
+            avatarUrl: serverProfile.avatarUrl ?? state.user!.avatarUrl,
+            bio: serverProfile.bio ?? state.user!.bio,
+            preferredCurrency: serverProfile.preferredCurrency ?? state.user!.preferredCurrency,
+          ),
+        );
+      }
+    } catch (_) {}
   }
 
   void toggleRememberMe(bool? value) {
@@ -278,17 +326,48 @@ class AuthController extends Notifier<AuthState> {
     required String name,
     required String email,
     String? phone,
+    String? avatarUrl,
+    String? preferredCurrency,
+    String? bio,
   }) async {
     final cleanName = name.trim();
     final cleanEmail = email.trim();
     final cleanPhone = phone?.trim();
+    final cleanAvatar = avatarUrl?.trim();
+    final cleanCurrency = preferredCurrency?.trim() ?? 'NGN';
+    final cleanBio = bio?.trim();
 
     await OnboardingPreferences.saveUserName(cleanName);
     await OnboardingPreferences.saveUserEmail(cleanEmail);
     if (cleanPhone != null && cleanPhone.isNotEmpty) {
       await OnboardingPreferences.saveUserPhone(cleanPhone);
     }
+    if (cleanAvatar != null && cleanAvatar.isNotEmpty) {
+      await OnboardingPreferences.saveUserAvatar(cleanAvatar);
+    }
+    if (cleanCurrency.isNotEmpty) {
+      await OnboardingPreferences.saveUserCurrency(cleanCurrency);
+    }
+    if (cleanBio != null && cleanBio.isNotEmpty) {
+      await OnboardingPreferences.saveUserBio(cleanBio);
+    }
     await OnboardingPreferences.setGuestMode(false);
+
+    // Sync with Serverpod backend
+    try {
+      await client.user.updateProfile(
+        info: UserAccountInfo(
+          userEmail: cleanEmail,
+          fullName: cleanName,
+          phoneNumber: cleanPhone,
+          avatarUrl: cleanAvatar,
+          preferredCurrency: cleanCurrency,
+          bio: cleanBio,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Note: Offline or failed to sync profile to server: $e');
+    }
 
     state = state.copyWith(
       user: UserProfile(
@@ -296,6 +375,9 @@ class AuthController extends Notifier<AuthState> {
         name: cleanName,
         email: cleanEmail,
         phone: cleanPhone,
+        avatarUrl: cleanAvatar,
+        preferredCurrency: cleanCurrency,
+        bio: cleanBio,
         isGuest: false,
       ),
     );

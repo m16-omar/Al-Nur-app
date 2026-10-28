@@ -26,7 +26,11 @@ import 'package:alnur_store_client/src/protocol/products/store_product.dart'
     as _i9;
 import 'package:alnur_store_client/src/protocol/storage/upload_result.dart'
     as _i10;
-import 'protocol.dart' as _i11;
+import 'package:alnur_store_client/src/protocol/users/user_account_info.dart'
+    as _i11;
+import 'package:alnur_store_client/src/protocol/users/user_address.dart'
+    as _i12;
+import 'protocol.dart' as _i13;
 
 /// {@category Endpoint}
 class EndpointAiAssistant extends _i1.EndpointRef {
@@ -574,6 +578,77 @@ class EndpointStorage extends _i1.EndpointRef {
   );
 }
 
+/// Endpoint for managing user profiles, account details, and delivery addresses.
+/// {@category Endpoint}
+class EndpointUser extends _i1.EndpointRef {
+  EndpointUser(_i1.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'user';
+
+  /// Fetches the profile account information for a user by email.
+  /// If no profile exists yet, creates and returns a default profile.
+  _i2.Future<_i11.UserAccountInfo> getProfile({required String email}) =>
+      caller.callServerEndpoint<_i11.UserAccountInfo>(
+        'user',
+        'getProfile',
+        {'email': email},
+      );
+
+  /// Updates account information (full name, phone, bio, avatarUrl, preferred currency).
+  _i2.Future<_i11.UserAccountInfo> updateProfile({
+    required _i11.UserAccountInfo info,
+  }) => caller.callServerEndpoint<_i11.UserAccountInfo>(
+    'user',
+    'updateProfile',
+    {'info': info},
+  );
+
+  /// Retrieves all saved delivery addresses for a customer by email.
+  _i2.Future<List<_i12.UserAddress>> getAddresses({required String email}) =>
+      caller.callServerEndpoint<List<_i12.UserAddress>>(
+        'user',
+        'getAddresses',
+        {'email': email},
+      );
+
+  /// Creates or updates a delivery address.
+  /// If set as default, removes default status from all other addresses of this user.
+  _i2.Future<_i12.UserAddress> saveAddress({
+    required _i12.UserAddress address,
+  }) => caller.callServerEndpoint<_i12.UserAddress>(
+    'user',
+    'saveAddress',
+    {'address': address},
+  );
+
+  /// Sets an address as the primary/default delivery address.
+  _i2.Future<bool> setDefaultAddress({
+    required int id,
+    required String email,
+  }) => caller.callServerEndpoint<bool>(
+    'user',
+    'setDefaultAddress',
+    {
+      'id': id,
+      'email': email,
+    },
+  );
+
+  /// Deletes a delivery address owned by this customer.
+  _i2.Future<bool> deleteAddress({
+    required int id,
+    required String email,
+  }) => caller.callServerEndpoint<bool>(
+    'user',
+    'deleteAddress',
+    {
+      'id': id,
+      'email': email,
+    },
+  );
+}
+
 class Modules {
   Modules(Client client) {
     serverpod_auth_idp = _i4.Caller(client);
@@ -605,7 +680,7 @@ class Client extends _i1.ServerpodClientShared {
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
          host,
-         _i11.Protocol(),
+         _i13.Protocol(),
          securityContext: securityContext,
          streamingConnectionTimeout: streamingConnectionTimeout,
          connectionTimeout: connectionTimeout,
@@ -622,6 +697,7 @@ class Client extends _i1.ServerpodClientShared {
     order = EndpointOrder(this);
     product = EndpointProduct(this);
     storage = EndpointStorage(this);
+    user = EndpointUser(this);
     modules = Modules(this);
   }
 
@@ -641,6 +717,8 @@ class Client extends _i1.ServerpodClientShared {
 
   late final EndpointStorage storage;
 
+  late final EndpointUser user;
+
   late final Modules modules;
 
   @override
@@ -653,6 +731,7 @@ class Client extends _i1.ServerpodClientShared {
     'order': order,
     'product': product,
     'storage': storage,
+    'user': user,
   };
 
   @override

@@ -37,3 +37,10 @@ storage:
   - getPublicUrl:
   - fileExists:
   - deleteFile:
+user:
+  - getProfile:
+  - updateProfile:
+  - getAddresses:
+  - saveAddress:
+  - setDefaultAddress:
+  - deleteAddress:
