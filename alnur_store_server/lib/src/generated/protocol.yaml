@@ -28,3 +28,12 @@ product:
   - createProduct:
   - updateProduct:
   - deleteProduct:
+storage:
+  - isCloudflareConfigured:
+  - getDirectUploadDescription:
+  - verifyDirectUpload:
+  - uploadBase64:
+  - uploadProductImage:
+  - getPublicUrl:
+  - fileExists:
+  - deleteFile:

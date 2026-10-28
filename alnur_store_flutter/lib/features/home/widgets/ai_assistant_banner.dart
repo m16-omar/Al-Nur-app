@@ -19,13 +19,13 @@ class AiAssistantBanner extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           gradient: const LinearGradient(
-            colors: [Color(0xFF133C2F), Color(0xFF1C5441), Color(0xFF23654F)],
+            colors: [AppColors.aiCardStart, Color(0xFF4A1A0C), AppColors.aiCardEnd],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF133C2F).withValues(alpha: 0.3),
+              color: AppColors.aiCardStart.withValues(alpha: 0.35),
               blurRadius: 16,
               offset: const Offset(0, 6),
             ),

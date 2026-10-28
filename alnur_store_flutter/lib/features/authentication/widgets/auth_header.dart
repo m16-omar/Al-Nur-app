@@ -29,9 +29,9 @@ class AuthHeader extends StatelessWidget {
               borderRadius: BorderRadius.circular(22),
               gradient: const LinearGradient(
                 colors: [
-                  Color(0xFF23654F),
-                  Color(0xFF133C2F),
-                  Color(0xFF0D251C),
+                  AppColors.aiCardEnd,
+                  AppColors.aiCardStart,
+                  AppColors.primaryDark,
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,

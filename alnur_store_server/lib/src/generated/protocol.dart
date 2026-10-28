@@ -23,18 +23,20 @@ import 'greetings/greeting.dart' as _i7;
 import 'idempotency/idempotency_record.dart' as _i8;
 import 'orders/store_order.dart' as _i9;
 import 'products/store_product.dart' as _i10;
+import 'storage/upload_result.dart' as _i11;
 import 'package:alnur_store_server/src/generated/categories/store_category.dart'
-    as _i11;
-import 'package:alnur_store_server/src/generated/orders/store_order.dart'
     as _i12;
-import 'package:alnur_store_server/src/generated/products/store_product.dart'
+import 'package:alnur_store_server/src/generated/orders/store_order.dart'
     as _i13;
+import 'package:alnur_store_server/src/generated/products/store_product.dart'
+    as _i14;
 export 'ai/ai_stylist.dart';
 export 'categories/store_category.dart';
 export 'greetings/greeting.dart';
 export 'idempotency/idempotency_record.dart';
 export 'orders/store_order.dart';
 export 'products/store_product.dart';
+export 'storage/upload_result.dart';
 
 class Protocol extends _i1.SerializationManagerServer {
   Protocol._();
@@ -500,6 +502,9 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i10.StoreProduct) {
       return _i10.StoreProduct.fromJson(data) as T;
     }
+    if (t == _i11.StorageUploadResult) {
+      return _i11.StorageUploadResult.fromJson(data) as T;
+    }
     if (t == _i1.getType<_i5.AiStylistResponse?>()) {
       return (data != null ? _i5.AiStylistResponse.fromJson(data) : null) as T;
     }
@@ -517,6 +522,10 @@ class Protocol extends _i1.SerializationManagerServer {
     }
     if (t == _i1.getType<_i10.StoreProduct?>()) {
       return (data != null ? _i10.StoreProduct.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i11.StorageUploadResult?>()) {
+      return (data != null ? _i11.StorageUploadResult.fromJson(data) : null)
+          as T;
     }
     if (t == List<_i10.StoreProduct>) {
       return (data as List)
@@ -541,19 +550,19 @@ class Protocol extends _i1.SerializationManagerServer {
               : null)
           as T;
     }
-    if (t == List<_i11.StoreCategory>) {
+    if (t == List<_i12.StoreCategory>) {
       return (data as List)
-              .map((e) => deserialize<_i11.StoreCategory>(e))
+              .map((e) => deserialize<_i12.StoreCategory>(e))
               .toList()
           as T;
     }
-    if (t == List<_i12.StoreOrder>) {
-      return (data as List).map((e) => deserialize<_i12.StoreOrder>(e)).toList()
+    if (t == List<_i13.StoreOrder>) {
+      return (data as List).map((e) => deserialize<_i13.StoreOrder>(e)).toList()
           as T;
     }
-    if (t == List<_i13.StoreProduct>) {
+    if (t == List<_i14.StoreProduct>) {
       return (data as List)
-              .map((e) => deserialize<_i13.StoreProduct>(e))
+              .map((e) => deserialize<_i14.StoreProduct>(e))
               .toList()
           as T;
     }
@@ -577,6 +586,7 @@ class Protocol extends _i1.SerializationManagerServer {
       _i8.IdempotencyRecord => 'IdempotencyRecord',
       _i9.StoreOrder => 'StoreOrder',
       _i10.StoreProduct => 'StoreProduct',
+      _i11.StorageUploadResult => 'StorageUploadResult',
       _ => null,
     };
   }
@@ -603,6 +613,8 @@ class Protocol extends _i1.SerializationManagerServer {
         return 'StoreOrder';
       case _i10.StoreProduct():
         return 'StoreProduct';
+      case _i11.StorageUploadResult():
+        return 'StorageUploadResult';
     }
     className = _i2.Protocol().getClassNameForObject(data);
     if (className != null) {
@@ -642,6 +654,9 @@ class Protocol extends _i1.SerializationManagerServer {
     }
     if (dataClassName == 'StoreProduct') {
       return deserialize<_i10.StoreProduct>(data['data']);
+    }
+    if (dataClassName == 'StorageUploadResult') {
+      return deserialize<_i11.StorageUploadResult>(data['data']);
     }
     if (dataClassName.startsWith('serverpod.')) {
       data['className'] = dataClassName.substring(10);

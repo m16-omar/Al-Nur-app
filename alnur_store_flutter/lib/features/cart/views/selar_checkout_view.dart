@@ -119,12 +119,12 @@ class _SelarCheckoutViewState extends ConsumerState<SelarCheckoutView> {
     // Register order in backend Serverpod with Idempotency Key protection
     try {
       final itemsSummary = jsonEncode(cartState.items.map((i) => {
-        'id': i.product.id,
-        'name': i.product.name,
+        'id': i.productId,
+        'name': i.name,
         'quantity': i.quantity,
-        'price': i.product.price,
-        'selectedSize': i.selectedSize,
-        'selectedColor': i.selectedColor,
+        'price': i.price,
+        'selectedSize': i.size,
+        'selectedColor': i.color,
       }).toList());
 
       await client.order.createOrder(

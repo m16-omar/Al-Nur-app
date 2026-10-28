@@ -124,7 +124,7 @@ class _WelcomeUserDialogState extends State<WelcomeUserDialog> with SingleTicker
                           width: double.infinity,
                           decoration: const BoxDecoration(
                             gradient: LinearGradient(
-                              colors: [Color(0xFF0F2E25), Color(0xFF1B4D3E), Color(0xFF2C6856)],
+                              colors: [AppColors.primaryDark, AppColors.primary, AppColors.primaryLight],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),

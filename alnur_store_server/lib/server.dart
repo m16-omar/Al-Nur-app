@@ -6,6 +6,7 @@ import 'package:serverpod_auth_idp_server/providers/email.dart';
 
 import 'src/generated/endpoints.dart';
 import 'src/generated/protocol.dart';
+import 'src/util/cloudflare_r2_config.dart';
 import 'src/util/email_service.dart';
 import 'src/web/routes/app_config_route.dart';
 import 'src/web/routes/root.dart';
@@ -14,6 +15,9 @@ import 'src/web/routes/root.dart';
 void run(List<String> args) async {
   // Initialize Serverpod and connect it with your generated code.
   final pod = Serverpod(args, Protocol(), Endpoints());
+
+  // Initialize Cloudflare R2 cloud storage (falls back gracefully to database storage if credentials are not yet set)
+  CloudflareR2Setup.configure(pod);
 
   // Initialize authentication services for the server.
   // Token managers will be used to validate and issue authentication keys,

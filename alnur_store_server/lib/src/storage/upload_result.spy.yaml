@@ -1,0 +1,9 @@
+class: StorageUploadResult
+fields:
+  success: bool
+  path: String
+  url: String?
+  fileSize: int?
+  mimeType: String?
+  error: String?
+

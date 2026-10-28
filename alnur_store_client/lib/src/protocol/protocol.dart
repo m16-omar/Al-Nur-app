@@ -18,21 +18,24 @@ import 'greetings/greeting.dart' as _i4;
 import 'idempotency/idempotency_record.dart' as _i5;
 import 'orders/store_order.dart' as _i6;
 import 'products/store_product.dart' as _i7;
+import 'storage/upload_result.dart' as _i8;
 import 'package:alnur_store_client/src/protocol/categories/store_category.dart'
-    as _i8;
-import 'package:alnur_store_client/src/protocol/orders/store_order.dart' as _i9;
-import 'package:alnur_store_client/src/protocol/products/store_product.dart'
+    as _i9;
+import 'package:alnur_store_client/src/protocol/orders/store_order.dart'
     as _i10;
-import 'package:serverpod_auth_idp_client/serverpod_auth_idp_client.dart'
+import 'package:alnur_store_client/src/protocol/products/store_product.dart'
     as _i11;
-import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
+import 'package:serverpod_auth_idp_client/serverpod_auth_idp_client.dart'
     as _i12;
+import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
+    as _i13;
 export 'ai/ai_stylist.dart';
 export 'categories/store_category.dart';
 export 'greetings/greeting.dart';
 export 'idempotency/idempotency_record.dart';
 export 'orders/store_order.dart';
 export 'products/store_product.dart';
+export 'storage/upload_result.dart';
 export 'client.dart';
 
 class Protocol extends _i1.SerializationManager {
@@ -87,6 +90,9 @@ class Protocol extends _i1.SerializationManager {
     if (t == _i7.StoreProduct) {
       return _i7.StoreProduct.fromJson(data) as T;
     }
+    if (t == _i8.StorageUploadResult) {
+      return _i8.StorageUploadResult.fromJson(data) as T;
+    }
     if (t == _i1.getType<_i2.AiStylistResponse?>()) {
       return (data != null ? _i2.AiStylistResponse.fromJson(data) : null) as T;
     }
@@ -104,6 +110,10 @@ class Protocol extends _i1.SerializationManager {
     }
     if (t == _i1.getType<_i7.StoreProduct?>()) {
       return (data != null ? _i7.StoreProduct.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i8.StorageUploadResult?>()) {
+      return (data != null ? _i8.StorageUploadResult.fromJson(data) : null)
+          as T;
     }
     if (t == List<_i7.StoreProduct>) {
       return (data as List)
@@ -128,27 +138,27 @@ class Protocol extends _i1.SerializationManager {
               : null)
           as T;
     }
-    if (t == List<_i8.StoreCategory>) {
+    if (t == List<_i9.StoreCategory>) {
       return (data as List)
-              .map((e) => deserialize<_i8.StoreCategory>(e))
+              .map((e) => deserialize<_i9.StoreCategory>(e))
               .toList()
           as T;
     }
-    if (t == List<_i9.StoreOrder>) {
-      return (data as List).map((e) => deserialize<_i9.StoreOrder>(e)).toList()
+    if (t == List<_i10.StoreOrder>) {
+      return (data as List).map((e) => deserialize<_i10.StoreOrder>(e)).toList()
           as T;
     }
-    if (t == List<_i10.StoreProduct>) {
+    if (t == List<_i11.StoreProduct>) {
       return (data as List)
-              .map((e) => deserialize<_i10.StoreProduct>(e))
+              .map((e) => deserialize<_i11.StoreProduct>(e))
               .toList()
           as T;
     }
-    try {
-      return _i11.Protocol().deserialize<T>(data, t);
-    } on _i1.DeserializationTypeNotFoundException catch (_) {}
     try {
       return _i12.Protocol().deserialize<T>(data, t);
+    } on _i1.DeserializationTypeNotFoundException catch (_) {}
+    try {
+      return _i13.Protocol().deserialize<T>(data, t);
     } on _i1.DeserializationTypeNotFoundException catch (_) {}
     return super.deserialize<T>(data, t);
   }
@@ -161,6 +171,7 @@ class Protocol extends _i1.SerializationManager {
       _i5.IdempotencyRecord => 'IdempotencyRecord',
       _i6.StoreOrder => 'StoreOrder',
       _i7.StoreProduct => 'StoreProduct',
+      _i8.StorageUploadResult => 'StorageUploadResult',
       _ => null,
     };
   }
@@ -187,12 +198,14 @@ class Protocol extends _i1.SerializationManager {
         return 'StoreOrder';
       case _i7.StoreProduct():
         return 'StoreProduct';
+      case _i8.StorageUploadResult():
+        return 'StorageUploadResult';
     }
-    className = _i11.Protocol().getClassNameForObject(data);
+    className = _i12.Protocol().getClassNameForObject(data);
     if (className != null) {
       return 'serverpod_auth_idp.$className';
     }
-    className = _i12.Protocol().getClassNameForObject(data);
+    className = _i13.Protocol().getClassNameForObject(data);
     if (className != null) {
       return 'serverpod_auth_core.$className';
     }
@@ -223,13 +236,16 @@ class Protocol extends _i1.SerializationManager {
     if (dataClassName == 'StoreProduct') {
       return deserialize<_i7.StoreProduct>(data['data']);
     }
+    if (dataClassName == 'StorageUploadResult') {
+      return deserialize<_i8.StorageUploadResult>(data['data']);
+    }
     if (dataClassName.startsWith('serverpod_auth_idp.')) {
       data['className'] = dataClassName.substring(19);
-      return _i11.Protocol().deserializeByClassName(data);
+      return _i12.Protocol().deserializeByClassName(data);
     }
     if (dataClassName.startsWith('serverpod_auth_core.')) {
       data['className'] = dataClassName.substring(20);
-      return _i12.Protocol().deserializeByClassName(data);
+      return _i13.Protocol().deserializeByClassName(data);
     }
     return super.deserializeByClassName(data);
   }
@@ -244,10 +260,10 @@ class Protocol extends _i1.SerializationManager {
       return null;
     }
     try {
-      return _i11.Protocol().mapRecordToJson(record);
+      return _i12.Protocol().mapRecordToJson(record);
     } catch (_) {}
     try {
-      return _i12.Protocol().mapRecordToJson(record);
+      return _i13.Protocol().mapRecordToJson(record);
     } catch (_) {}
     throw Exception('Unsupported record type ${record.runtimeType}');
   }

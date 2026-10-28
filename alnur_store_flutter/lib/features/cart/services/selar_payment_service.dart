@@ -3,7 +3,7 @@ import '../models/cart_item_model.dart';
 
 class SelarPaymentService {
   static const String _prefKeySelarStoreUrl = 'alnur_selar_store_url';
-  static const String defaultStoreUrl = 'https://selar.com/m/alnur';
+  static const String defaultStoreUrl = 'https://selar.com/m/fatima-muhammad3397104';
 
   /// Retrieves the merchant Selar checkout/store URL, falling back to default
   static Future<String> getStoreUrl() async {

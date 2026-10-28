@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/models/product_model.dart';
 import '../../../shared/widgets/product_card.dart';
@@ -45,7 +46,7 @@ class FeaturedProductsSection extends StatelessWidget {
                     const Icon(
                       Icons.arrow_forward_rounded,
                       size: 14,
-                      color: Color(0xFF1B4D3E),
+                      color: AppColors.primary,
                     ),
                   ],
                 ),

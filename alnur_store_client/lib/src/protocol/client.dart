@@ -24,7 +24,9 @@ import 'package:alnur_store_client/src/protocol/greetings/greeting.dart' as _i7;
 import 'package:alnur_store_client/src/protocol/orders/store_order.dart' as _i8;
 import 'package:alnur_store_client/src/protocol/products/store_product.dart'
     as _i9;
-import 'protocol.dart' as _i10;
+import 'package:alnur_store_client/src/protocol/storage/upload_result.dart'
+    as _i10;
+import 'protocol.dart' as _i11;
 
 /// {@category Endpoint}
 class EndpointAiAssistant extends _i1.EndpointRef {
@@ -454,6 +456,124 @@ class EndpointProduct extends _i1.EndpointRef {
   );
 }
 
+/// Endpoint for handling file and image uploads and storage backed by Cloudflare R2.
+/// {@category Endpoint}
+class EndpointStorage extends _i1.EndpointRef {
+  EndpointStorage(_i1.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'storage';
+
+  /// Checks whether Cloudflare R2 cloud storage is actively connected.
+  _i2.Future<bool> isCloudflareConfigured() => caller.callServerEndpoint<bool>(
+    'storage',
+    'isCloudflareConfigured',
+    {},
+  );
+
+  /// Creates a pre-signed direct upload description for client-to-Cloudflare direct upload.
+  /// Returns a JSON description containing the PUT URL and required headers.
+  _i2.Future<String?> getDirectUploadDescription({
+    required String path,
+    String? storageId,
+    int? maxFileSize,
+  }) => caller.callServerEndpoint<String?>(
+    'storage',
+    'getDirectUploadDescription',
+    {
+      'path': path,
+      'storageId': storageId,
+      'maxFileSize': maxFileSize,
+    },
+  );
+
+  /// Verifies a direct upload once the client has uploaded the file directly to Cloudflare R2.
+  _i2.Future<_i10.StorageUploadResult> verifyDirectUpload({
+    required String path,
+    String? storageId,
+  }) => caller.callServerEndpoint<_i10.StorageUploadResult>(
+    'storage',
+    'verifyDirectUpload',
+    {
+      'path': path,
+      'storageId': storageId,
+    },
+  );
+
+  /// Directly uploads a Base64-encoded file (ideal for web admin, mobile, or API calls).
+  /// Automatically strips data URI prefixes (e.g. data:image/jpeg;base64,).
+  _i2.Future<_i10.StorageUploadResult> uploadBase64({
+    required String path,
+    required String base64Data,
+    String? mimeType,
+    String? storageId,
+  }) => caller.callServerEndpoint<_i10.StorageUploadResult>(
+    'storage',
+    'uploadBase64',
+    {
+      'path': path,
+      'base64Data': base64Data,
+      'mimeType': mimeType,
+      'storageId': storageId,
+    },
+  );
+
+  /// Convenience method: uploads a product or category image to Cloudflare R2
+  /// and automatically returns the CDN URL.
+  _i2.Future<_i10.StorageUploadResult> uploadProductImage({
+    required String base64Data,
+    required String fileName,
+    String? productSlug,
+  }) => caller.callServerEndpoint<_i10.StorageUploadResult>(
+    'storage',
+    'uploadProductImage',
+    {
+      'base64Data': base64Data,
+      'fileName': fileName,
+      'productSlug': productSlug,
+    },
+  );
+
+  /// Gets the public CDN / R2 URL for a given stored file path.
+  _i2.Future<String?> getPublicUrl({
+    required String path,
+    String? storageId,
+  }) => caller.callServerEndpoint<String?>(
+    'storage',
+    'getPublicUrl',
+    {
+      'path': path,
+      'storageId': storageId,
+    },
+  );
+
+  /// Checks if a file exists in cloud storage.
+  _i2.Future<bool> fileExists({
+    required String path,
+    String? storageId,
+  }) => caller.callServerEndpoint<bool>(
+    'storage',
+    'fileExists',
+    {
+      'path': path,
+      'storageId': storageId,
+    },
+  );
+
+  /// Deletes a file from cloud storage.
+  _i2.Future<bool> deleteFile({
+    required String path,
+    String? storageId,
+  }) => caller.callServerEndpoint<bool>(
+    'storage',
+    'deleteFile',
+    {
+      'path': path,
+      'storageId': storageId,
+    },
+  );
+}
+
 class Modules {
   Modules(Client client) {
     serverpod_auth_idp = _i4.Caller(client);
@@ -485,7 +605,7 @@ class Client extends _i1.ServerpodClientShared {
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
          host,
-         _i10.Protocol(),
+         _i11.Protocol(),
          securityContext: securityContext,
          streamingConnectionTimeout: streamingConnectionTimeout,
          connectionTimeout: connectionTimeout,
@@ -501,6 +621,7 @@ class Client extends _i1.ServerpodClientShared {
     greeting = EndpointGreeting(this);
     order = EndpointOrder(this);
     product = EndpointProduct(this);
+    storage = EndpointStorage(this);
     modules = Modules(this);
   }
 
@@ -518,6 +639,8 @@ class Client extends _i1.ServerpodClientShared {
 
   late final EndpointProduct product;
 
+  late final EndpointStorage storage;
+
   late final Modules modules;
 
   @override
@@ -529,6 +652,7 @@ class Client extends _i1.ServerpodClientShared {
     'greeting': greeting,
     'order': order,
     'product': product,
+    'storage': storage,
   };
 
   @override

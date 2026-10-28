@@ -13,6 +13,9 @@ dependencies:
   serverpod_auth_idp_server: 3.4.13
   mailer: ^6.1.2
   crypto: ^3.0.6
+  serverpod_cloud_storage_r2: 3.4.13
+  path: ^1.9.1
+  mime: ^2.1.0
 
 dev_dependencies:
   lints: '>=3.0.0 <7.0.0'

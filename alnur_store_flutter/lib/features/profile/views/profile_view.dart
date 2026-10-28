@@ -1017,7 +1017,7 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF1B4D3E), Color(0xFF0F2E25)],
+                  colors: [AppColors.primary, AppColors.primaryDark],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),

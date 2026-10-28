@@ -720,7 +720,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
                         ),
                         _buildNotificationItem(
                           icon: Icons.mosque_outlined,
-                          iconColor: const Color(0xFF10B981),
+                          iconColor: AppColors.primary,
                           title: 'Jumuah Mubarak Discount! 🕌',
                           subtitle: 'Enjoy 15% off all Jalabias & Thobes plus free nationwide delivery with code JUMUAH15.',
                           time: 'Yesterday',

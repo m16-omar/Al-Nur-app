@@ -35,11 +35,11 @@ class AppTheme {
   static ThemeData get darkTheme {
     final base = ThemeData.dark(useMaterial3: true);
     return base.copyWith(
-      scaffoldBackgroundColor: const Color(0xFF121615),
+      scaffoldBackgroundColor: const Color(0xFF200B04),
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.primary,
-        primary: AppColors.accentMint,
-        surface: const Color(0xFF1B2220),
+        primary: AppColors.gold,
+        surface: const Color(0xFF2D1107),
         brightness: Brightness.dark,
       ),
       textTheme: GoogleFonts.plusJakartaSansTextTheme(base.textTheme),

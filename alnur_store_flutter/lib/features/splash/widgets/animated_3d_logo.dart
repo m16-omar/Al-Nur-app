@@ -96,9 +96,9 @@ class _Animated3dLogoState extends State<Animated3dLogo>
                     borderRadius: BorderRadius.circular(widget.size * 0.28),
                     gradient: const LinearGradient(
                       colors: [
-                        Color(0xFF23654F),
-                        Color(0xFF133C2F),
-                        Color(0xFF0D281E),
+                        AppColors.aiCardEnd,
+                        AppColors.aiCardStart,
+                        AppColors.primaryDark,
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -202,9 +202,9 @@ class Logo3dPainter extends CustomPainter {
 
     canvas.drawPath(path, domePaint);
 
-    // Inner arch cutout in rich emerald
+    // Inner arch cutout in rich espresso
     final innerPaint = Paint()
-      ..color = const Color(0xFF133C2F)
+      ..color = AppColors.aiCardStart
       ..style = PaintingStyle.fill;
 
     final innerPath = Path();
@@ -224,7 +224,7 @@ class Logo3dPainter extends CustomPainter {
     canvas.drawCircle(moonCenter, 4.0, moonOuterPaint);
 
     final moonCutoutPaint = Paint()
-      ..color = const Color(0xFF133C2F)
+      ..color = AppColors.aiCardStart
       ..style = PaintingStyle.fill;
     canvas.drawCircle(Offset(w * 0.52, h * 0.04), 3.2, moonCutoutPaint);
   }

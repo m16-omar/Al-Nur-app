@@ -79,9 +79,9 @@ class _SplashViewState extends State<SplashView> with SingleTickerProviderStateM
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Color(0xFF091E16),
-                Color(0xFF133C2F),
-                Color(0xFF0D251C),
+                Color(0xFF1A0A04),
+                Color(0xFF2E1107),
+                Color(0xFF1A0A04),
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,

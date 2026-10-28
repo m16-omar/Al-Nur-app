@@ -19,14 +19,15 @@ import '../categories/category_endpoint.dart' as _i5;
 import '../greetings/greeting_endpoint.dart' as _i6;
 import '../orders/order_endpoint.dart' as _i7;
 import '../products/product_endpoint.dart' as _i8;
+import '../storage/storage_endpoint.dart' as _i9;
 import 'package:alnur_store_server/src/generated/categories/store_category.dart'
-    as _i9;
-import 'package:alnur_store_server/src/generated/products/store_product.dart'
     as _i10;
-import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
+import 'package:alnur_store_server/src/generated/products/store_product.dart'
     as _i11;
-import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
+import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
     as _i12;
+import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
+    as _i13;
 
 class Endpoints extends _i1.EndpointDispatch {
   @override
@@ -72,6 +73,12 @@ class Endpoints extends _i1.EndpointDispatch {
         ..initialize(
           server,
           'product',
+          null,
+        ),
+      'storage': _i9.StorageEndpoint()
+        ..initialize(
+          server,
+          'storage',
           null,
         ),
     };
@@ -341,7 +348,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'category': _i1.ParameterDescription(
               name: 'category',
-              type: _i1.getType<_i9.StoreCategory>(),
+              type: _i1.getType<_i10.StoreCategory>(),
               nullable: false,
             ),
           },
@@ -593,7 +600,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'product': _i1.ParameterDescription(
               name: 'product',
-              type: _i1.getType<_i10.StoreProduct>(),
+              type: _i1.getType<_i11.StoreProduct>(),
               nullable: false,
             ),
             'idempotencyKey': _i1.ParameterDescription(
@@ -618,7 +625,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'product': _i1.ParameterDescription(
               name: 'product',
-              type: _i1.getType<_i10.StoreProduct>(),
+              type: _i1.getType<_i11.StoreProduct>(),
               nullable: false,
             ),
           },
@@ -653,9 +660,224 @@ class Endpoints extends _i1.EndpointDispatch {
         ),
       },
     );
-    modules['serverpod_auth_idp'] = _i11.Endpoints()
+    connectors['storage'] = _i1.EndpointConnector(
+      name: 'storage',
+      endpoint: endpoints['storage']!,
+      methodConnectors: {
+        'isCloudflareConfigured': _i1.MethodConnector(
+          name: 'isCloudflareConfigured',
+          params: {},
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['storage'] as _i9.StorageEndpoint)
+                  .isCloudflareConfigured(session),
+        ),
+        'getDirectUploadDescription': _i1.MethodConnector(
+          name: 'getDirectUploadDescription',
+          params: {
+            'path': _i1.ParameterDescription(
+              name: 'path',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'storageId': _i1.ParameterDescription(
+              name: 'storageId',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+            'maxFileSize': _i1.ParameterDescription(
+              name: 'maxFileSize',
+              type: _i1.getType<int?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['storage'] as _i9.StorageEndpoint)
+                  .getDirectUploadDescription(
+                    session,
+                    path: params['path'],
+                    storageId: params['storageId'],
+                    maxFileSize: params['maxFileSize'],
+                  ),
+        ),
+        'verifyDirectUpload': _i1.MethodConnector(
+          name: 'verifyDirectUpload',
+          params: {
+            'path': _i1.ParameterDescription(
+              name: 'path',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'storageId': _i1.ParameterDescription(
+              name: 'storageId',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['storage'] as _i9.StorageEndpoint)
+                  .verifyDirectUpload(
+                    session,
+                    path: params['path'],
+                    storageId: params['storageId'],
+                  ),
+        ),
+        'uploadBase64': _i1.MethodConnector(
+          name: 'uploadBase64',
+          params: {
+            'path': _i1.ParameterDescription(
+              name: 'path',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'base64Data': _i1.ParameterDescription(
+              name: 'base64Data',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'mimeType': _i1.ParameterDescription(
+              name: 'mimeType',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+            'storageId': _i1.ParameterDescription(
+              name: 'storageId',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['storage'] as _i9.StorageEndpoint).uploadBase64(
+                    session,
+                    path: params['path'],
+                    base64Data: params['base64Data'],
+                    mimeType: params['mimeType'],
+                    storageId: params['storageId'],
+                  ),
+        ),
+        'uploadProductImage': _i1.MethodConnector(
+          name: 'uploadProductImage',
+          params: {
+            'base64Data': _i1.ParameterDescription(
+              name: 'base64Data',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'fileName': _i1.ParameterDescription(
+              name: 'fileName',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'productSlug': _i1.ParameterDescription(
+              name: 'productSlug',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['storage'] as _i9.StorageEndpoint)
+                  .uploadProductImage(
+                    session,
+                    base64Data: params['base64Data'],
+                    fileName: params['fileName'],
+                    productSlug: params['productSlug'],
+                  ),
+        ),
+        'getPublicUrl': _i1.MethodConnector(
+          name: 'getPublicUrl',
+          params: {
+            'path': _i1.ParameterDescription(
+              name: 'path',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'storageId': _i1.ParameterDescription(
+              name: 'storageId',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['storage'] as _i9.StorageEndpoint).getPublicUrl(
+                    session,
+                    path: params['path'],
+                    storageId: params['storageId'],
+                  ),
+        ),
+        'fileExists': _i1.MethodConnector(
+          name: 'fileExists',
+          params: {
+            'path': _i1.ParameterDescription(
+              name: 'path',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'storageId': _i1.ParameterDescription(
+              name: 'storageId',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['storage'] as _i9.StorageEndpoint).fileExists(
+                    session,
+                    path: params['path'],
+                    storageId: params['storageId'],
+                  ),
+        ),
+        'deleteFile': _i1.MethodConnector(
+          name: 'deleteFile',
+          params: {
+            'path': _i1.ParameterDescription(
+              name: 'path',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'storageId': _i1.ParameterDescription(
+              name: 'storageId',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['storage'] as _i9.StorageEndpoint).deleteFile(
+                    session,
+                    path: params['path'],
+                    storageId: params['storageId'],
+                  ),
+        ),
+      },
+    );
+    modules['serverpod_auth_idp'] = _i12.Endpoints()
       ..initializeEndpoints(server);
-    modules['serverpod_auth_core'] = _i12.Endpoints()
+    modules['serverpod_auth_core'] = _i13.Endpoints()
       ..initializeEndpoints(server);
   }
 }
