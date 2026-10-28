@@ -1,5 +1,6 @@
 import 'dart:convert';
 import '../../../main.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -20,7 +21,7 @@ class SelarCheckoutView extends ConsumerStatefulWidget {
 }
 
 class _SelarCheckoutViewState extends ConsumerState<SelarCheckoutView> {
-  late final WebViewController _webViewController;
+  WebViewController? _webViewController;
   bool _isLoading = true;
   int _loadingProgress = 0;
   String _checkoutUrl = '';
@@ -60,40 +61,46 @@ class _SelarCheckoutViewState extends ConsumerState<SelarCheckoutView> {
       _checkoutUrl = url;
     });
 
-    _webViewController = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(Colors.white)
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onProgress: (progress) {
-            if (mounted) {
-              setState(() {
-                _loadingProgress = progress;
-                _isLoading = progress < 100;
-              });
-            }
-          },
-          onPageStarted: (url) {
-            _checkUrlForSuccess(url);
-          },
-          onPageFinished: (url) {
-            if (mounted) {
-              setState(() => _isLoading = false);
-            }
-            _checkUrlForSuccess(url);
-          },
-          onNavigationRequest: (request) {
-            if (_checkUrlForSuccess(request.url)) {
-              return NavigationDecision.prevent;
-            }
-            return NavigationDecision.navigate;
-          },
-          onWebResourceError: (error) {
-            debugPrint('[SelarCheckout] WebView Error: ${error.description}');
-          },
-        ),
-      )
-      ..loadRequest(Uri.parse(url));
+    if (!kIsWeb) {
+      _webViewController = WebViewController()
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..setBackgroundColor(Colors.white)
+        ..setNavigationDelegate(
+          NavigationDelegate(
+            onProgress: (progress) {
+              if (mounted) {
+                setState(() {
+                  _loadingProgress = progress;
+                  _isLoading = progress < 100;
+                });
+              }
+            },
+            onPageStarted: (url) {
+              _checkUrlForSuccess(url);
+            },
+            onPageFinished: (url) {
+              if (mounted) {
+                setState(() => _isLoading = false);
+              }
+              _checkUrlForSuccess(url);
+            },
+            onNavigationRequest: (request) {
+              if (_checkUrlForSuccess(request.url)) {
+                return NavigationDecision.prevent;
+              }
+              return NavigationDecision.navigate;
+            },
+            onWebResourceError: (error) {
+              debugPrint('[SelarCheckout] WebView Error: ${error.description}');
+            },
+          ),
+        )
+        ..loadRequest(Uri.parse(url));
+    } else {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   bool _checkUrlForSuccess(String url) {
@@ -127,17 +134,47 @@ class _SelarCheckoutViewState extends ConsumerState<SelarCheckoutView> {
         'selectedColor': i.color,
       }).toList());
 
+      // Fetch user's selected/default delivery address
+      String shippingAddress = 'Plot 14, Admiralty Way, Lekki Phase 1, Lagos';
+      String effectivePhone = customerPhone;
+
+      if (customerEmail.isNotEmpty && customerEmail != 'guest@alnurstore.com') {
+        try {
+          final addresses = await client.user.getAddresses(email: customerEmail);
+          if (addresses.isNotEmpty) {
+            final defaultAddr = addresses.firstWhere(
+              (a) => a.isDefault,
+              orElse: () => addresses.first,
+            );
+            final parts = [
+              defaultAddr.streetAddress,
+              defaultAddr.city,
+              defaultAddr.state,
+              if (defaultAddr.country != null && defaultAddr.country!.isNotEmpty) defaultAddr.country!,
+            ].where((p) => p.trim().isNotEmpty).toList();
+            if (parts.isNotEmpty) {
+              shippingAddress = parts.join(', ');
+            }
+            if (effectivePhone.isEmpty && defaultAddr.phoneNumber.isNotEmpty) {
+              effectivePhone = defaultAddr.phoneNumber;
+            }
+          }
+        } catch (addrErr) {
+          debugPrint('[Checkout] Address resolution note: $addrErr');
+        }
+      }
+
       await client.order.createOrder(
         idempotencyKey: 'checkout-$_orderId',
         customerEmail: customerEmail,
         customerName: customerName,
-        customerPhone: customerPhone,
-        shippingAddress: 'Lagos, Nigeria',
+        customerPhone: effectivePhone,
+        shippingAddress: shippingAddress,
         totalAmount: totalPaid,
         itemsJson: itemsSummary,
         paymentReference: _orderId,
       );
-      debugPrint('[Checkout] Idempotent order confirmed in backend: $_orderId');
+      debugPrint('[Checkout] Idempotent order confirmed in backend: $_orderId with address: $shippingAddress');
     } catch (e) {
       debugPrint('[Checkout] Backend order creation note: $e');
     }
@@ -285,6 +322,124 @@ class _SelarCheckoutViewState extends ConsumerState<SelarCheckoutView> {
     );
   }
 
+  Widget _buildWebCheckoutFallback(CartState cartState) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 500),
+          child: Container(
+            padding: const EdgeInsets.all(28),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: AppColors.border),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.payment_rounded, color: AppColors.primary, size: 32),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Selar Halal Checkout',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                    fontFamily: 'serif',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Your payment gateway opens in a secure browser tab to complete your transaction with card, bank transfer, or USSD.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.45),
+                ),
+                const SizedBox(height: 24),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceMuted,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Total Amount:', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                          Text(
+                            '₦${cartState.grandTotal.toStringAsFixed(0)}',
+                            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.primary),
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Order Reference:', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                          Text(_orderId, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      elevation: 0,
+                    ),
+                    icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                    label: const Text('Open Selar Payment Page', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    onPressed: _openInExternalBrowser,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF10B981),
+                      side: const BorderSide(color: Color(0xFF10B981), width: 1.5),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
+                    label: const Text('I Have Completed Payment', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    onPressed: _confirmManualPayment,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cartState = ref.watch(cartControllerProvider);
@@ -323,8 +478,8 @@ class _SelarCheckoutViewState extends ConsumerState<SelarCheckoutView> {
             icon: const Icon(Icons.refresh_rounded, color: AppColors.textPrimary, size: 20),
             tooltip: 'Reload Page',
             onPressed: () {
-              if (_checkoutUrl.isNotEmpty) {
-                _webViewController.reload();
+              if (_checkoutUrl.isNotEmpty && _webViewController != null) {
+                _webViewController!.reload();
               }
             },
           ),
@@ -349,7 +504,9 @@ class _SelarCheckoutViewState extends ConsumerState<SelarCheckoutView> {
                     minHeight: 3,
                   ),
                 Expanded(
-                  child: WebViewWidget(controller: _webViewController),
+                  child: kIsWeb || _webViewController == null
+                      ? _buildWebCheckoutFallback(cartState)
+                      : WebViewWidget(controller: _webViewController!),
                 ),
                 // Floating Bottom Security Bar
                 Container(

@@ -3,12 +3,17 @@ import '../models/cart_item_model.dart';
 
 class SelarPaymentService {
   static const String _prefKeySelarStoreUrl = 'alnur_selar_store_url';
-  static const String defaultStoreUrl = 'https://selar.com/m/fatima-muhammad3397104';
+  static const String defaultStoreUrl = 'https://selar.com/m/fatimamuhammad';
 
   /// Retrieves the merchant Selar checkout/store URL, falling back to default
   static Future<String> getStoreUrl() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_prefKeySelarStoreUrl) ?? defaultStoreUrl;
+    final stored = prefs.getString(_prefKeySelarStoreUrl);
+    if (stored == null || stored.isEmpty || stored.contains('fatima-muhammad3397104')) {
+      await prefs.setString(_prefKeySelarStoreUrl, defaultStoreUrl);
+      return defaultStoreUrl;
+    }
+    return stored;
   }
 
   /// Allows setting or updating the Selar store link
