@@ -83,6 +83,14 @@ class CategoryEndpoint extends Endpoint {
     return await StoreCategory.db.insertRow(session, category);
   }
 
+  /// Updates an existing category.
+  Future<StoreCategory> updateCategory(
+    Session session,
+    StoreCategory category,
+  ) async {
+    return await StoreCategory.db.updateRow(session, category);
+  }
+
   /// Deletes a category by ID.
   Future<bool> deleteCategory(Session session, int id) async {
     final cat = await StoreCategory.db.findById(session, id);

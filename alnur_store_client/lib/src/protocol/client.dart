@@ -303,6 +303,14 @@ class EndpointCategory extends _i1.EndpointRef {
         {'category': category},
       );
 
+  /// Updates an existing category.
+  _i2.Future<_i6.StoreCategory> updateCategory(_i6.StoreCategory category) =>
+      caller.callServerEndpoint<_i6.StoreCategory>(
+        'category',
+        'updateCategory',
+        {'category': category},
+      );
+
   /// Deletes a category by ID.
   _i2.Future<bool> deleteCategory(int id) => caller.callServerEndpoint<bool>(
     'category',

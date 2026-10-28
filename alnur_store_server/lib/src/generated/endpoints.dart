@@ -373,6 +373,25 @@ class Endpoints extends _i1.EndpointDispatch {
                     params['category'],
                   ),
         ),
+        'updateCategory': _i1.MethodConnector(
+          name: 'updateCategory',
+          params: {
+            'category': _i1.ParameterDescription(
+              name: 'category',
+              type: _i1.getType<_i11.StoreCategory>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['category'] as _i5.CategoryEndpoint)
+                  .updateCategory(
+                    session,
+                    params['category'],
+                  ),
+        ),
         'deleteCategory': _i1.MethodConnector(
           name: 'deleteCategory',
           params: {
