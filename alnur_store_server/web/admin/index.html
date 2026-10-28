@@ -265,7 +265,7 @@
             <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
             <span class="text-gray-700 font-medium">Serverpod Monolith Active</span>
             <span class="text-gray-400">•</span>
-            <span class="text-brand-emerald font-semibold font-mono">Port 8080 API • 8082 Web</span>
+            <span id="badge-api-host" class="text-brand-emerald font-semibold font-mono">Port 8080 API • 8082 Web</span>
           </div>
           <button onclick="fetchInitialData()" class="p-2 rounded-lg bg-gray-50 text-gray-600 hover:text-brand-emerald hover:bg-gray-100 border border-gray-200 transition" title="Refresh Live Data">
             <i data-lucide="refresh-cw" class="w-4 h-4"></i>
@@ -916,7 +916,7 @@
               <span class="font-bold text-gray-900">Main API Server</span>
               <span class="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Online</span>
             </div>
-            <div class="text-gray-600">Endpoint: <code class="text-brand-emerald font-bold">http://localhost:8080</code></div>
+            <div class="text-gray-600">Endpoint: <code id="health-api-endpoint" class="text-brand-emerald font-bold">http://localhost:8080</code></div>
             <div class="text-gray-600">Latency: <span class="text-gray-900 font-mono font-bold">1.2ms</span></div>
           </div>
 
@@ -1420,7 +1420,16 @@
   <!-- 4. JAVASCRIPT CONTROLLERS & SERVERPOD API  -->
   <!-- ========================================== -->
   <script>
-    const API_URL = 'http://localhost:8080';
+    const API_URL = (function() {
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return 'http://localhost:8080';
+      }
+      if (window.location.hostname.endsWith('.serverpod.space')) {
+        const projectSubdomain = window.location.hostname.replace('.serverpod.space', '');
+        return `https://${projectSubdomain}.api.serverpod.space`;
+      }
+      return window.location.origin;
+    })();
     let allProducts = [];
     let allCategories = [];
     let allUsers = [];
@@ -2777,6 +2786,15 @@
 
     async function fetchInitialData() {
       try {
+        const badgeHost = document.getElementById('badge-api-host');
+        if (badgeHost) {
+          badgeHost.innerText = API_URL.replace(/^https?:\/\//, '');
+        }
+        const healthEndpoint = document.getElementById('health-api-endpoint');
+        if (healthEndpoint) {
+          healthEndpoint.innerText = API_URL;
+        }
+
         // Fetch products
         const prodRes = await fetch(`${API_URL}/product/getProducts`, {
           method: 'POST',
