@@ -297,8 +297,8 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
     // Multi-angle gallery images based on primary product image
     final galleryImages = [
       product.imageUrl,
-      'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1629200468328-87bf3adfb78b?auto=format&fit=crop&w=800&q=80',
     ];
 
     return Scaffold(

@@ -101,7 +101,7 @@ class CartController extends Notifier<CartState> {
             name: 'Pure Medina Silk Hijab',
             categoryId: 'hijabs',
             price: 8500,
-            imageUrl: 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?auto=format&fit=crop&w=500&q=80',
+            imageUrl: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=500&q=80',
             size: 'Standard (180x75cm)',
             color: 'Emerald Silk',
             quantity: 2,
