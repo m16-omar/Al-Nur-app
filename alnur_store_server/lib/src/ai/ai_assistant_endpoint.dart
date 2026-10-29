@@ -230,7 +230,13 @@ class AiAssistantEndpoint extends Endpoint {
       } else if (query.contains('perfume') || query.contains('oud') || query.contains('scent')) {
         final perfume = findProduct('perfumes');
         if (perfume != null) selected.add(perfume);
-      } else if (query.contains('jewelry') || query.contains('necklace') || query.contains('bracelet') || query.contains('bangle')) {
+      } else if (query.contains('necklace') || query.contains('choker') || query.contains('chain')) {
+        final necklace = findProduct('necklaces') ?? findProduct('jewelries');
+        if (necklace != null) selected.add(necklace);
+      } else if (query.contains('bangle') || query.contains('bracelet') || query.contains('cuff')) {
+        final bangle = findProduct('bangles') ?? findProduct('jewelries');
+        if (bangle != null) selected.add(bangle);
+      } else if (query.contains('jewelry') || query.contains('jewel') || query.contains('set')) {
         final jewelry = findProduct('jewelries');
         if (jewelry != null) selected.add(jewelry);
       } else {

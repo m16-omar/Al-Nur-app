@@ -5,7 +5,7 @@ import '../idempotency/idempotency_manager.dart';
 
 class ProductEndpoint extends Endpoint {
   /// Fetches products, filtering optionally by categoryId and search query.
-  /// Automatically synchronizes official Nigerian luxury catalog (Rings, Perfumes, Jewelries, Wedding Rings, Wristwatches).
+  /// Automatically synchronizes official Nigerian luxury catalog (Rings, Perfumes, Jewelries, Wedding Rings, Wristwatches, Necklaces, Bangles).
   Future<List<StoreProduct>> getProducts(
     Session session, {
     String? categoryId,
@@ -46,7 +46,7 @@ class ProductEndpoint extends Endpoint {
     );
   }
 
-  /// Explicitly resets and reseeds the catalog with the 20 official Nigerian luxury products.
+  /// Explicitly resets and reseeds the catalog with the 28 official Nigerian luxury products.
   Future<List<StoreProduct>> reseedProducts(Session session) async {
     final existing = await StoreProduct.db.find(session);
     for (final p in existing) {
@@ -302,45 +302,92 @@ class ProductEndpoint extends Endpoint {
         isFavorite: true,
       ),
 
-      // 4. FINE JEWELRY & SETS
+      // 4. LUXURY NECKLACES
       StoreProduct(
-        name: 'Zainab Luxury Bridal Choker & Earrings Set',
-        slug: 'zainab-luxury-bridal-choker-set',
-        categoryId: 'jewelries',
-        price: 75000.0,
-        originalPrice: 95000.0,
-        rating: 5.0,
-        reviewCount: 140,
+        name: 'Dubai 18K Gold Multi-Layer Figaro Chain Necklace',
+        slug: 'dubai-18k-gold-multi-layer-figaro-chain',
+        categoryId: 'necklaces',
+        price: 32000.0,
+        originalPrice: 40000.0,
+        rating: 4.9,
+        reviewCount: 118,
         imageUrl:
             'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80',
         description:
-            'High-grade Austrian crystal choker necklace with chandelier drop earrings, handcrafted for Nigerian traditional and white wedding receptions.',
+            'Triple-layered Figaro chain with 18K vacuum plating. Guaranteed sweat and perfume resistant for Nigerian weddings and parties.',
         isAvailable: true,
         isFavorite: true,
       ),
       StoreProduct(
-        name: '18K Gold-Layered Dubai Rope Chain Necklace',
-        slug: '18k-gold-layered-dubai-rope-chain',
-        categoryId: 'jewelries',
+        name: 'Zainab Bridal Austrian Crystal Choker Set',
+        slug: 'zainab-bridal-austrian-crystal-choker-set',
+        categoryId: 'necklaces',
+        price: 75000.0,
+        originalPrice: 95000.0,
+        rating: 5.0,
+        reviewCount: 142,
+        imageUrl:
+            'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80',
+        description:
+            'Regal Austrian crystal choker necklace with cascading drop crystals, designed for Nigerian brides, traditional weddings, and gala nights.',
+        isAvailable: true,
+        isFavorite: true,
+      ),
+      StoreProduct(
+        name: '18K Gold-Layered Heavyweight Dubai Rope Chain (5mm)',
+        slug: '18k-gold-layered-dubai-rope-chain-5mm',
+        categoryId: 'necklaces',
         price: 26000.0,
         originalPrice: 34000.0,
         rating: 4.8,
         reviewCount: 115,
         imageUrl:
-            'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1506630448388-4e683c67ddb0?auto=format&fit=crop&w=600&q=80',
         description:
             'Heavyweight 5mm twisted rope chain with secure lobster claw clasp. Triple-plated for non-tarnish luster under Nigerian humidity.',
         isAvailable: true,
         isFavorite: false,
       ),
       StoreProduct(
-        name: 'Sparkling Tennis Bracelet (4mm White Gold Finish)',
-        slug: 'sparkling-tennis-bracelet-4mm',
-        categoryId: 'jewelries',
+        name: 'Arabic "Sabr & Shukr" Coin Medallion Necklace',
+        slug: 'arabic-sabr-shukr-coin-medallion-necklace',
+        categoryId: 'necklaces',
+        price: 22500.0,
+        originalPrice: 28000.0,
+        rating: 4.9,
+        reviewCount: 96,
+        imageUrl:
+            'https://images.unsplash.com/photo-1506630448388-4e683c67ddb0?auto=format&fit=crop&w=600&q=80',
+        description:
+            'Reversible double-sided coin pendant engraved with Arabic Patience (Sabr) and Gratitude (Shukr), on an adjustable 18-inch curb chain.',
+        isAvailable: true,
+        isFavorite: false,
+      ),
+
+      // 5. ROYAL BANGLES & BRACELETS
+      StoreProduct(
+        name: 'Kano Royal Filigree 18K Gold Bangle Set (Pair)',
+        slug: 'kano-royal-filigree-gold-bangles-pair',
+        categoryId: 'bangles',
+        price: 42000.0,
+        originalPrice: 52000.0,
+        rating: 5.0,
+        reviewCount: 128,
+        imageUrl:
+            'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=600&q=80',
+        description:
+            'Intricately embossed Northern Nigerian and Arabian filigree motifs on polished gold-tone brass with hidden spring hinges.',
+        isAvailable: true,
+        isFavorite: true,
+      ),
+      StoreProduct(
+        name: 'Sparkling 4mm Zirconia Tennis Bracelet (White Gold Finish)',
+        slug: 'sparkling-4mm-zirconia-tennis-bracelet',
+        categoryId: 'bangles',
         price: 28000.0,
         originalPrice: 36000.0,
         rating: 4.9,
-        reviewCount: 98,
+        reviewCount: 104,
         imageUrl:
             'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=600&q=80',
         description:
@@ -349,22 +396,99 @@ class ProductEndpoint extends Endpoint {
         isFavorite: true,
       ),
       StoreProduct(
-        name: 'Kano Royal Filigree Gold Bangle Set (Pair)',
-        slug: 'kano-royal-filigree-gold-bangles',
-        categoryId: 'jewelries',
-        price: 42000.0,
-        originalPrice: 52000.0,
-        rating: 4.9,
-        reviewCount: 82,
+        name: 'Dubai Intricate Lattice Open-Cuff Gold Bangle',
+        slug: 'dubai-intricate-lattice-open-cuff-bangle',
+        categoryId: 'bangles',
+        price: 35000.0,
+        originalPrice: 44000.0,
+        rating: 4.8,
+        reviewCount: 79,
         imageUrl:
-            'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?auto=format&fit=crop&w=600&q=80',
         description:
-            'Intricately embossed Northern Nigerian and Arabian filigree motifs on polished gold-tone brass with hidden spring hinges.',
+            'Wide architectural lattice open cuff bangle with micro-beaded borders. Fits all wrist sizes with flexible tension adjustment.',
+        isAvailable: true,
+        isFavorite: false,
+      ),
+      StoreProduct(
+        name: 'Stackable Twisted Gold Wire Bangles (Set of 3)',
+        slug: 'stackable-twisted-gold-wire-bangles-set',
+        categoryId: 'bangles',
+        price: 38000.0,
+        originalPrice: 46000.0,
+        rating: 4.9,
+        reviewCount: 88,
+        imageUrl:
+            'https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?auto=format&fit=crop&w=600&q=80',
+        description:
+            'Trio of high-shine diamond-cut and twisted gold wire bangles designed to jingle gracefully with traditional Nigerian attire.',
         isAvailable: true,
         isFavorite: false,
       ),
 
-      // 5. RINGS (EVERYDAY & STATEMENT)
+      // 6. FINE JEWELRY SETS & ENSEMBLES
+      StoreProduct(
+        name: 'Grand Imperial Dubai 4-Piece Bridal Jewelry Set',
+        slug: 'grand-imperial-dubai-bridal-jewelry-set',
+        categoryId: 'jewelries',
+        price: 125000.0,
+        originalPrice: 155000.0,
+        rating: 5.0,
+        reviewCount: 89,
+        imageUrl:
+            'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80',
+        description:
+            'Complete majestic set comprising necklace, chandelier earrings, statement ring, and matching bangle for grand Nigerian celebrations.',
+        isAvailable: true,
+        isFavorite: true,
+      ),
+      StoreProduct(
+        name: 'Royal Emerald Crystal Teardrop Gala Jewelry Set',
+        slug: 'royal-emerald-crystal-teardrop-set',
+        categoryId: 'jewelries',
+        price: 68000.0,
+        originalPrice: 85000.0,
+        rating: 4.9,
+        reviewCount: 92,
+        imageUrl:
+            'https://images.unsplash.com/photo-1535632787350-4e68ef0ac584?auto=format&fit=crop&w=600&q=80',
+        description:
+            'Lush deep emerald teardrop crystals surrounded by halo pavé stones on gold-plated collar necklace with matching earrings.',
+        isAvailable: true,
+        isFavorite: false,
+      ),
+      StoreProduct(
+        name: 'Traditional Arewa Gold Filigree Brooch & Earring Set',
+        slug: 'traditional-arewa-gold-filigree-set',
+        categoryId: 'jewelries',
+        price: 34000.0,
+        originalPrice: 42000.0,
+        rating: 4.8,
+        reviewCount: 67,
+        imageUrl:
+            'https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?auto=format&fit=crop&w=600&q=80',
+        description:
+            'Northern Nigerian inspired geometric filigree brooch pin and clip earrings, an aristocratic addition to lace and headties.',
+        isAvailable: true,
+        isFavorite: false,
+      ),
+      StoreProduct(
+        name: 'Pearl & 18K Gold Bead Layered Owambe Statement Set',
+        slug: 'pearl-18k-gold-bead-layered-owambe-set',
+        categoryId: 'jewelries',
+        price: 48000.0,
+        originalPrice: 60000.0,
+        rating: 4.9,
+        reviewCount: 110,
+        imageUrl:
+            'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80',
+        description:
+            'Lustrous faux baroque pearls interspersed with textured 18K gold beads. Crafted for mother-of-the-day and dignitaries.',
+        isAvailable: true,
+        isFavorite: true,
+      ),
+
+      // 7. RINGS (EVERYDAY & STATEMENT)
       StoreProduct(
         name: 'Emerald Cut Green Crystal Statement Ring',
         slug: 'emerald-cut-green-crystal-statement-ring',

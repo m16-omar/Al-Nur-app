@@ -11,6 +11,8 @@ class HomeState {
   final List<ProductModel> perfumesProducts;
   final List<ProductModel> weddingRingsProducts;
   final List<ProductModel> wristwatchesProducts;
+  final List<ProductModel> necklacesProducts;
+  final List<ProductModel> banglesProducts;
   final List<ProductModel> jewelriesProducts;
   final List<ProductModel> ringsProducts;
   final int cartCount;
@@ -25,6 +27,8 @@ class HomeState {
     required this.perfumesProducts,
     required this.weddingRingsProducts,
     required this.wristwatchesProducts,
+    this.necklacesProducts = const [],
+    this.banglesProducts = const [],
     required this.jewelriesProducts,
     required this.ringsProducts,
     this.cartCount = 3,
@@ -46,6 +50,8 @@ class HomeState {
       ...perfumesProducts,
       ...weddingRingsProducts,
       ...wristwatchesProducts,
+      ...necklacesProducts,
+      ...banglesProducts,
       ...jewelriesProducts,
       ...ringsProducts,
     ]) {
@@ -76,6 +82,8 @@ class HomeState {
     List<ProductModel>? perfumesProducts,
     List<ProductModel>? weddingRingsProducts,
     List<ProductModel>? wristwatchesProducts,
+    List<ProductModel>? necklacesProducts,
+    List<ProductModel>? banglesProducts,
     List<ProductModel>? jewelriesProducts,
     List<ProductModel>? ringsProducts,
     // Support legacy parameters for compatibility
@@ -95,6 +103,8 @@ class HomeState {
       perfumesProducts: perfumesProducts ?? abayasProducts ?? this.perfumesProducts,
       weddingRingsProducts: weddingRingsProducts ?? hijabsProducts ?? this.weddingRingsProducts,
       wristwatchesProducts: wristwatchesProducts ?? jalabiasProducts ?? this.wristwatchesProducts,
+      necklacesProducts: necklacesProducts ?? this.necklacesProducts,
+      banglesProducts: banglesProducts ?? this.banglesProducts,
       jewelriesProducts: jewelriesProducts ?? thobesProducts ?? this.jewelriesProducts,
       ringsProducts: ringsProducts ?? this.ringsProducts,
       cartCount: cartCount ?? this.cartCount,
@@ -125,6 +135,18 @@ class HomeController extends Notifier<HomeState> {
         name: 'Wristwatches',
         fallbackIcon: Icons.watch_outlined,
         backgroundColor: Color(0xFFE9F0FA),
+      ),
+      CategoryModel(
+        id: 'necklaces',
+        name: 'Luxury Necklaces',
+        fallbackIcon: Icons.diamond_outlined,
+        backgroundColor: Color(0xFFF3E8FF),
+      ),
+      CategoryModel(
+        id: 'bangles',
+        name: 'Royal Bangles',
+        fallbackIcon: Icons.circle_outlined,
+        backgroundColor: Color(0xFFFEF3C7),
       ),
       CategoryModel(
         id: 'jewelries',
@@ -339,54 +361,154 @@ class HomeController extends Notifier<HomeState> {
         description: 'Matching couple timepieces with Japanese quartz movement and dual-tone gold links, packaged in an embossed velvet gift chest.',
       ),
     ],
-    jewelriesProducts: const [
+    necklacesProducts: const [
       ProductModel(
-        id: 'jewel_1',
-        name: 'Zainab Luxury Bridal Choker & Earrings Set',
+        id: 'neck_1',
+        name: 'Dubai 18K Gold Multi-Layer Figaro Chain Necklace',
+        price: 32000,
+        originalPrice: 40000,
+        rating: 4.9,
+        reviewCount: 118,
+        imageUrl: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80',
+        categoryId: 'necklaces',
+        isFavorite: true,
+        description: 'Triple-layered Figaro chain with 18K vacuum plating. Guaranteed sweat and perfume resistant for Nigerian weddings and parties.',
+      ),
+      ProductModel(
+        id: 'neck_2',
+        name: 'Zainab Bridal Austrian Crystal Choker Set',
         price: 75000,
         originalPrice: 95000,
         rating: 5.0,
-        reviewCount: 140,
+        reviewCount: 142,
         imageUrl: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80',
-        categoryId: 'jewelries',
+        categoryId: 'necklaces',
         isFavorite: true,
-        description: 'High-grade Austrian crystal choker necklace with chandelier drop earrings, handcrafted for Nigerian traditional and white wedding receptions.',
+        description: 'Regal Austrian crystal choker necklace with cascading drop crystals, designed for Nigerian brides, traditional weddings, and gala nights.',
       ),
       ProductModel(
-        id: 'jewel_2',
-        name: '18K Gold-Layered Dubai Rope Chain Necklace',
+        id: 'neck_3',
+        name: '18K Gold-Layered Heavyweight Dubai Rope Chain (5mm)',
         price: 26000,
         originalPrice: 34000,
         rating: 4.8,
         reviewCount: 115,
-        imageUrl: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80',
-        categoryId: 'jewelries',
+        imageUrl: 'https://images.unsplash.com/photo-1506630448388-4e683c67ddb0?auto=format&fit=crop&w=600&q=80',
+        categoryId: 'necklaces',
         isFavorite: false,
         description: 'Heavyweight 5mm twisted rope chain with secure lobster claw clasp. Triple-plated for non-tarnish luster under Nigerian humidity.',
       ),
       ProductModel(
-        id: 'jewel_3',
-        name: 'Sparkling Tennis Bracelet (4mm White Gold Finish)',
+        id: 'neck_4',
+        name: 'Arabic "Sabr & Shukr" Coin Medallion Necklace',
+        price: 22500,
+        originalPrice: 28000,
+        rating: 4.9,
+        reviewCount: 96,
+        imageUrl: 'https://images.unsplash.com/photo-1506630448388-4e683c67ddb0?auto=format&fit=crop&w=600&q=80',
+        categoryId: 'necklaces',
+        isFavorite: false,
+        description: 'Reversible double-sided coin pendant engraved with Arabic Patience (Sabr) and Gratitude (Shukr), on an adjustable 18-inch curb chain.',
+      ),
+    ],
+    banglesProducts: const [
+      ProductModel(
+        id: 'bangle_1',
+        name: 'Kano Royal Filigree 18K Gold Bangle Set (Pair)',
+        price: 42000,
+        originalPrice: 52000,
+        rating: 5.0,
+        reviewCount: 128,
+        imageUrl: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=600&q=80',
+        categoryId: 'bangles',
+        isFavorite: true,
+        description: 'Intricately embossed Northern Nigerian and Arabian filigree motifs on polished gold-tone brass with hidden spring hinges.',
+      ),
+      ProductModel(
+        id: 'bangle_2',
+        name: 'Sparkling 4mm Zirconia Tennis Bracelet (White Gold Finish)',
         price: 28000,
         originalPrice: 36000,
         rating: 4.9,
-        reviewCount: 98,
+        reviewCount: 104,
         imageUrl: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=600&q=80',
-        categoryId: 'jewelries',
+        categoryId: 'bangles',
         isFavorite: true,
         description: 'Continuous line of four-prong hand-set brilliant round stones with double safety latch. An enduring luxury staple for every wrist.',
       ),
       ProductModel(
-        id: 'jewel_4',
-        name: 'Kano Royal Filigree Gold Bangle Set (Pair)',
-        price: 42000,
-        originalPrice: 52000,
+        id: 'bangle_3',
+        name: 'Dubai Intricate Lattice Open-Cuff Gold Bangle',
+        price: 35000,
+        originalPrice: 44000,
+        rating: 4.8,
+        reviewCount: 79,
+        imageUrl: 'https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?auto=format&fit=crop&w=600&q=80',
+        categoryId: 'bangles',
+        isFavorite: false,
+        description: 'Wide architectural lattice open cuff bangle with micro-beaded borders. Fits all wrist sizes with flexible tension adjustment.',
+      ),
+      ProductModel(
+        id: 'bangle_4',
+        name: 'Stackable Twisted Gold Wire Bangles (Set of 3)',
+        price: 38000,
+        originalPrice: 46000,
         rating: 4.9,
-        reviewCount: 82,
-        imageUrl: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=600&q=80',
+        reviewCount: 88,
+        imageUrl: 'https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?auto=format&fit=crop&w=600&q=80',
+        categoryId: 'bangles',
+        isFavorite: false,
+        description: 'Trio of high-shine diamond-cut and twisted gold wire bangles designed to jingle gracefully with traditional Nigerian attire.',
+      ),
+    ],
+    jewelriesProducts: const [
+      ProductModel(
+        id: 'jewel_1',
+        name: 'Grand Imperial Dubai 4-Piece Bridal Jewelry Set',
+        price: 125000,
+        originalPrice: 155000,
+        rating: 5.0,
+        reviewCount: 89,
+        imageUrl: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80',
+        categoryId: 'jewelries',
+        isFavorite: true,
+        description: 'Complete majestic set comprising necklace, chandelier earrings, statement ring, and matching bangle for grand Nigerian celebrations.',
+      ),
+      ProductModel(
+        id: 'jewel_2',
+        name: 'Royal Emerald Crystal Teardrop Gala Jewelry Set',
+        price: 68000,
+        originalPrice: 85000,
+        rating: 4.9,
+        reviewCount: 92,
+        imageUrl: 'https://images.unsplash.com/photo-1535632787350-4e68ef0ac584?auto=format&fit=crop&w=600&q=80',
         categoryId: 'jewelries',
         isFavorite: false,
-        description: 'Intricately embossed Northern Nigerian and Arabian filigree motifs on polished gold-tone brass with hidden spring hinges.',
+        description: 'Lush deep emerald teardrop crystals surrounded by halo pavé stones on gold-plated collar necklace with matching earrings.',
+      ),
+      ProductModel(
+        id: 'jewel_3',
+        name: 'Traditional Arewa Gold Filigree Brooch & Earring Set',
+        price: 34000,
+        originalPrice: 42000,
+        rating: 4.8,
+        reviewCount: 67,
+        imageUrl: 'https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?auto=format&fit=crop&w=600&q=80',
+        categoryId: 'jewelries',
+        isFavorite: false,
+        description: 'Northern Nigerian inspired geometric filigree brooch pin and clip earrings, an aristocratic addition to lace and headties.',
+      ),
+      ProductModel(
+        id: 'jewel_4',
+        name: 'Pearl & 18K Gold Bead Layered Owambe Statement Set',
+        price: 48000,
+        originalPrice: 60000,
+        rating: 4.9,
+        reviewCount: 110,
+        imageUrl: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80',
+        categoryId: 'jewelries',
+        isFavorite: true,
+        description: 'Lustrous faux baroque pearls interspersed with textured 18K gold beads. Crafted for mother-of-the-day and dignitaries.',
       ),
     ],
     ringsProducts: const [
@@ -497,6 +619,8 @@ class HomeController extends Notifier<HomeState> {
         final perfumes = allMappedProducts.where((p) => p.categoryId == 'perfumes').toList();
         final weddingRings = allMappedProducts.where((p) => p.categoryId == 'wedding-rings').toList();
         final watches = allMappedProducts.where((p) => p.categoryId == 'wristwatches').toList();
+        final necklaces = allMappedProducts.where((p) => p.categoryId == 'necklaces').toList();
+        final bangles = allMappedProducts.where((p) => p.categoryId == 'bangles').toList();
         final jewelries = allMappedProducts.where((p) => p.categoryId == 'jewelries').toList();
         final rings = allMappedProducts.where((p) => p.categoryId == 'rings').toList();
         final featured = allMappedProducts.where((p) => p.rating >= 4.9 || p.isFavorite).toList();
@@ -508,6 +632,8 @@ class HomeController extends Notifier<HomeState> {
           perfumesProducts: perfumes.isNotEmpty ? perfumes : state.perfumesProducts,
           weddingRingsProducts: weddingRings.isNotEmpty ? weddingRings : state.weddingRingsProducts,
           wristwatchesProducts: watches.isNotEmpty ? watches : state.wristwatchesProducts,
+          necklacesProducts: necklaces.isNotEmpty ? necklaces : state.necklacesProducts,
+          banglesProducts: bangles.isNotEmpty ? bangles : state.banglesProducts,
           jewelriesProducts: jewelries.isNotEmpty ? jewelries : state.jewelriesProducts,
           ringsProducts: rings.isNotEmpty ? rings : state.ringsProducts,
           isLoading: false,
@@ -534,6 +660,10 @@ class HomeController extends Notifier<HomeState> {
         return Icons.diamond_rounded;
       case 'wristwatches':
         return Icons.watch_outlined;
+      case 'necklaces':
+        return Icons.diamond_outlined;
+      case 'bangles':
+        return Icons.circle_outlined;
       case 'jewelries':
         return Icons.auto_awesome_rounded;
       case 'rings':
@@ -589,6 +719,8 @@ class HomeController extends Notifier<HomeState> {
       perfumesProducts: updateList(state.perfumesProducts),
       weddingRingsProducts: updateList(state.weddingRingsProducts),
       wristwatchesProducts: updateList(state.wristwatchesProducts),
+      necklacesProducts: updateList(state.necklacesProducts),
+      banglesProducts: updateList(state.banglesProducts),
       jewelriesProducts: updateList(state.jewelriesProducts),
       ringsProducts: updateList(state.ringsProducts),
     );

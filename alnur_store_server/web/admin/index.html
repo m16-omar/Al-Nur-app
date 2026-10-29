@@ -456,7 +456,7 @@
             <div class="flex items-center space-x-2 overflow-x-auto" id="categoryFilterChips">
               <button onclick="setCategoryFilter('all', this)" class="cat-chip active px-3.5 py-1.5 rounded-full text-xs font-semibold bg-brand-emerald text-white shadow-sm flex items-center space-x-1.5 shrink-0">
                 <span>All Collections</span>
-                <span id="cat-count-all" class="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px]">20</span>
+                <span id="cat-count-all" class="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px]">28</span>
               </button>
               <button onclick="setCategoryFilter('perfumes', this)" class="cat-chip px-3.5 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200 border border-gray-200 flex items-center space-x-1.5 shrink-0">
                 <span>Perfumes & Oud</span>
@@ -470,6 +470,14 @@
                 <span>Wristwatches</span>
                 <span id="cat-count-wristwatches" class="px-1.5 py-0.2 rounded-full bg-gray-200 text-gray-700 text-[10px]">4</span>
               </button>
+              <button onclick="setCategoryFilter('necklaces', this)" class="cat-chip px-3.5 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200 border border-gray-200 flex items-center space-x-1.5 shrink-0">
+                <span>Necklaces</span>
+                <span id="cat-count-necklaces" class="px-1.5 py-0.2 rounded-full bg-gray-200 text-gray-700 text-[10px]">4</span>
+              </button>
+              <button onclick="setCategoryFilter('bangles', this)" class="cat-chip px-3.5 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200 border border-gray-200 flex items-center space-x-1.5 shrink-0">
+                <span>Bangles & Bracelets</span>
+                <span id="cat-count-bangles" class="px-1.5 py-0.2 rounded-full bg-gray-200 text-gray-700 text-[10px]">4</span>
+              </button>
               <button onclick="setCategoryFilter('jewelries', this)" class="cat-chip px-3.5 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200 border border-gray-200 flex items-center space-x-1.5 shrink-0">
                 <span>Fine Jewelry</span>
                 <span id="cat-count-jewelries" class="px-1.5 py-0.2 rounded-full bg-gray-200 text-gray-700 text-[10px]">4</span>
@@ -477,11 +485,6 @@
               <button onclick="setCategoryFilter('rings', this)" class="cat-chip px-3.5 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200 border border-gray-200 flex items-center space-x-1.5 shrink-0">
                 <span>Rings</span>
                 <span id="cat-count-rings" class="px-1.5 py-0.2 rounded-full bg-gray-200 text-gray-700 text-[10px]">4</span>
-              </button>
-            </div>
-              <button onclick="setCategoryFilter('jewelries', this)" class="cat-chip px-3.5 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200 border border-gray-200 flex items-center space-x-1.5">
-                <span>Jewelries</span>
-                <span id="cat-count-jewelries" class="px-1.5 py-0.2 rounded-full bg-gray-200 text-gray-700 text-[10px]">2</span>
               </button>
             </div>
 
@@ -1120,6 +1123,8 @@
               <option value="perfumes">Perfumes & Oud</option>
               <option value="wedding-rings">Wedding Rings</option>
               <option value="wristwatches">Wristwatches</option>
+              <option value="necklaces">Necklaces</option>
+              <option value="bangles">Bangles & Bracelets</option>
               <option value="jewelries">Fine Jewelry</option>
               <option value="rings">Rings</option>
             </select>
@@ -3356,7 +3361,7 @@
       const countAllCat = document.getElementById('cat-count-all');
       if (countAllCat) countAllCat.innerText = total;
 
-      const cats = ['perfumes', 'wedding-rings', 'wristwatches', 'jewelries', 'rings'];
+      const cats = ['perfumes', 'wedding-rings', 'wristwatches', 'necklaces', 'bangles', 'jewelries', 'rings'];
       cats.forEach(c => {
         const el = document.getElementById(`cat-count-${c}`);
         if (el) {

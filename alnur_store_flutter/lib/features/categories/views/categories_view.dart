@@ -81,6 +81,10 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
         return Icons.diamond_rounded;
       case 'wristwatches':
         return Icons.watch_outlined;
+      case 'necklaces':
+        return Icons.diamond_outlined;
+      case 'bangles':
+        return Icons.circle_outlined;
       case 'jewelries':
         return Icons.auto_awesome_rounded;
       case 'rings':

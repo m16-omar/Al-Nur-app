@@ -2,7 +2,7 @@ import 'package:serverpod/serverpod.dart';
 import '../generated/protocol.dart';
 
 class CategoryEndpoint extends Endpoint {
-  /// Default official Al-Nur collections: Rings, Perfumes, Jewelries, Wedding Rings, Wristwatches
+  /// Default official Al-Nur collections: Rings, Perfumes, Jewelries, Wedding Rings, Wristwatches, Necklaces, Bangles
   static List<StoreCategory> get defaultOfficialCategories => [
         StoreCategory(
           categoryId: 'perfumes',
@@ -29,11 +29,27 @@ class CategoryEndpoint extends Endpoint {
           colorHex: '0xFFE9F0FA',
         ),
         StoreCategory(
+          categoryId: 'necklaces',
+          name: 'Luxury Necklaces',
+          iconName: 'diamond_outlined',
+          tagline: 'Dubai Rope Chains, Chokers & Pendants',
+          intro: 'Non-tarnish 18K gold layered chains, Arabic coin medallions, and Austrian bridal chokers crafted for Nigerian weddings and galas.',
+          colorHex: '0xFFF3E8FF',
+        ),
+        StoreCategory(
+          categoryId: 'bangles',
+          name: 'Royal Bangles & Bracelets',
+          iconName: 'circle_outlined',
+          tagline: 'Kano Filigree Bangles & Tennis Bracelets',
+          intro: 'Exquisite embossed gold bangles, open cuffs, and sparkling cubic zirconia tennis bracelets for Owambe and everyday grace.',
+          colorHex: '0xFFFEF3C7',
+        ),
+        StoreCategory(
           categoryId: 'jewelries',
           name: 'Fine Jewelry',
           iconName: 'auto_awesome_rounded',
-          tagline: 'Bridal Chokers, Dubai Chains & Bangles',
-          intro: 'Exquisite Austrian crystal necklaces, tennis bracelets, and non-tarnish gold jewelry.',
+          tagline: 'Bridal Sets, Gala Brooches & Ensembles',
+          intro: 'Exquisite 4-piece bridal sets, emerald crystals, and heirloom gold jewelry for grand Nigerian celebrations.',
           colorHex: '0xFFF9EAE1',
         ),
         StoreCategory(

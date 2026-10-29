@@ -341,6 +341,32 @@ class _HomeViewState extends ConsumerState<HomeView> {
 
           const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
+          // Luxury Necklaces & Chokers Section
+          SliverToBoxAdapter(
+            child: FeaturedProductsSection(
+              title: 'Luxury Necklaces & Chokers',
+              products: homeState.necklacesProducts,
+              onProductTap: (product) => _showProductDetailsModal(context, product),
+              onFavoriteToggle: (product) => homeController.toggleFavorite(product),
+              onViewAllTap: () => setState(() => _currentNavIndex = 1),
+            ),
+          ),
+
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
+          // Royal Bangles & Bracelets Section
+          SliverToBoxAdapter(
+            child: FeaturedProductsSection(
+              title: 'Royal Bangles & Bracelets',
+              products: homeState.banglesProducts,
+              onProductTap: (product) => _showProductDetailsModal(context, product),
+              onFavoriteToggle: (product) => homeController.toggleFavorite(product),
+              onViewAllTap: () => setState(() => _currentNavIndex = 1),
+            ),
+          ),
+
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
           // Fine Jewelry & Sets Section
           SliverToBoxAdapter(
             child: FeaturedProductsSection(
