@@ -2081,7 +2081,7 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
               TextField(
                 controller: urlController,
                 decoration: InputDecoration(
-                  hintText: 'https://selar.com/m/alnurstore',
+                  hintText: 'https://selar.com/h3wa923367',
                   prefixIcon: const Icon(Icons.link_rounded, size: 18),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),

@@ -5,7 +5,7 @@ class SelarPaymentService {
   static const String _prefKeySelarStoreUrl = 'alnur_selar_store_url';
   static const String _prefKeySelarApiKey = 'alnur_selar_api_key';
 
-  static const String defaultStoreUrl = 'https://selar.com/m/alnurstore';
+  static const String defaultStoreUrl = 'https://selar.com/h3wa923367';
   static const String defaultApiKey = 'sat_873skzy08l1889v50814bs77093r4818j38f8';
 
   /// Retrieves the merchant Selar checkout/store URL, falling back to default
@@ -17,7 +17,8 @@ class SelarPaymentService {
         stored.contains('fatima-muhammad') ||
         stored.contains('fatimamuhammad') ||
         stored.endsWith('/alnur') ||
-        stored.endsWith('/alnur/')) {
+        stored.endsWith('/alnur/') ||
+        stored.contains('/m/alnurstore')) {
       await prefs.setString(_prefKeySelarStoreUrl, defaultStoreUrl);
       return defaultStoreUrl;
     }
