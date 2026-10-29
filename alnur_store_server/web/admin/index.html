@@ -436,7 +436,7 @@
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <div>
               <h2 class="text-xl font-bold font-serif text-gray-900">Manage Luxury Catalog</h2>
-              <p class="text-xs text-gray-500 mt-1">Real-time inventory and pricing for Abayas, Hijabs, Jalabias, Thobes, and Scents</p>
+              <p class="text-xs text-gray-500 mt-1">Real-time inventory and pricing for Rings, Royal Perfumes, Fine Jewelries, Wedding Rings, and Wristwatches</p>
             </div>
             <div class="flex items-center space-x-3">
               <div class="relative">
@@ -454,30 +454,31 @@
           <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 mb-5 border-b border-gray-100">
             <!-- Category Filter Pills with Product Numbers -->
             <div class="flex items-center space-x-2 overflow-x-auto" id="categoryFilterChips">
-              <button onclick="setCategoryFilter('all', this)" class="cat-chip active px-3.5 py-1.5 rounded-full text-xs font-semibold bg-brand-emerald text-white shadow-sm flex items-center space-x-1.5">
+              <button onclick="setCategoryFilter('all', this)" class="cat-chip active px-3.5 py-1.5 rounded-full text-xs font-semibold bg-brand-emerald text-white shadow-sm flex items-center space-x-1.5 shrink-0">
                 <span>All Collections</span>
-                <span id="cat-count-all" class="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px]">11</span>
+                <span id="cat-count-all" class="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px]">20</span>
               </button>
-              <button onclick="setCategoryFilter('abayas', this)" class="cat-chip px-3.5 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200 border border-gray-200 flex items-center space-x-1.5">
-                <span>Abayas</span>
-                <span id="cat-count-abayas" class="px-1.5 py-0.2 rounded-full bg-gray-200 text-gray-700 text-[10px]">4</span>
+              <button onclick="setCategoryFilter('perfumes', this)" class="cat-chip px-3.5 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200 border border-gray-200 flex items-center space-x-1.5 shrink-0">
+                <span>Perfumes & Oud</span>
+                <span id="cat-count-perfumes" class="px-1.5 py-0.2 rounded-full bg-gray-200 text-gray-700 text-[10px]">4</span>
               </button>
-              <button onclick="setCategoryFilter('hijabs', this)" class="cat-chip px-3.5 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200 border border-gray-200 flex items-center space-x-1.5">
-                <span>Hijabs</span>
-                <span id="cat-count-hijabs" class="px-1.5 py-0.2 rounded-full bg-gray-200 text-gray-700 text-[10px]">2</span>
+              <button onclick="setCategoryFilter('wedding-rings', this)" class="cat-chip px-3.5 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200 border border-gray-200 flex items-center space-x-1.5 shrink-0">
+                <span>Wedding Rings</span>
+                <span id="cat-count-wedding-rings" class="px-1.5 py-0.2 rounded-full bg-gray-200 text-gray-700 text-[10px]">4</span>
               </button>
-              <button onclick="setCategoryFilter('jalabias', this)" class="cat-chip px-3.5 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200 border border-gray-200 flex items-center space-x-1.5">
-                <span>Jalabias</span>
-                <span id="cat-count-jalabias" class="px-1.5 py-0.2 rounded-full bg-gray-200 text-gray-700 text-[10px]">1</span>
+              <button onclick="setCategoryFilter('wristwatches', this)" class="cat-chip px-3.5 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200 border border-gray-200 flex items-center space-x-1.5 shrink-0">
+                <span>Wristwatches</span>
+                <span id="cat-count-wristwatches" class="px-1.5 py-0.2 rounded-full bg-gray-200 text-gray-700 text-[10px]">4</span>
               </button>
-              <button onclick="setCategoryFilter('thobes', this)" class="cat-chip px-3.5 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200 border border-gray-200 flex items-center space-x-1.5">
-                <span>Thobes</span>
-                <span id="cat-count-thobes" class="px-1.5 py-0.2 rounded-full bg-gray-200 text-gray-700 text-[10px]">1</span>
+              <button onclick="setCategoryFilter('jewelries', this)" class="cat-chip px-3.5 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200 border border-gray-200 flex items-center space-x-1.5 shrink-0">
+                <span>Fine Jewelry</span>
+                <span id="cat-count-jewelries" class="px-1.5 py-0.2 rounded-full bg-gray-200 text-gray-700 text-[10px]">4</span>
               </button>
-              <button onclick="setCategoryFilter('perfumes', this)" class="cat-chip px-3.5 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200 border border-gray-200 flex items-center space-x-1.5">
-                <span>Perfumes</span>
-                <span id="cat-count-perfumes" class="px-1.5 py-0.2 rounded-full bg-gray-200 text-gray-700 text-[10px]">1</span>
+              <button onclick="setCategoryFilter('rings', this)" class="cat-chip px-3.5 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200 border border-gray-200 flex items-center space-x-1.5 shrink-0">
+                <span>Rings</span>
+                <span id="cat-count-rings" class="px-1.5 py-0.2 rounded-full bg-gray-200 text-gray-700 text-[10px]">4</span>
               </button>
+            </div>
               <button onclick="setCategoryFilter('jewelries', this)" class="cat-chip px-3.5 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200 border border-gray-200 flex items-center space-x-1.5">
                 <span>Jewelries</span>
                 <span id="cat-count-jewelries" class="px-1.5 py-0.2 rounded-full bg-gray-200 text-gray-700 text-[10px]">2</span>
@@ -1115,13 +1116,12 @@
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block font-semibold text-gray-700 mb-1">Category</label>
-            <select id="formCategory" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2.5 text-gray-900 focus:outline-none focus:border-brand-emerald focus:bg-white transition">
-              <option value="abayas">Abayas</option>
-              <option value="hijabs">Hijabs</option>
-              <option value="jalabias">Jalabias</option>
-              <option value="thobes">Thobes</option>
-              <option value="perfumes">Perfumes</option>
-              <option value="jewelries">Jewelries</option>
+            <select id="formCategory" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2.5 text-gray-900 focus:outline-none focus:border-brand-emerald focus:bg-white transition font-medium">
+              <option value="perfumes">Perfumes & Oud</option>
+              <option value="wedding-rings">Wedding Rings</option>
+              <option value="wristwatches">Wristwatches</option>
+              <option value="jewelries">Fine Jewelry</option>
+              <option value="rings">Rings</option>
             </select>
           </div>
           <div>
@@ -2542,7 +2542,7 @@
       
       const phoneDigits = user.phone.replace(/[^0-9]/g, '');
       const waMsg = encodeURIComponent(
-        `Assalamu alaykum ${user.name}! 🌟 We noticed you ${isNeverOrdered ? 'recently joined Al-Nur Store' : 'haven\'t shopped with us in a few months'}. Enjoy an exclusive ${discount} with code *${promoCode}* on our handcrafted Abayas and Scents! Shop now: http://localhost:8082/app`
+        `Assalamu alaykum ${user.name}! 🌟 We noticed you ${isNeverOrdered ? 'recently joined Al-Nur Store' : 'haven\'t shopped with us in a few months'}. Enjoy an exclusive ${discount} with code *${promoCode}* on our luxury Rings, Royal Arabian Perfumes, and Fine Jewelries! Shop now: http://localhost:8082/app`
       );
 
       const content = document.getElementById('winBackContent');
@@ -2570,7 +2570,7 @@
 
         <div>
           <label class="block font-semibold text-gray-700 mb-1">Personalized WhatsApp Concierge Draft</label>
-          <textarea rows="4" readonly class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 text-[11px] text-gray-700 font-sans focus:outline-none leading-relaxed">Assalamu alaykum ${user.name}! We noticed you ${isNeverOrdered ? 'recently joined Al-Nur Store' : 'haven\'t shopped with us in a few months'}. Enjoy an exclusive ${discount} with code ${promoCode} on our handcrafted Abayas and Scents!</textarea>
+          <textarea rows="4" readonly class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 text-[11px] text-gray-700 font-sans focus:outline-none leading-relaxed">Assalamu alaykum ${user.name}! We noticed you ${isNeverOrdered ? 'recently joined Al-Nur Store' : 'haven\'t shopped with us in a few months'}. Enjoy an exclusive ${discount} with code ${promoCode} on our luxury Rings, Royal Arabian Perfumes, and Fine Jewelries!</textarea>
         </div>
 
         <div class="pt-2 flex space-x-2">
@@ -3356,7 +3356,7 @@
       const countAllCat = document.getElementById('cat-count-all');
       if (countAllCat) countAllCat.innerText = total;
 
-      const cats = ['abayas', 'hijabs', 'jalabias', 'thobes', 'perfumes', 'jewelries'];
+      const cats = ['perfumes', 'wedding-rings', 'wristwatches', 'jewelries', 'rings'];
       cats.forEach(c => {
         const el = document.getElementById(`cat-count-${c}`);
         if (el) {
@@ -4269,39 +4269,39 @@
     const defaultAiMessages = [
       {
         sender: 'user',
-        text: 'Assalamu alaykum! I have a Friday Jumuah prayer followed by a family gathering. What modest dress and scent do you recommend under ₦50,000?'
+        text: 'Assalamu alaykum! I am attending a Nigerian wedding in Lekki this weekend. What perfume, wedding jewelry, and wristwatch do you recommend under ₦120,000?'
       },
       {
         sender: 'assistant',
-        occasion: 'Friday Jumuah Prayer & Gathering',
-        modestyNote: '100% Non-Transparent Fabric Policy • Generous A-Line Silhouette • Wrist & Ankle Coverage with Opaque Lining.',
-        reply: 'Wa alaykum assalam wa rahmatullah! ✨\n\nFor **Friday Jumuah Prayer & Gathering**, I have curated a balanced, fully opaque modest ensemble adhering to Islamic couture principles:',
+        occasion: 'Nikah Ceremony & Royal Wedding Reception',
+        modestyNote: '100% Non-Tarnish Gold Bonded & 925 Sterling Silver Guarantee • Alcohol-Free Royal Arabian Fragrances • Precision Luxury Timepieces.',
+        reply: 'Wa alaykum assalam wa rahmatullah! ✨\n\nFor **Nikah Ceremony & Royal Wedding Reception**, I have curated an exquisite Nigerian luxury jewelry, timepiece, and royal fragrance set:',
         recommendedProducts: [
           {
-            name: 'Classic Black Korean Abaya',
-            price: 24500,
-            description: 'Made from high-grade Korean Nida fabric, offering lightweight modest coverage with deep black finish.',
-            category: 'abayas'
-          },
-          {
-            name: 'Royal Oud Signature Flacon',
-            price: 18000,
-            description: 'Smoky Cambodian oud with a warm amber-vanilla finish. Suitable for Jumuah and festive evenings.',
+            name: 'Royal Amber & Cambodian Oud EDP (100ml)',
+            price: 28500,
+            description: 'Opulent Cambodian oud infused with warm amber, Madagascar vanilla, and long-lasting sillage for Nigerian weddings.',
             category: 'perfumes'
           },
           {
-            name: 'Rose Chiffon Everyday Hijab',
-            price: 7500,
-            description: 'Lightweight, breathable luxury chiffon that drapes gracefully without slipping.',
-            category: 'hijabs'
+            name: 'Geneva Diamond-Bezel Emerald Rose Gold Watch',
+            price: 36000,
+            description: 'Striking emerald green sunburst dial encircled with Austrian crystal accents and an 18K rose-gold Jubilee link bracelet.',
+            category: 'wristwatches'
+          },
+          {
+            name: 'Zirconia Solitaire Halo Engagement Ring (925 Silver)',
+            price: 38500,
+            description: 'Dazzling 2-carat round brilliant cubic zirconia stone bordered by a pavé halo on solid rhodium-plated sterling silver.',
+            category: 'wedding-rings'
           }
         ],
-        totalEstimatedCost: 50000,
+        totalEstimatedCost: 103000,
         suggestedPrompts: [
-          '🌿 Show breathable linen options',
-          '🌸 Pair with long-lasting Royal Oud',
-          '💰 What can I get under ₦30,000?',
-          '🕌 Men\'s Friday thobes & scents'
+          '💍 18K Gold couple wedding band sets',
+          '✨ Zainab bridal crystal choker & earrings',
+          '⌚ His & Hers matching watch gift set',
+          '🌸 Lattafa Khamrah & Smoky Bukhoor gift box'
         ]
       }
     ];

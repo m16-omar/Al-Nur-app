@@ -97,13 +97,13 @@ void main() {
       bool favoriteToggled = false;
 
       const product = ProductModel(
-        id: 'widget_abaya_1',
-        name: 'Oud Noir Luxury Abaya',
+        id: 'widget_perfume_1',
+        name: 'Royal Amber & Cambodian Oud EDP',
         price: 28500,
         rating: 4.9,
         reviewCount: 32,
-        imageUrl: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b',
-        categoryId: 'abayas',
+        imageUrl: 'https://images.unsplash.com/photo-1594035910387-fea47794261f',
+        categoryId: 'perfumes',
         isFavorite: true,
       );
 
@@ -119,11 +119,11 @@ void main() {
         ),
       );
 
-      expect(find.text('Oud Noir Luxury Abaya'), findsOneWidget);
+      expect(find.text('Royal Amber & Cambodian Oud EDP'), findsOneWidget);
       expect(find.byIcon(Icons.favorite), findsOneWidget);
 
       // Tap card
-      await tester.tap(find.text('Oud Noir Luxury Abaya'));
+      await tester.tap(find.text('Royal Amber & Cambodian Oud EDP'));
       expect(cardTapped, isTrue);
 
       // Tap favorite button

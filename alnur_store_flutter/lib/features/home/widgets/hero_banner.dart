@@ -20,25 +20,32 @@ class _HeroBannerState extends State<HeroBanner> {
 
   final List<Map<String, String>> _banners = [
     {
-      'tag': 'HAUTE MODESTY',
-      'title': 'Luxury Abayas\nfor Every Occasion',
-      'subtitle': 'Modest. Stylish. Timeless.',
-      'buttonText': 'Shop Now →',
-      'imageUrl': 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=600&q=80',
+      'tag': 'ROYAL PERFUMERY',
+      'title': 'Arabian Oud &\nLuxury Fragrances',
+      'subtitle': 'Oud. Amber. Long-Lasting.',
+      'buttonText': 'Explore Scents →',
+      'imageUrl': 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=600&q=80',
     },
     {
-      'tag': 'RAMADAN & EID',
-      'title': 'Pure Medina Silk\nHijab Collection',
-      'subtitle': 'Breathable. Graceful. Pure.',
-      'buttonText': 'Explore →',
-      'imageUrl': 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?auto=format&fit=crop&w=600&q=80',
+      'tag': 'BRIDAL & NIKAH',
+      'title': '18K Gold Plated\nWedding Rings',
+      'subtitle': 'Couple Bands. Eternal Love.',
+      'buttonText': 'View Bands →',
+      'imageUrl': 'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?auto=format&fit=crop&w=600&q=80',
     },
     {
-      'tag': 'ARTISANAL LUXURY',
-      'title': 'Royal Moroccan\nJalabias & Kaftans',
-      'subtitle': 'Embroidered Festive Elegance.',
-      'buttonText': 'View All →',
-      'imageUrl': 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=600&q=80',
+      'tag': 'FINE TIMEPIECES',
+      'title': 'Diamond-Bezel\nLuxury Wristwatches',
+      'subtitle': 'Emerald Green. Rose Gold.',
+      'buttonText': 'Discover Watches →',
+      'imageUrl': 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=600&q=80',
+    },
+    {
+      'tag': 'NIGERIAN LUXURY',
+      'title': 'Zainab Bridal Chokers\n& Statement Rings',
+      'subtitle': 'Austrian Crystals. Non-Tarnish.',
+      'buttonText': 'Shop Jewelry →',
+      'imageUrl': 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80',
     },
   ];
 

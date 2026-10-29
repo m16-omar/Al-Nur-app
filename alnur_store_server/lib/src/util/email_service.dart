@@ -48,7 +48,7 @@ class EmailService {
       subtitle: 'Complete your account verification',
       greeting: 'Assalamu alaykum wa rahmatullah,',
       description:
-          'Thank you for joining Al-Nur Store, your sanctuary for luxury modest attire, fine abayas, thobes, and royal oud fragrances. Please enter the verification code below to activate your account:',
+          'Thank you for joining Al-Nur Store, your premier sanctuary for luxury Rings, Royal Arabian Perfumes, Fine Jewelry, Wedding Rings, and Swiss-grade Wristwatches. Please enter the verification code below to activate your account:',
       otpCode: code,
       actionNote:
           'This verification code is valid for 15 minutes. For your protection, never share this code with anyone.',

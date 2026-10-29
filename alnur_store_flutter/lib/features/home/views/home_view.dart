@@ -302,11 +302,11 @@ class _HomeViewState extends ConsumerState<HomeView> {
 
           const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-          // Al-Nur Abayas Section
+          // Royal Arabian Perfumes & Oud Section
           SliverToBoxAdapter(
             child: FeaturedProductsSection(
-              title: 'Al-Nur Abayas',
-              products: homeState.abayasProducts,
+              title: 'Royal Arabian Perfumes & Oud',
+              products: homeState.perfumesProducts,
               onProductTap: (product) => _showProductDetailsModal(context, product),
               onFavoriteToggle: (product) => homeController.toggleFavorite(product),
               onViewAllTap: () => setState(() => _currentNavIndex = 1),
@@ -315,11 +315,11 @@ class _HomeViewState extends ConsumerState<HomeView> {
 
           const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-          // Al-Nur Hijabs Section
+          // Bridal & Wedding Rings Section
           SliverToBoxAdapter(
             child: FeaturedProductsSection(
-              title: 'Al-Nur Hijabs',
-              products: homeState.hijabsProducts,
+              title: 'Bridal & Wedding Rings',
+              products: homeState.weddingRingsProducts,
               onProductTap: (product) => _showProductDetailsModal(context, product),
               onFavoriteToggle: (product) => homeController.toggleFavorite(product),
               onViewAllTap: () => setState(() => _currentNavIndex = 1),
@@ -328,11 +328,11 @@ class _HomeViewState extends ConsumerState<HomeView> {
 
           const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-          // Al-Nur Jalabias Section
+          // Luxury Wristwatches Section
           SliverToBoxAdapter(
             child: FeaturedProductsSection(
-              title: 'Al-Nur Jalabias',
-              products: homeState.jalabiasProducts,
+              title: 'Luxury Wristwatches',
+              products: homeState.wristwatchesProducts,
               onProductTap: (product) => _showProductDetailsModal(context, product),
               onFavoriteToggle: (product) => homeController.toggleFavorite(product),
               onViewAllTap: () => setState(() => _currentNavIndex = 1),
@@ -341,11 +341,24 @@ class _HomeViewState extends ConsumerState<HomeView> {
 
           const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-          // Al-Nur Thobes & Jubbahs Section
+          // Fine Jewelry & Sets Section
           SliverToBoxAdapter(
             child: FeaturedProductsSection(
-              title: 'Al-Nur Thobes & Jubbahs',
-              products: homeState.thobesProducts,
+              title: 'Fine Jewelry & Sets',
+              products: homeState.jewelriesProducts,
+              onProductTap: (product) => _showProductDetailsModal(context, product),
+              onFavoriteToggle: (product) => homeController.toggleFavorite(product),
+              onViewAllTap: () => setState(() => _currentNavIndex = 1),
+            ),
+          ),
+
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
+          // Everyday Statement Rings Section
+          SliverToBoxAdapter(
+            child: FeaturedProductsSection(
+              title: 'Everyday Statement Rings',
+              products: homeState.ringsProducts,
               onProductTap: (product) => _showProductDetailsModal(context, product),
               onFavoriteToggle: (product) => homeController.toggleFavorite(product),
               onViewAllTap: () => setState(() => _currentNavIndex = 1),

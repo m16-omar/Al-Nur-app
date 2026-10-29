@@ -160,14 +160,13 @@ class AiAssistantEndpoint extends Endpoint {
   }) {
     if (allProducts.isEmpty) return [];
 
-    final isThobeOrMale = RegExp(
-      r'\b(thobe|thobes|jalabiya|jalabias|male|men|man|brother)\b',
+    final isMaleQuery = RegExp(
+      r'\b(men|man|brother|groom|husband)\b',
       caseSensitive: false,
     ).hasMatch(query);
 
     final isWedding = occasion.contains('Wedding') || occasion.contains('Nikah');
     final isJumuah = occasion.contains('Jumuah');
-    final isLinen = query.contains('linen') || occasion.contains('Warm Weather');
 
     final List<StoreProduct> selected = [];
 
@@ -186,58 +185,63 @@ class AiAssistantEndpoint extends Endpoint {
       return candidates.first;
     }
 
-    if (isThobeOrMale) {
-      final thobe = findProduct('thobes') ?? findProduct('jalabias');
-      if (thobe != null) selected.add(thobe);
+    if (isMaleQuery) {
+      final watch = findProduct('wristwatches', keywords: ['naviforce', 'men']);
+      if (watch != null) selected.add(watch);
 
-      final scent = findProduct('perfumes', keywords: ['oud', 'royal']);
+      final ring = findProduct('rings', keywords: ['onyx', 'signet']) ??
+          findProduct('wedding-rings', keywords: ['dubai', 'couple']);
+      if (ring != null) selected.add(ring);
+
+      final scent = findProduct('perfumes', keywords: ['cambodian', 'oud']);
       if (scent != null) selected.add(scent);
     } else if (isWedding) {
-      final bridalAbaya = findProduct('abayas', keywords: ['organza', 'pearl', 'gold']) ??
-          findProduct('jalabias', keywords: ['moroccan', 'emerald']);
-      if (bridalAbaya != null) selected.add(bridalAbaya);
+      final weddingBand = findProduct('wedding-rings', keywords: ['eternal', 'couple', 'halo', 'dubai']);
+      if (weddingBand != null) selected.add(weddingBand);
 
-      final jewelry = findProduct('jewelries', keywords: ['bridal', 'aisha', 'gold']);
+      final jewelry = findProduct('jewelries', keywords: ['bridal', 'choker', 'gold', 'zainab']);
       if (jewelry != null) selected.add(jewelry);
 
-      final silkHijab = findProduct('hijabs', keywords: ['silk', 'medina']);
-      if (silkHijab != null) selected.add(silkHijab);
+      final watch = findProduct('wristwatches', keywords: ['emerald', 'rose', 'dual']);
+      if (watch != null) selected.add(watch);
 
-      final oud = findProduct('perfumes');
-      if (oud != null) selected.add(oud);
-    } else if (isLinen) {
-      final linenAbaya = findProduct('abayas', keywords: ['linen', 'kimono']);
-      if (linenAbaya != null) selected.add(linenAbaya);
-
-      final chiffon = findProduct('hijabs', keywords: ['chiffon', 'rose', 'breathable']);
-      if (chiffon != null) selected.add(chiffon);
+      final scent = findProduct('perfumes', keywords: ['khamrah', 'oud', 'royal']);
+      if (scent != null) selected.add(scent);
     } else if (isJumuah) {
-      final jumuahAbaya = findProduct('abayas', keywords: ['korean', 'black', 'nida']) ??
-          findProduct('abayas');
-      if (jumuahAbaya != null) selected.add(jumuahAbaya);
-
-      final scent = findProduct('perfumes', keywords: ['oud', 'signature']);
+      final scent = findProduct('perfumes', keywords: ['tahara', 'oud', 'amber']);
       if (scent != null) selected.add(scent);
 
-      final hijab = findProduct('hijabs');
-      if (hijab != null) selected.add(hijab);
+      final ring = findProduct('rings', keywords: ['barakah', 'signet', 'emerald']);
+      if (ring != null) selected.add(ring);
+
+      final watch = findProduct('wristwatches', keywords: ['roman', 'naviforce']);
+      if (watch != null) selected.add(watch);
     } else {
       // General or specific keyword match
-      if (query.contains('hijab') || query.contains('scarf')) {
-        final hijab = findProduct('hijabs', keywords: ['medina', 'silk']) ?? findProduct('hijabs');
-        if (hijab != null) selected.add(hijab);
+      if (query.contains('watch') || query.contains('timepiece')) {
+        final watch = findProduct('wristwatches');
+        if (watch != null) selected.add(watch);
+      } else if (query.contains('wedding') || query.contains('couple') || query.contains('proposal')) {
+        final band = findProduct('wedding-rings');
+        if (band != null) selected.add(band);
+      } else if (query.contains('ring')) {
+        final ring = findProduct('rings') ?? findProduct('wedding-rings');
+        if (ring != null) selected.add(ring);
       } else if (query.contains('perfume') || query.contains('oud') || query.contains('scent')) {
         final perfume = findProduct('perfumes');
         if (perfume != null) selected.add(perfume);
+      } else if (query.contains('jewelry') || query.contains('necklace') || query.contains('bracelet') || query.contains('bangle')) {
+        final jewelry = findProduct('jewelries');
+        if (jewelry != null) selected.add(jewelry);
       } else {
-        final abaya = findProduct('abayas');
-        if (abaya != null) selected.add(abaya);
-
-        final hijab = findProduct('hijabs');
-        if (hijab != null) selected.add(hijab);
-
         final perfume = findProduct('perfumes');
         if (perfume != null) selected.add(perfume);
+
+        final ring = findProduct('wedding-rings') ?? findProduct('rings');
+        if (ring != null) selected.add(ring);
+
+        final watch = findProduct('wristwatches');
+        if (watch != null) selected.add(watch);
       }
     }
 
@@ -298,40 +302,37 @@ class AiAssistantEndpoint extends Endpoint {
 
     buffer.writeln();
     buffer.writeln(
-      '💡 **Stylist Tip:** Pair with neutral under-scarves for zero hair slippage, and apply Cambodian Oud on pulse points for an enduring prayer-safe aroma.',
+      '💡 **Stylist Tip:** Layer Arabian Oud or Musk Tahara on pulse points for an all-day regal scent trail, and complement your rings with a matching diamond-bezel timepiece.',
     );
 
     return buffer.toString();
   }
 
   String _buildModestyNote(List<StoreProduct> products, String occasion) {
-    if (products.any((p) => p.categoryId == 'thobes')) {
-      return 'Tailored with loose-fitting drape, opaque natural cotton weave, and wrist-length cut suitable for prayer and Friday congregation.';
-    }
-    return '100% Non-Transparent Fabric Policy • Generous A-Line Silhouette • Wrist & Ankle Coverage with Opaque Lining.';
+    return '100% Non-Tarnish Gold Bonded & 925 Sterling Silver Guarantee • Alcohol-Free Royal Arabian Fragrances • Precision Luxury Timepieces.';
   }
 
   List<String> _buildSuggestedPrompts(String occasion) {
     if (occasion.contains('Jumuah')) {
       return [
-        '🌿 Show breathable linen options',
-        '🌸 Pair with long-lasting Royal Oud',
-        '💰 What can I get under ₦30,000?',
-        '🕌 Men\'s Friday thobes & scents',
+        '🌸 Royal Cambodian Oud & Musk Tahara',
+        '⌚ Men\'s Naviforce blue dial timepiece',
+        '💍 Arabic Barakah engraved silver ring',
+        '💰 Best luxury gift under ₦30,000',
       ];
     } else if (occasion.contains('Wedding') || occasion.contains('Nikah')) {
       return [
-        '💍 View Aisha Bridal Heirloom jewelry',
-        '✨ Double-layer organza abayas',
-        '🧕 Pure Medina silk scarves in gold',
-        '👗 Velvet Moroccan jalabias',
+        '💍 18K Gold couple wedding band sets',
+        '✨ Zainab bridal crystal choker & earrings',
+        '⌚ His & Hers matching watch gift set',
+        '🌸 Lattafa Khamrah & Smoky Bukhoor gift box',
       ];
     } else {
       return [
-        '🕌 Jumuah prayer ensemble ideas',
-        '✨ Royal Eid modest luxury',
-        '🌿 Breathable summer modesty under ₦30k',
-        '🌸 Non-alcoholic prayer scents',
+        '💍 Solitaire engagement rings in sterling silver',
+        '⌚ Luxury diamond-bezel wristwatches',
+        '🌸 Long-lasting Arabian oud perfumes',
+        '✨ Sparkling tennis bracelets & bangles',
       ];
     }
   }
@@ -354,8 +355,8 @@ class AiAssistantEndpoint extends Endpoint {
         .join('\n');
 
     final promptText = '''
-You are the Al-Nur Luxury Islamic Haute Couture AI Stylist.
-A customer is asking for modest fashion advice: "$query".
+You are the Al-Nur Luxury Jewelry, Timepiece & Royal Fragrance AI Stylist in Nigeria.
+A customer is asking for luxury styling or gift advice: "$query".
 Detected Occasion: $occasion
 Customer Budget: ${budget != null ? '₦${budget.toStringAsFixed(0)}' : 'Flexible'}
 Recommended Products from catalog:
@@ -363,6 +364,9 @@ $catalogContext
 
 Guidelines:
 1. Greet with a warm Islamic greeting ("As-salamu alaykum" or "Wa alaykum assalam").
+2. Specialize in Wedding Rings, Everyday Statement Rings, Royal Arabian Perfumes/Oud, Fine Jewelry (Chokers, Bangles, Tennis Bracelets), and Luxury Wristwatches.
+3. Tailor recommendations for the Nigerian market (Lagos, Abuja, Kano, Port Harcourt), highlighting durability, non-tarnish finishes under humidity, and gifts for weddings, owambe, and Jumu'ah.
+4. Always provide prices in Nigerian Naira (₦).
 2. Describe why the recommended products pair gracefully together with attention to opaque modest fabrics (Korean Nida, Medina Silk, European Linen), silhouettes, and prayer-safe scent layering.
 3. Be respectful, encouraging, elegant, and concise. Mention product prices in Nigerian Naira (₦).
 ''';

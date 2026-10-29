@@ -33,16 +33,16 @@ class AiChatController extends Notifier<AiChatState> {
         ChatMessage(
           id: 'welcome',
           text:
-              '''As-salamu alaykum! ✨ I am your Al-Nur Personal AI Stylist.
+              '''As-salamu alaykum! ✨ I am your Al-Nur Personal Luxury Jewelry, Timepiece & Fragrance Stylist.
 
-Need help styling an abaya, layering prayer-safe fragrances, or curating a modest look for an upcoming occasion?''',
+Need guidance choosing couple wedding rings, selecting long-lasting Arabian oud, or matching a diamond-bezel wristwatch with fine jewelry for an upcoming celebration?''',
           sender: MessageSender.assistant,
           timestamp: DateTime.now(),
           suggestedPrompts: const [
-            '🕌 Jumuah prayer ensemble',
-            '✨ Royal Eid modest luxury',
-            '💍 Nikah wedding guest look',
-            '🌿 Breathable summer modesty under ₦30k',
+            '💍 Couple wedding bands in 18K gold',
+            '🌸 Best long-lasting Arabian Oud under ₦30k',
+            '⌚ Luxury diamond-bezel wristwatches',
+            '✨ Zainab bridal crystal choker & earrings',
           ],
         ),
       ],

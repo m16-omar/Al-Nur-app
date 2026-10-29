@@ -66,15 +66,15 @@ void main() {
     test('Search query filters allProducts correctly', () {
       final controller = container.read(homeControllerProvider.notifier);
 
-      controller.updateSearchQuery('abaya');
+      controller.updateSearchQuery('gold');
       final searchState = container.read(homeControllerProvider);
 
-      expect(searchState.searchQuery, equals('abaya'));
+      expect(searchState.searchQuery, equals('gold'));
       expect(searchState.filteredSearchResults, isNotEmpty);
       for (final p in searchState.filteredSearchResults) {
-        final matches = p.name.toLowerCase().contains('abaya') ||
-            p.description.toLowerCase().contains('abaya') ||
-            p.categoryId.toLowerCase().contains('abaya');
+        final matches = p.name.toLowerCase().contains('gold') ||
+            p.description.toLowerCase().contains('gold') ||
+            p.categoryId.toLowerCase().contains('gold');
         expect(matches, isTrue);
       }
     });

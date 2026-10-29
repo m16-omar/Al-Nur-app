@@ -5,14 +5,26 @@ import '../idempotency/idempotency_manager.dart';
 
 class ProductEndpoint extends Endpoint {
   /// Fetches products, filtering optionally by categoryId and search query.
-  /// Seeds initial Al-Nur catalog products if empty.
+  /// Automatically synchronizes official Nigerian luxury catalog (Rings, Perfumes, Jewelries, Wedding Rings, Wristwatches).
   Future<List<StoreProduct>> getProducts(
     Session session, {
     String? categoryId,
     String? search,
   }) async {
-    final count = await StoreProduct.db.count(session);
-    if (count == 0) {
+    final existing = await StoreProduct.db.find(session);
+    final hasLegacy = existing.any((p) =>
+        p.categoryId == 'abayas' ||
+        p.categoryId == 'hijabs' ||
+        p.categoryId == 'jalabias' ||
+        p.categoryId == 'thobes' ||
+        p.categoryId == 'silk-khimars');
+
+    if (existing.isEmpty || hasLegacy) {
+      if (hasLegacy) {
+        for (final p in existing) {
+          await StoreProduct.db.deleteRow(session, p);
+        }
+      }
       await _seedDefaultProducts(session);
     }
 
@@ -30,6 +42,19 @@ class ProductEndpoint extends Endpoint {
         }
         return exp ?? Constant.bool(true);
       },
+      orderBy: (t) => t.id,
+    );
+  }
+
+  /// Explicitly resets and reseeds the catalog with the 20 official Nigerian luxury products.
+  Future<List<StoreProduct>> reseedProducts(Session session) async {
+    final existing = await StoreProduct.db.find(session);
+    for (final p in existing) {
+      await StoreProduct.db.deleteRow(session, p);
+    }
+    await _seedDefaultProducts(session);
+    return await StoreProduct.db.find(
+      session,
       orderBy: (t) => t.id,
     );
   }
@@ -91,164 +116,312 @@ class ProductEndpoint extends Endpoint {
 
   Future<void> _seedDefaultProducts(Session session) async {
     final seedItems = [
-      // Abayas
+      // 1. PERFUMES & ROYAL OUD
       StoreProduct(
-        name: 'Dubai Gold Noir Abaya',
-        slug: 'dubai-gold-noir-abaya',
-        categoryId: 'abayas',
+        name: 'Royal Amber & Cambodian Oud EDP (100ml)',
+        slug: 'royal-amber-cambodian-oud',
+        categoryId: 'perfumes',
         price: 28500.0,
         originalPrice: 35000.0,
-        rating: 4.9,
-        reviewCount: 142,
+        rating: 5.0,
+        reviewCount: 148,
         imageUrl:
-            'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=500&q=80',
+            'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=600&q=80',
         description:
-            'Hand-tailored Dubai crepe abaya featuring intricate golden wrist embroidery and graceful flowing drape.',
+            'Opulent Cambodian oud infused with warm amber, Madagascar vanilla, and long-lasting sillage for Nigerian weddings and Jumu\'ah celebrations.',
         isAvailable: true,
         isFavorite: true,
       ),
       StoreProduct(
-        name: 'Classic Black Korean Abaya',
-        slug: 'classic-black-korean-abaya',
-        categoryId: 'abayas',
-        price: 24500.0,
-        originalPrice: 29000.0,
-        rating: 4.8,
-        reviewCount: 118,
+        name: 'Pure Musk Tahara & White Lotus Oil (12ml)',
+        slug: 'pure-musk-tahara-lotus-oil',
+        categoryId: 'perfumes',
+        price: 14000.0,
+        originalPrice: 18000.0,
+        rating: 4.9,
+        reviewCount: 112,
         imageUrl:
-            'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=500&q=80',
+            'https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=600&q=80',
         description:
-            'Made from high-grade Korean Nida fabric, offering lightweight modest coverage with deep black finish.',
+            'Concentrated alcohol-free white musk oil with powdery lotus floral accents, revered across Nigeria for personal elegance and daily freshness.',
         isAvailable: true,
         isFavorite: false,
       ),
       StoreProduct(
-        name: 'Pearl Beaded Organza Abaya',
-        slug: 'pearl-beaded-organza-abaya',
-        categoryId: 'abayas',
+        name: 'Lattafa Khamrah & Smoky Bukhoor Set',
+        slug: 'lattafa-khamrah-smoky-bukhoor',
+        categoryId: 'perfumes',
         price: 38000.0,
         originalPrice: 45000.0,
         rating: 4.9,
-        reviewCount: 82,
+        reviewCount: 94,
         imageUrl:
-            'https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?auto=format&fit=crop&w=500&q=80',
+            'https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=600&q=80',
         description:
-            'Luxurious double-layer organza abaya with hand-set river pearls along the lapel and cuffs.',
+            'Decadent blend of sweet dates, cinnamon bark, roasted praline, and smoky incense wood. An esteemed Nigerian bridal shower and anniversary gift.',
         isAvailable: true,
         isFavorite: true,
       ),
       StoreProduct(
-        name: 'Kimono Flare Linen Abaya',
-        slug: 'kimono-flare-linen-abaya',
-        categoryId: 'abayas',
-        price: 27500.0,
-        originalPrice: 32000.0,
-        rating: 4.7,
+        name: 'Golden Damask Rose & Vanilla Arabian Extrait',
+        slug: 'golden-damask-rose-vanilla',
+        categoryId: 'perfumes',
+        price: 24000.0,
+        originalPrice: 30000.0,
+        rating: 4.8,
+        reviewCount: 86,
+        imageUrl:
+            'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=600&q=80',
+        description:
+            'Exotic damask rose petals steeped in caramelized vanilla pods and amberwood, tailored for warm tropical Nigerian evenings.',
+        isAvailable: true,
+        isFavorite: false,
+      ),
+
+      // 2. WEDDING RINGS & BRIDAL BANDS
+      StoreProduct(
+        name: 'Eternal Vows 18K Gold Plated Couple Wedding Bands',
+        slug: 'eternal-vows-18k-wedding-bands',
+        categoryId: 'wedding-rings',
+        price: 68000.0,
+        originalPrice: 85000.0,
+        rating: 5.0,
+        reviewCount: 136,
+        imageUrl:
+            'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?auto=format&fit=crop&w=600&q=80',
+        description:
+            'His & Hers matching Nigerian marital rings finished in non-tarnish 18K brushed gold with curved comfort fit and luxury presentation case.',
+        isAvailable: true,
+        isFavorite: true,
+      ),
+      StoreProduct(
+        name: 'Zirconia Solitaire Halo Engagement Ring (925 Silver)',
+        slug: 'zirconia-solitaire-halo-engagement-ring',
+        categoryId: 'wedding-rings',
+        price: 38500.0,
+        originalPrice: 48000.0,
+        rating: 4.9,
+        reviewCount: 92,
+        imageUrl:
+            'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=600&q=80',
+        description:
+            'Dazzling 2-carat round brilliant cubic zirconia stone bordered by a pavé halo on solid rhodium-plated sterling silver.',
+        isAvailable: true,
+        isFavorite: true,
+      ),
+      StoreProduct(
+        name: 'Crown Tiara Diamond-Simulant Wedding Band',
+        slug: 'crown-tiara-diamond-wedding-band',
+        categoryId: 'wedding-rings',
+        price: 32000.0,
+        originalPrice: 40000.0,
+        rating: 4.8,
         reviewCount: 64,
         imageUrl:
-            'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=500&q=80',
+            'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=600&q=80',
         description:
-            'Breathable European linen blend in neutral sand, tailored with wide relaxed kimono sleeves.',
-        isAvailable: true,
-        isFavorite: false,
-      ),
-
-      // Hijabs
-      StoreProduct(
-        name: 'Pure Medina Silk Hijab',
-        slug: 'pure-medina-silk-hijab',
-        categoryId: 'hijabs',
-        price: 8500.0,
-        originalPrice: 11000.0,
-        rating: 4.8,
-        reviewCount: 96,
-        imageUrl:
-            'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?auto=format&fit=crop&w=500&q=80',
-        description:
-            'Ultra-soft, opaque Medina silk hijab with subtle luster, breathable for all-day comfort.',
+            'Regal tiara contour ring encrusted with micro-pavé crystals, designed to stack seamlessly with engagement rings or wear standalone.',
         isAvailable: true,
         isFavorite: false,
       ),
       StoreProduct(
-        name: 'Rose Chiffon Everyday Hijab',
-        slug: 'rose-chiffon-everyday-hijab',
-        categoryId: 'hijabs',
-        price: 7500.0,
-        originalPrice: 9500.0,
-        rating: 4.8,
+        name: 'Dubai 18K Solid Gold-Bonded Marital Bands (Pair)',
+        slug: 'dubai-18k-gold-bonded-marital-bands',
+        categoryId: 'wedding-rings',
+        price: 85000.0,
+        originalPrice: 105000.0,
+        rating: 5.0,
         reviewCount: 78,
         imageUrl:
-            'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?auto=format&fit=crop&w=500&q=80',
+            'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?auto=format&fit=crop&w=600&q=80',
         description:
-            'Lightweight, breathable luxury chiffon that drapes gracefully without slipping.',
+            'Heavyweight classic dome wedding bands crafted with multi-layer 18K gold bonded core, guaranteed resistant to sweat, perfume, and daily wear.',
         isAvailable: true,
         isFavorite: true,
       ),
 
-      // Jalabias
+      // 3. WRISTWATCHES
       StoreProduct(
-        name: 'Moroccan Royal Emerald Jalabia',
-        slug: 'moroccan-royal-emerald-jalabia',
-        categoryId: 'jalabias',
+        name: 'Geneva Diamond-Bezel Emerald Rose Gold Watch',
+        slug: 'geneva-diamond-bezel-emerald-watch',
+        categoryId: 'wristwatches',
         price: 36000.0,
-        originalPrice: 42000.0,
+        originalPrice: 45000.0,
         rating: 4.9,
-        reviewCount: 68,
+        reviewCount: 124,
         imageUrl:
-            'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=500&q=80',
+            'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=600&q=80',
         description:
-            'Exquisite Moroccan Sfifa embroidery on premium emerald velvet with handmade sfifa buttons.',
+            'Striking emerald green sunburst dial encircled with Austrian crystal accents and an 18K rose-gold Jubilee stainless steel link bracelet.',
+        isAvailable: true,
+        isFavorite: true,
+      ),
+      StoreProduct(
+        name: 'Naviforce Royal Roman Numeral Men\'s Timepiece',
+        slug: 'naviforce-royal-roman-mens-watch',
+        categoryId: 'wristwatches',
+        price: 32500.0,
+        originalPrice: 40000.0,
+        rating: 4.8,
+        reviewCount: 108,
+        imageUrl:
+            'https://images.unsplash.com/photo-1533139502658-0198f920d8e8?auto=format&fit=crop&w=600&q=80',
+        description:
+            'Water-resistant midnight blue dial featuring gold roman numerals, date calendar window, and hardened mineral scratch-resistant glass.',
+        isAvailable: true,
+        isFavorite: false,
+      ),
+      StoreProduct(
+        name: 'Hannah Martin Minimalist Mesh Strap Women\'s Watch',
+        slug: 'hannah-martin-minimalist-mesh-watch',
+        categoryId: 'wristwatches',
+        price: 22000.0,
+        originalPrice: 28000.0,
+        rating: 4.7,
+        reviewCount: 88,
+        imageUrl:
+            'https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&w=600&q=80',
+        description:
+            'Ultra-slim 7mm profile watch with breathable Milanese magnetic mesh strap, beloved by Nigerian corporate professionals and brides.',
+        isAvailable: true,
+        isFavorite: false,
+      ),
+      StoreProduct(
+        name: 'Al-Nur Dual His & Hers Luxury Watch Gift Set',
+        slug: 'alnur-dual-his-hers-watch-set',
+        categoryId: 'wristwatches',
+        price: 58000.0,
+        originalPrice: 72000.0,
+        rating: 5.0,
+        reviewCount: 95,
+        imageUrl:
+            'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=600&q=80',
+        description:
+            'Matching couple timepieces with Japanese quartz movement and dual-tone gold links, packaged in an embossed velvet gift chest.',
         isAvailable: true,
         isFavorite: true,
       ),
 
-      // Thobes
+      // 4. FINE JEWELRY & SETS
       StoreProduct(
-        name: 'Emirati Minimalist White Thobe',
-        slug: 'emirati-minimalist-white-thobe',
-        categoryId: 'thobes',
-        price: 26000.0,
-        originalPrice: 32000.0,
-        rating: 4.8,
-        reviewCount: 57,
+        name: 'Zainab Luxury Bridal Choker & Earrings Set',
+        slug: 'zainab-luxury-bridal-choker-set',
+        categoryId: 'jewelries',
+        price: 75000.0,
+        originalPrice: 95000.0,
+        rating: 5.0,
+        reviewCount: 140,
         imageUrl:
-            'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=500&q=80',
+            'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80',
         description:
-            'Crisp white cotton thobe with round collar, tailored for daily prayer, Friday Jumuah, and formal events.',
+            'High-grade Austrian crystal choker necklace with chandelier drop earrings, handcrafted for Nigerian traditional and white wedding receptions.',
+        isAvailable: true,
+        isFavorite: true,
+      ),
+      StoreProduct(
+        name: '18K Gold-Layered Dubai Rope Chain Necklace',
+        slug: '18k-gold-layered-dubai-rope-chain',
+        categoryId: 'jewelries',
+        price: 26000.0,
+        originalPrice: 34000.0,
+        rating: 4.8,
+        reviewCount: 115,
+        imageUrl:
+            'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80',
+        description:
+            'Heavyweight 5mm twisted rope chain with secure lobster claw clasp. Triple-plated for non-tarnish luster under Nigerian humidity.',
+        isAvailable: true,
+        isFavorite: false,
+      ),
+      StoreProduct(
+        name: 'Sparkling Tennis Bracelet (4mm White Gold Finish)',
+        slug: 'sparkling-tennis-bracelet-4mm',
+        categoryId: 'jewelries',
+        price: 28000.0,
+        originalPrice: 36000.0,
+        rating: 4.9,
+        reviewCount: 98,
+        imageUrl:
+            'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=600&q=80',
+        description:
+            'Continuous line of four-prong hand-set brilliant round stones with double safety latch. An enduring luxury staple for every wrist.',
+        isAvailable: true,
+        isFavorite: true,
+      ),
+      StoreProduct(
+        name: 'Kano Royal Filigree Gold Bangle Set (Pair)',
+        slug: 'kano-royal-filigree-gold-bangles',
+        categoryId: 'jewelries',
+        price: 42000.0,
+        originalPrice: 52000.0,
+        rating: 4.9,
+        reviewCount: 82,
+        imageUrl:
+            'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=600&q=80',
+        description:
+            'Intricately embossed Northern Nigerian and Arabian filigree motifs on polished gold-tone brass with hidden spring hinges.',
         isAvailable: true,
         isFavorite: false,
       ),
 
-      // Perfumes
+      // 5. RINGS (EVERYDAY & STATEMENT)
       StoreProduct(
-        name: 'Royal Oud Signature Flacon',
-        slug: 'royal-oud-signature',
-        categoryId: 'perfumes',
-        price: 18000.0,
-        originalPrice: 22000.0,
-        rating: 5.0,
-        reviewCount: 110,
+        name: 'Emerald Cut Green Crystal Statement Ring',
+        slug: 'emerald-cut-green-crystal-statement-ring',
+        categoryId: 'rings',
+        price: 18500.0,
+        originalPrice: 24000.0,
+        rating: 4.9,
+        reviewCount: 116,
         imageUrl:
-            'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=500&q=80',
+            'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=600&q=80',
         description:
-            'Smoky Cambodian oud with a warm amber-vanilla finish. Suitable for Jumuah and festive evenings.',
+            'Vibrant faceted emerald-green centerpiece stone set on an 18K gold-plated band, capturing magnificent light from every angle.',
         isAvailable: true,
         isFavorite: true,
       ),
-
-      // Jewelries
       StoreProduct(
-        name: 'Aisha Bridal Heirloom Set',
-        slug: 'aisha-bridal-heirloom-set',
-        categoryId: 'jewelries',
-        price: 55000.0,
-        originalPrice: 65000.0,
-        rating: 4.9,
-        reviewCount: 45,
+        name: 'Arabic Calligraphy \'Barakah\' Open Band Ring',
+        slug: 'arabic-calligraphy-barakah-ring',
+        categoryId: 'rings',
+        price: 16000.0,
+        originalPrice: 20000.0,
+        rating: 4.8,
+        reviewCount: 94,
         imageUrl:
-            'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=500&q=80',
+            'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=600&q=80',
         description:
-            '18k gold-finish bridal set complete with necklace, matching drop earrings, bangles and ornate ring.',
+            'Adjustable 925 sterling silver band engraved with the Arabic prayer for blessing (Barakah), accented with micro-pave zirconia.',
+        isAvailable: true,
+        isFavorite: false,
+      ),
+      StoreProduct(
+        name: 'Classic 3-Row Pavé Crystal Eternity Band',
+        slug: 'classic-3row-pave-crystal-eternity-band',
+        categoryId: 'rings',
+        price: 15000.0,
+        originalPrice: 19000.0,
+        rating: 4.7,
+        reviewCount: 84,
+        imageUrl:
+            'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=600&q=80',
+        description:
+            'Triple row of shimmering hand-set cubic zirconia crystals. Perfect for everyday luxury, ring stacking, or vow renewal.',
+        isAvailable: true,
+        isFavorite: false,
+      ),
+      StoreProduct(
+        name: 'Vintage Black Onyx Signet Ring',
+        slug: 'vintage-black-onyx-signet-ring',
+        categoryId: 'rings',
+        price: 19500.0,
+        originalPrice: 25000.0,
+        rating: 4.9,
+        reviewCount: 76,
+        imageUrl:
+            'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=600&q=80',
+        description:
+            'Bold octagonal natural black onyx gemstone encased in heavy gold-tone bezel, favored by both men and women for distinctive elegance.',
         isAvailable: true,
         isFavorite: true,
       ),

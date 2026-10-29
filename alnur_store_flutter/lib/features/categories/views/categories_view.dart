@@ -74,25 +74,19 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
   }
 
   IconData _getCategoryIcon(String categoryId) {
-    switch (categoryId) {
-      case 'abayas':
-        return Icons.dry_cleaning_rounded;
-      case 'hijabs':
-        return Icons.all_inclusive_rounded;
-      case 'jalabias':
-        return Icons.auto_awesome_outlined;
-      case 'thobes':
-        return Icons.person_rounded;
+    switch (categoryId.toLowerCase()) {
       case 'perfumes':
         return Icons.spa_rounded;
+      case 'wedding-rings':
+        return Icons.diamond_rounded;
+      case 'wristwatches':
+        return Icons.watch_outlined;
       case 'jewelries':
-        return Icons.diamond_outlined;
-      case 'bags':
-        return Icons.shopping_bag_outlined;
-      case 'slippers':
-        return Icons.hiking_rounded;
+        return Icons.auto_awesome_rounded;
+      case 'rings':
+        return Icons.circle_outlined;
       default:
-        return Icons.checkroom_rounded;
+        return Icons.auto_awesome_rounded;
     }
   }
 
@@ -113,13 +107,11 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
 
     // Merge categories: use Serverpod categories if available, otherwise fallback to homeState
     final List<Map<String, dynamic>> categoryTabs = [
-      {'id': 'all', 'label': 'All Modest Wear', 'icon': Icons.all_inclusive_rounded},
+      {'id': 'all', 'label': 'All Collections', 'icon': Icons.diamond_outlined},
     ];
 
     if (_serverCategories.isNotEmpty) {
       for (final sc in _serverCategories) {
-        final cid = sc.categoryId.toLowerCase();
-        if (cid == 'perfumes' || cid == 'jewelries' || cid == 'accessories' || cid == 'slippers') continue;
         categoryTabs.add({
           'id': sc.categoryId,
           'label': sc.name,
@@ -140,10 +132,6 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
     List<ProductModel> allProducts = [];
     if (_serverProducts.isNotEmpty) {
       allProducts = _serverProducts
-          .where((sp) {
-            final cid = sp.categoryId.toLowerCase();
-            return cid != 'perfumes' && cid != 'jewelries' && cid != 'accessories' && cid != 'slippers';
-          })
           .map(
             (sp) => ProductModel(
               id: (sp.id ?? sp.slug).toString(),
@@ -161,13 +149,7 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
           .toList();
     } else {
       final productMap = <String, ProductModel>{};
-      for (final p in [
-        ...homeState.featuredProducts,
-        ...homeState.abayasProducts,
-        ...homeState.hijabsProducts,
-        ...homeState.jalabiasProducts,
-        ...homeState.thobesProducts,
-      ]) {
+      for (final p in homeState.allProducts) {
         productMap[p.id] = p;
       }
       allProducts = productMap.values.toList();
@@ -305,7 +287,7 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
             child: TextField(
               onChanged: (val) => setState(() => _searchFilter = val),
               decoration: InputDecoration(
-                hintText: 'Search abayas, hijabs, jalabias, perfumes...',
+                hintText: 'Search perfumes, wedding rings, wristwatches, jewelry...',
                 hintStyle: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
                 prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primary, size: 20),
                 suffixIcon: _searchFilter.isNotEmpty

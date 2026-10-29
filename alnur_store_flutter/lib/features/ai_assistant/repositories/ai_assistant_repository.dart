@@ -22,18 +22,21 @@ class AiAssistantRepository {
       final lower = userQuery.toLowerCase();
       String responseText;
 
-      if (lower.contains('abaya') || lower.contains('black')) {
+      if (lower.contains('ring') || lower.contains('wedding')) {
         responseText =
-            'I recommend our Classic Black Abaya (₦24,500). Crafted from premium Korean Nida fabric, offering full non-transparent modesty that pairs elegantly with our Silk Chiffon Hijab!';
-      } else if (lower.contains('hijab') || lower.contains('scarf')) {
+            'For marital celebrations and proposals, I highly recommend our Eternal Vows 18K Gold Plated Couple Wedding Bands (₦68,000) or our Zirconia Solitaire Halo Engagement Ring (₦38,500) crafted in solid 925 sterling silver!';
+      } else if (lower.contains('watch') || lower.contains('timepiece')) {
         responseText =
-            'Our Pure Medina Silk Hijab (₦8,500) offers breathable elegance with subtle matte luster that never slips.';
-      } else if (lower.contains('thobe') || lower.contains('jalabia')) {
+            'Our Geneva Diamond-Bezel Emerald Rose Gold Watch (₦36,000) or Naviforce Royal Men\'s Timepiece (₦32,500) offer water-resistant precision and stunning Nigerian elegance.';
+      } else if (lower.contains('perfume') || lower.contains('oud') || lower.contains('scent')) {
         responseText =
-            'For congregational prayers and formal events, our Emirati Minimalist White Thobe (₦26,000) tailored from pure Egyptian cotton is an exceptional choice.';
+            'For an enduring regal scent trail, our Royal Amber & Cambodian Oud EDP (₦28,500) and alcohol-free Pure Musk Tahara (₦14,000) are beloved favorites for Nigerian weddings and Jumu\'ah.';
+      } else if (lower.contains('jewelry') || lower.contains('necklace') || lower.contains('choker')) {
+        responseText =
+            'Our Zainab Luxury Bridal Choker & Earrings Set (₦75,000) features brilliant Austrian crystals designed for Nigerian traditional and white wedding glam.';
       } else {
         responseText =
-            'As-salamu alaykum! I am your Al-Nur AI Stylist. Tell me your preferred occasion (Jumuah, Eid, Nikah, daily wear) or budget, and I will curate an authentic modest ensemble for you.';
+            'As-salamu alaykum! I am your Al-Nur Luxury Stylist. Tell me your preferred celebration (Wedding, Jumu\'ah, Anniversary, Owambe) or budget, and I will recommend matching Rings, Royal Oud, Fine Jewelry, or Wristwatches.';
       }
 
       return ChatMessage(
