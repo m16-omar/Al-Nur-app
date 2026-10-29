@@ -86,16 +86,20 @@ class _OnboardingViewState extends State<OnboardingView> {
                   Row(
                     children: [
                       Container(
-                        width: 34,
-                        height: 34,
+                        width: 38,
+                        height: 38,
                         decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(10),
+                          color: AppColors.primaryDark,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColors.gold.withValues(alpha: 0.45),
+                            width: 1.2,
+                          ),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.2),
-                              blurRadius: 6,
-                              offset: const Offset(0, 2),
+                              color: AppColors.primaryDark.withValues(alpha: 0.18),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
                             ),
                           ],
                         ),
@@ -103,7 +107,7 @@ class _OnboardingViewState extends State<OnboardingView> {
                           child: Icon(
                             Icons.star_rounded,
                             color: AppColors.gold,
-                            size: 19,
+                            size: 20,
                           ),
                         ),
                       ),
@@ -111,35 +115,45 @@ class _OnboardingViewState extends State<OnboardingView> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Al-Nur',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.primary,
-                              letterSpacing: -0.3,
+                          RichText(
+                            text: TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: 'Al-Nur ',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.primaryDark,
+                                    letterSpacing: -0.3,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: 'STORE',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.primary,
+                                    letterSpacing: 1.5,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          if (_isReturningUser)
-                            Text(
-                              _savedUserName != null
-                                  ? 'Welcome back, $_savedUserName'
-                                  : 'Modesty Tour',
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.goldDark,
-                              ),
-                            )
-                          else
-                            const Text(
-                              'First Time Welcome',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textSecondary,
-                              ),
+                          Text(
+                            _isReturningUser
+                                ? (_savedUserName != null
+                                    ? 'Welcome back, $_savedUserName'
+                                    : 'Modesty Atelier Tour')
+                                : 'HAUTE MODESTY COUTURE',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.6,
+                              color: _isReturningUser
+                                  ? AppColors.goldDark
+                                  : AppColors.textTertiary,
                             ),
+                          ),
                         ],
                       ),
                     ],
@@ -147,36 +161,76 @@ class _OnboardingViewState extends State<OnboardingView> {
 
                   // Action Button: Exit / Skip
                   if (_isReturningUser)
-                    TextButton.icon(
-                      onPressed: () => context.go(AppRoutes.home),
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppColors.primary,
-                        backgroundColor: AppColors.primary.withValues(alpha: 0.08),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: AppColors.primary.withValues(alpha: 0.2),
+                          width: 0.8,
+                        ),
                       ),
-                      icon: const Icon(Icons.close_rounded, size: 16),
-                      label: Text(
-                        'Exit to Shop',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () => context.go(AppRoutes.home),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.close_rounded,
+                                size: 14,
+                                color: AppColors.primary,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Exit to Shop',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     )
                   else
-                    TextButton(
-                      onPressed: () => _completeAndGo(AppRoutes.home),
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppColors.textSecondary,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceMuted.withValues(alpha: 0.65),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: AppColors.border,
+                          width: 0.8,
+                        ),
                       ),
-                      child: Text(
-                        'Skip to Store',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () => _completeAndGo(AppRoutes.home),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Skip',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              const Icon(
+                                Icons.arrow_forward_ios_rounded,
+                                size: 10,
+                                color: AppColors.textSecondary,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -217,24 +271,36 @@ class _OnboardingViewState extends State<OnboardingView> {
                       return AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
                         margin: const EdgeInsets.symmetric(horizontal: 4),
-                        height: 8,
-                        width: isActive ? 28 : 8,
+                        height: 7,
+                        width: isActive ? 30 : 8,
                         decoration: BoxDecoration(
-                          color: isActive
-                              ? AppColors.primary
-                              : AppColors.border,
+                          gradient: isActive
+                              ? const LinearGradient(
+                                  colors: [AppColors.primary, AppColors.gold],
+                                )
+                              : null,
+                          color: isActive ? null : AppColors.border,
                           borderRadius: BorderRadius.circular(4),
+                          boxShadow: isActive
+                              ? [
+                                  BoxShadow(
+                                    color: AppColors.primary.withValues(alpha: 0.3),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ]
+                              : null,
                         ),
                       );
                     }),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 18),
 
                   // Different Actions based on Page and User Type
                   if (!isLastPage) ...[
-                    // Pages 1 & 2: Next Button
+                    // Pages 1 & 2: Continue Button
                     AppButton(
-                      text: 'Next',
+                      text: 'Continue',
                       width: double.infinity,
                       height: 52,
                       onPressed: _onNext,
@@ -246,7 +312,7 @@ class _OnboardingViewState extends State<OnboardingView> {
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         child: Text(
-                          _isReturningUser ? 'Back to Modest Collections' : 'Continue as Guest',
+                          _isReturningUser ? 'Back to Modest Collections' : 'Explore as Guest',
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,

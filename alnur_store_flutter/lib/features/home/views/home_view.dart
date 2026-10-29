@@ -935,6 +935,33 @@ class _HomeViewState extends ConsumerState<HomeView> {
                   ),
                   Positioned(
                     top: 10,
+                    left: 10,
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        context.push('/product/${product.id}', extra: product);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.fullscreen_rounded, color: Colors.white, size: 16),
+                            SizedBox(width: 4),
+                            Text(
+                              'Full Page',
+                              style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 10,
                     right: 10,
                     child: CircleAvatar(
                       backgroundColor: Colors.black45,

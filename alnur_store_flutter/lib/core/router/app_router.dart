@@ -7,8 +7,10 @@ import '../../features/cart/views/selar_checkout_view.dart';
 import '../../features/home/views/home_view.dart';
 import '../../features/onboarding/views/onboarding_view.dart';
 import '../../features/orders/views/orders_view.dart';
+import '../../features/products/views/product_details_view.dart';
 import '../../features/profile/views/profile_view.dart';
 import '../../features/splash/views/splash_view.dart';
+import '../../shared/models/product_model.dart';
 
 class AppRoutes {
   static const String splash = '/splash';
@@ -66,6 +68,17 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.aiChat,
       builder: (context, state) => const AiChatView(),
+    ),
+    GoRoute(
+      path: AppRoutes.productDetails,
+      builder: (context, state) {
+        final id = state.pathParameters['id'] ?? '';
+        final initialProduct = state.extra as ProductModel?;
+        return ProductDetailsView(
+          productId: id,
+          initialProduct: initialProduct,
+        );
+      },
     ),
   ],
 );

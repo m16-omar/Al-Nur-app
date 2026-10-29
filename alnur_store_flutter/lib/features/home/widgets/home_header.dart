@@ -40,41 +40,49 @@ class HomeHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Logo & Branding
-          Row(
-            children: [
-              _buildMosqueLogo(),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  RichText(
-                    text: TextSpan(
-                      text: 'Al-Nur ',
-                      style: AppTextStyles.brandTitle,
-                      children: [
-                        TextSpan(
-                          text: 'STORE',
-                          style: AppTextStyles.brandTitle.copyWith(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                            letterSpacing: 2.0,
-                          ),
+          Expanded(
+            child: Row(
+              children: [
+                _buildMosqueLogo(),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      RichText(
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        text: TextSpan(
+                          text: 'Al-Nur ',
+                          style: AppTextStyles.brandTitle,
+                          children: [
+                            TextSpan(
+                              text: 'STORE',
+                              style: AppTextStyles.brandTitle.copyWith(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                letterSpacing: 2.0,
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Modest Fashion • Quality • You',
+                        style: AppTextStyles.brandSubtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Modest Fashion • Quality • You',
-                    style: AppTextStyles.brandSubtitle,
-                  ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
 
-          const Spacer(),
+          const SizedBox(width: 8),
 
           // Notification Bell
           GestureDetector(
@@ -118,7 +126,7 @@ class HomeHeader extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
 
           // Cart Button with Counter Badge
           GestureDetector(
@@ -177,7 +185,7 @@ class HomeHeader extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
 
           // User Profile Avatar Button
           _buildUserAvatarButton(context),
@@ -489,8 +497,8 @@ class HomeHeader extends StatelessWidget {
 
   Widget _buildMosqueLogo() {
     return Container(
-      width: 42,
-      height: 42,
+      width: 40,
+      height: 40,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: AppColors.primaryContainer.withValues(alpha: 0.4),

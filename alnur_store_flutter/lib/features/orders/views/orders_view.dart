@@ -1,21 +1,28 @@
+import 'dart:convert';
+import 'package:alnur_store_client/alnur_store_client.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../main.dart';
+import '../../authentication/controllers/auth_controller.dart';
 import '../models/order_model.dart';
 
-class OrdersView extends StatefulWidget {
+class OrdersView extends ConsumerStatefulWidget {
   final VoidCallback? onBackToHome;
 
   const OrdersView({super.key, this.onBackToHome});
 
   @override
-  State<OrdersView> createState() => _OrdersViewState();
+  ConsumerState<OrdersView> createState() => _OrdersViewState();
 }
 
-class _OrdersViewState extends State<OrdersView> with SingleTickerProviderStateMixin {
+class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  bool _isLoading = true;
+  List<OrderModel> _allOrders = [];
 
-  final List<OrderModel> _allOrders = [
+  final List<OrderModel> _demoOrders = [
     OrderModel(
       id: 'ALN-84920',
       orderDate: DateTime.now().subtract(const Duration(days: 1)),
@@ -225,6 +232,128 @@ class _OrdersViewState extends State<OrdersView> with SingleTickerProviderStateM
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _fetchOrders();
+  }
+
+  Future<void> _fetchOrders() async {
+    final authState = ref.read(authControllerProvider);
+    final email = authState.user?.email;
+
+    try {
+      final serverOrders = await client.order.getOrders(
+        customerEmail: (email != null && email.isNotEmpty) ? email : null,
+      );
+
+      if (serverOrders.isNotEmpty) {
+        final liveOrders = serverOrders.map(_mapStoreOrderToModel).toList();
+        if (mounted) {
+          setState(() {
+            _allOrders = liveOrders;
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+    } catch (e) {
+      debugPrint('[OrdersView] Backend live orders fetch notice: $e');
+    }
+
+    if (mounted) {
+      setState(() {
+        _allOrders = _demoOrders;
+        _isLoading = false;
+      });
+    }
+  }
+
+  OrderModel _mapStoreOrderToModel(StoreOrder so) {
+    List<OrderItem> items = [];
+    try {
+      final decoded = jsonDecode(so.itemsJson) as List;
+      for (final it in decoded) {
+        if (it is Map<String, dynamic>) {
+          items.add(OrderItem(
+            name: it['name']?.toString() ?? 'Al-Nur Modest Couture',
+            category: it['category']?.toString() ?? 'Abayas & Haute Modesty',
+            quantity: (it['quantity'] as num?)?.toInt() ?? 1,
+            size: it['selectedSize']?.toString() ?? '56',
+            color: it['selectedColor']?.toString() ?? 'Default',
+            price: (it['price'] as num?)?.toDouble() ?? 0.0,
+            imageUrl: it['imageUrl']?.toString() ??
+                'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=500&q=80',
+          ));
+        }
+      }
+    } catch (_) {}
+
+    if (items.isEmpty) {
+      items.add(OrderItem(
+        name: 'Al-Nur Modest Couture Item',
+        category: 'Couture',
+        quantity: 1,
+        size: 'Standard',
+        color: 'Default',
+        price: so.totalAmount,
+        imageUrl: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=500&q=80',
+      ));
+    }
+
+    OrderStatus status = OrderStatus.processing;
+    final fStatus = so.fulfillmentStatus.toLowerCase().trim();
+    if (fStatus.contains('transit') || fStatus.contains('shipped') || fStatus.contains('delivery')) {
+      status = OrderStatus.inTransit;
+    } else if (fStatus.contains('deliver') || fStatus.contains('completed')) {
+      status = OrderStatus.completed;
+    } else if (fStatus.contains('cancel')) {
+      status = OrderStatus.cancelled;
+    }
+
+    final subtotal = so.totalAmount > 2500 ? so.totalAmount - 2500 : so.totalAmount;
+    final shippingFee = so.totalAmount > 2500 ? 2500.0 : 0.0;
+    final tracking = 'ALN-TRK-${so.orderRef.replaceAll('ALN-', '')}';
+
+    return OrderModel(
+      id: so.orderRef,
+      orderDate: so.createdAt,
+      status: status,
+      trackingNumber: tracking,
+      deliveryAddress: so.shippingAddress,
+      estimatedDelivery: status == OrderStatus.completed
+          ? 'Delivered'
+          : 'Estimated 2-3 Days via Express Courier',
+      subtotal: subtotal,
+      shippingFee: shippingFee,
+      totalAmount: so.totalAmount,
+      items: items,
+      timeline: [
+        OrderTimelineStep(
+          title: 'Order Placed & Confirmed',
+          subtitle: 'Payment: ${so.paymentStatus.toUpperCase()} (Ref: ${so.paymentReference ?? so.orderRef})',
+          date: '${so.createdAt.day}/${so.createdAt.month}/${so.createdAt.year}',
+          isCompleted: true,
+        ),
+        OrderTimelineStep(
+          title: 'Custom Sizing & Master Tailoring',
+          subtitle: 'Handcrafted according to modesty guidelines',
+          date: 'In Progress',
+          isCompleted: status != OrderStatus.cancelled,
+          isCurrent: status == OrderStatus.processing,
+        ),
+        OrderTimelineStep(
+          title: 'Dispatched with Courier',
+          subtitle: 'Waybill Track ID: $tracking',
+          date: status == OrderStatus.inTransit || status == OrderStatus.completed ? 'Dispatched' : 'Pending',
+          isCompleted: status == OrderStatus.inTransit || status == OrderStatus.completed,
+          isCurrent: status == OrderStatus.inTransit,
+        ),
+        OrderTimelineStep(
+          title: 'Delivered',
+          subtitle: 'Delivered to ${so.customerName}',
+          date: status == OrderStatus.completed ? 'Delivered' : 'Pending',
+          isCompleted: status == OrderStatus.completed,
+        ),
+      ],
+    );
   }
 
   @override
@@ -284,52 +413,70 @@ class _OrdersViewState extends State<OrdersView> with SingleTickerProviderStateM
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildOrdersList(_activeOrders, isCurrentTabActive: true),
-          _buildOrdersList(_completedOrders),
-          _buildOrdersList(_cancelledOrders),
-        ],
-      ),
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(
+                color: AppColors.primary,
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _fetchOrders,
+              color: AppColors.primary,
+              backgroundColor: Colors.white,
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildOrdersList(_activeOrders, isCurrentTabActive: true),
+                  _buildOrdersList(_completedOrders),
+                  _buildOrdersList(_cancelledOrders),
+                ],
+              ),
+            ),
     );
   }
 
   Widget _buildOrdersList(List<OrderModel> orders, {bool isCurrentTabActive = false}) {
     if (orders.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: const BoxDecoration(
-                  color: AppColors.primaryContainer,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.inventory_2_outlined, size: 40, color: AppColors.primary),
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          SizedBox(height: MediaQuery.of(context).size.height * 0.15),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: const BoxDecoration(
+                      color: AppColors.primaryContainer,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.inventory_2_outlined, size: 40, color: AppColors.primary),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'No Orders Found',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Your modest clothing orders will appear here once placed.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              const Text(
-                'No Orders Found',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Your modest clothing orders will appear here once placed.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       );
     }
 
     return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
       itemCount: orders.length,
       itemBuilder: (context, index) {

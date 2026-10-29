@@ -3,13 +3,21 @@ import '../models/cart_item_model.dart';
 
 class SelarPaymentService {
   static const String _prefKeySelarStoreUrl = 'alnur_selar_store_url';
-  static const String defaultStoreUrl = 'https://selar.com/m/fatimamuhammad';
+  static const String _prefKeySelarApiKey = 'alnur_selar_api_key';
+
+  static const String defaultStoreUrl = 'https://selar.com/m/alnurstore';
+  static const String defaultApiKey = 'sat_873skzy08l1889v50814bs77093r4818j38f8';
 
   /// Retrieves the merchant Selar checkout/store URL, falling back to default
   static Future<String> getStoreUrl() async {
     final prefs = await SharedPreferences.getInstance();
     final stored = prefs.getString(_prefKeySelarStoreUrl);
-    if (stored == null || stored.isEmpty || stored.contains('fatima-muhammad3397104')) {
+    if (stored == null ||
+        stored.isEmpty ||
+        stored.contains('fatima-muhammad') ||
+        stored.contains('fatimamuhammad') ||
+        stored.endsWith('/alnur') ||
+        stored.endsWith('/alnur/')) {
       await prefs.setString(_prefKeySelarStoreUrl, defaultStoreUrl);
       return defaultStoreUrl;
     }
@@ -20,6 +28,23 @@ class SelarPaymentService {
   static Future<void> setStoreUrl(String url) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefKeySelarStoreUrl, url.trim());
+  }
+
+  /// Retrieves the merchant Selar 3rd-party integration API key
+  static Future<String> getApiKey() async {
+    final prefs = await SharedPreferences.getInstance();
+    final stored = prefs.getString(_prefKeySelarApiKey);
+    if (stored == null || stored.isEmpty) {
+      await prefs.setString(_prefKeySelarApiKey, defaultApiKey);
+      return defaultApiKey;
+    }
+    return stored;
+  }
+
+  /// Allows setting or updating the Selar 3rd-party integration API key
+  static Future<void> setApiKey(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefKeySelarApiKey, key.trim());
   }
 
   /// Builds a Selar checkout URL with pre-filled customer details and order metadata

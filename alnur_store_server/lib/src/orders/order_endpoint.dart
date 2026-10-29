@@ -113,6 +113,10 @@ class OrderEndpoint extends Endpoint {
     );
   }
 
+  /// Official Selar Merchant Integration Credentials
+  static const String selarApiKey = 'sat_873skzy08l1889v50814bs77093r4818j38f8';
+  static const String selarStoreUrl = 'https://selar.com/m/alnurstore';
+
   /// Processes payment gateway webhooks (Selar, Paystack, Flutterwave) idempotently.
   /// Prevents double-crediting or duplicate status notifications.
   Future<StoreOrder?> processPaymentWebhook(

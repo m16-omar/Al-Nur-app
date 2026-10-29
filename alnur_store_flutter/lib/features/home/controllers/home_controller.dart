@@ -45,6 +45,10 @@ class HomeState {
     return map.values.toList();
   }
 
+  List<ProductModel> get favoriteProducts {
+    return allProducts.where((p) => p.isFavorite).toList();
+  }
+
   List<ProductModel> get filteredSearchResults {
     if (searchQuery.trim().isEmpty) return [];
     final q = searchQuery.toLowerCase().trim();
@@ -58,6 +62,7 @@ class HomeState {
   HomeState copyWith({
     List<CategoryModel>? categories,
     String? selectedCategoryId,
+    bool clearCategory = false,
     List<ProductModel>? featuredProducts,
     List<ProductModel>? abayasProducts,
     List<ProductModel>? hijabsProducts,
@@ -70,7 +75,7 @@ class HomeState {
   }) {
     return HomeState(
       categories: categories ?? this.categories,
-      selectedCategoryId: selectedCategoryId ?? this.selectedCategoryId,
+      selectedCategoryId: clearCategory ? null : (selectedCategoryId ?? this.selectedCategoryId),
       featuredProducts: featuredProducts ?? this.featuredProducts,
       abayasProducts: abayasProducts ?? this.abayasProducts,
       hijabsProducts: hijabsProducts ?? this.hijabsProducts,
@@ -382,18 +387,27 @@ class HomeController extends Notifier<HomeState> {
     ],
   );
 
+  bool _isDisposed = false;
+
   @override
   HomeState build() {
+    _isDisposed = false;
+    ref.onDispose(() {
+      _isDisposed = true;
+    });
     Future.microtask(() => fetchHomeDataFromBackend());
     return _initialState;
   }
 
   /// Fetches real-time collections and products from the Serverpod backend
   Future<void> fetchHomeDataFromBackend() async {
+    if (_isDisposed) return;
     state = state.copyWith(isLoading: true);
     try {
       final serverCategories = await client.category.getCategories();
       final serverProducts = await client.product.getProducts();
+
+      if (_isDisposed) return;
 
       // Ensure only genuine Islamic modest attire categories are processed
       final modestServerCategories = serverCategories.where((c) {
@@ -443,6 +457,7 @@ class HomeController extends Notifier<HomeState> {
         final thobes = allMappedProducts.where((p) => p.categoryId == 'thobes').toList();
         final featured = allMappedProducts.where((p) => p.rating >= 4.8 || p.isFavorite).toList();
 
+        if (_isDisposed) return;
         state = state.copyWith(
           categories: mappedCategories.isNotEmpty ? mappedCategories : state.categories,
           featuredProducts: featured.isNotEmpty ? featured : state.featuredProducts,
@@ -453,11 +468,11 @@ class HomeController extends Notifier<HomeState> {
           isLoading: false,
         );
       } else {
-        state = state.copyWith(isLoading: false);
+        if (!_isDisposed) state = state.copyWith(isLoading: false);
       }
     } catch (e) {
       debugPrint('[HomeController] Serverpod backend sync notice: $e');
-      state = state.copyWith(isLoading: false);
+      if (!_isDisposed) state = state.copyWith(isLoading: false);
     }
   }
 
@@ -507,7 +522,7 @@ class HomeController extends Notifier<HomeState> {
 
   void selectCategory(CategoryModel category) {
     if (state.selectedCategoryId == category.id) {
-      state = state.copyWith(selectedCategoryId: null);
+      state = state.copyWith(clearCategory: true);
     } else {
       state = state.copyWith(selectedCategoryId: category.id);
     }

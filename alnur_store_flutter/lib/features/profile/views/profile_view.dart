@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'package:alnur_store_client/alnur_store_client.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../authentication/controllers/auth_controller.dart';
+import '../../home/controllers/home_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../cart/controllers/cart_controller.dart';
@@ -10,6 +12,9 @@ import '../../cart/services/selar_payment_service.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/utils/currency_formatter.dart';
+import '../../../shared/models/product_model.dart';
+import '../../../shared/widgets/product_image.dart';
 import '../../../main.dart';
 
 class ProfileView extends ConsumerStatefulWidget {
@@ -229,7 +234,12 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
           IconButton(
             icon: const Icon(Icons.settings_outlined, color: AppColors.primary),
             tooltip: 'Settings',
-            onPressed: () => _showPreferencesModal(),
+            onPressed: isGuest
+                ? () => _showGuestPrompt(
+                      title: 'Account Settings',
+                      message: 'Please sign in or create an account to access and manage your Al-Nur account settings.',
+                    )
+                : () => _showPreferencesModal(),
           ),
         ],
       ),
@@ -460,10 +470,15 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                 Expanded(
                   child: _buildMetricTile(
                     icon: Icons.favorite_border_rounded,
-                    count: isGuest ? '0' : '8',
+                    count: isGuest ? '0' : '${ref.watch(homeControllerProvider).favoriteProducts.length}',
                     label: 'Favorites',
                     color: const Color(0xFFE11D48),
-                    onTap: () => _showWishlistModal(),
+                    onTap: isGuest
+                        ? () => _showGuestPrompt(
+                              title: 'Modesty Wishlist',
+                              message: 'Sign in or create an account to view and sync your favorited modest couture across all your devices.',
+                            )
+                        : () => _showWishlistModal(),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -563,8 +578,13 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
               _buildListTile(
                 icon: Icons.payment_outlined,
                 title: 'Payment & Cards',
-                subtitle: 'Mastercard & Selar Halal Gateway',
-                onTap: () => _showPaymentModal(),
+                subtitle: isGuest ? 'Sign in to manage payment methods' : 'Mastercard & Selar Halal Gateway',
+                onTap: isGuest
+                    ? () => _showGuestPrompt(
+                          title: 'Payment & Cards',
+                          message: 'Sign in or create an account to securely save and manage your payment methods.',
+                        )
+                    : () => _showPaymentModal(),
               ),
             ]),
 
@@ -624,12 +644,13 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                 subtitle: 'Replay the 3-step luxury modest experience',
                 onTap: () => context.push(AppRoutes.onboarding),
               ),
-              _buildListTile(
-                icon: Icons.restart_alt_rounded,
-                title: 'Reset First-Time User Experience',
-                subtitle: 'Clear saved state to test initial onboarding',
-                onTap: () => _showResetOnboardingDialog(),
-              ),
+              if (kDebugMode && !isGuest)
+                _buildListTile(
+                  icon: Icons.restart_alt_rounded,
+                  title: 'Reset First-Time User Experience',
+                  subtitle: 'Clear saved state to test initial onboarding',
+                  onTap: () => _showResetOnboardingDialog(),
+                ),
             ]),
 
             const SizedBox(height: 24),
@@ -2025,7 +2046,9 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
 
   void _showEditSelarUrlDialog() async {
     final currentUrl = await SelarPaymentService.getStoreUrl();
-    final textController = TextEditingController(text: currentUrl);
+    final currentKey = await SelarPaymentService.getApiKey();
+    final urlController = TextEditingController(text: currentUrl);
+    final keyController = TextEditingController(text: currentKey);
 
     if (!mounted) return;
 
@@ -2035,29 +2058,58 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Row(
           children: [
-            Icon(Icons.link_rounded, color: AppColors.primary),
+            Icon(Icons.shield_outlined, color: AppColors.primary),
             SizedBox(width: 8),
-            Text('Selar Store Link', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text('Selar Gateway & API Key', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Enter your Selar checkout or merchant store link (e.g. https://selar.com/m/yourname):',
-              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: textController,
-              decoration: InputDecoration(
-                hintText: 'https://selar.com/m/alnur',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Customer Checkout Store URL:',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
               ),
-            ),
-          ],
+              const SizedBox(height: 4),
+              const Text(
+                'Used for mobile webview and web customer payments.',
+                style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: urlController,
+                decoration: InputDecoration(
+                  hintText: 'https://selar.com/m/alnurstore',
+                  prefixIcon: const Icon(Icons.link_rounded, size: 18),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Third Party Integration API Key:',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Used for secure webhook callbacks and Serverpod backend verification.',
+                style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: keyController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  hintText: 'sat_...',
+                  prefixIcon: const Icon(Icons.vpn_key_outlined, size: 18),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -2070,21 +2122,25 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
               foregroundColor: Colors.white,
             ),
             onPressed: () async {
-              final newUrl = textController.text.trim();
+              final newUrl = urlController.text.trim();
+              final newKey = keyController.text.trim();
               if (newUrl.isNotEmpty) {
                 await SelarPaymentService.setStoreUrl(newUrl);
-                if (ctx.mounted) {
-                  Navigator.pop(ctx);
-                }
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Selar link updated: $newUrl')),
-                  );
-                  setState(() {});
-                }
+              }
+              if (newKey.isNotEmpty) {
+                await SelarPaymentService.setApiKey(newKey);
+              }
+              if (ctx.mounted) {
+                Navigator.pop(ctx);
+              }
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Selar credentials updated: $newUrl')),
+                );
+                setState(() {});
               }
             },
-            child: const Text('Save Link'),
+            child: const Text('Save Settings'),
           ),
         ],
       ),
@@ -2191,9 +2247,17 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                     ),
                     onPressed: () {
                       Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Saved: Size $abayaSize set as default modesty fit!')),
-                      );
+                      final isGuest = ref.read(authControllerProvider).isGuest;
+                      if (isGuest) {
+                        _showGuestPrompt(
+                          title: 'Save Size Profile',
+                          message: 'Sign in or create an account to permanently save your custom size profile to your modesty account.',
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Saved: Size $abayaSize set as default modesty fit!')),
+                        );
+                      }
                     },
                     child: const Text('Save to My Profile'),
                   ),
@@ -2210,90 +2274,197 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.6,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
-              ),
+      isScrollControlled: true,
+      builder: (modalCtx) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          final liveFavorites = ref.watch(homeControllerProvider).favoriteProducts;
+          final homeController = ref.read(homeControllerProvider.notifier);
+
+          return Container(
+            height: MediaQuery.of(ctx).size.height * 0.72,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
             ),
-            const SizedBox(height: 16),
-            Text('My Modesty Wishlist (8 items)', style: AppTextStyles.productTitle.copyWith(fontSize: 18)),
-            const SizedBox(height: 12),
-            Expanded(
-              child: ListView(
-                children: [
-                  _buildWishlistItem(
-                    name: 'Dubai Gold Noir Abaya',
-                    price: '₦28,500',
-                    imageUrl: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=500&q=80',
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
                   ),
-                  _buildWishlistItem(
-                    name: 'Sage Emerald Medina Hijab',
-                    price: '₦8,800',
-                    imageUrl: 'https://images.unsplash.com/photo-1596704017254-9b121068fb31?auto=format&fit=crop&w=500&q=80',
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'My Modesty Wishlist (${liveFavorites.length})',
+                      style: AppTextStyles.productTitle.copyWith(fontSize: 18),
+                    ),
+                    if (liveFavorites.isNotEmpty)
+                      TextButton.icon(
+                        icon: const Icon(Icons.shopping_bag_outlined, size: 16, color: AppColors.primary),
+                        label: const Text(
+                          'Add All to Bag',
+                          style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 12),
+                        ),
+                        onPressed: () {
+                          for (final p in liveFavorites) {
+                            ref.read(cartControllerProvider.notifier).addItem(p);
+                          }
+                          Navigator.pop(modalCtx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Added all ${liveFavorites.length} wishlist items to your bag!'),
+                              backgroundColor: AppColors.primary,
+                            ),
+                          );
+                        },
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (liveFavorites.isEmpty)
+                  Expanded(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(18),
+                            decoration: const BoxDecoration(
+                              color: AppColors.surfaceMuted,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.favorite_border_rounded,
+                              size: 42,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Your Wishlist is Empty',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary),
+                          ),
+                          const SizedBox(height: 6),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 24),
+                            child: Text(
+                              'Tap the heart icon on any abaya, hijab, or couture item to save your modesty wishlist.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            icon: const Icon(Icons.explore_outlined, size: 18),
+                            label: const Text('Discover Collections'),
+                            onPressed: () {
+                              Navigator.pop(modalCtx);
+                              if (widget.isStandalonePage) {
+                                context.go(AppRoutes.home);
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: liveFavorites.length,
+                      separatorBuilder: (context, index) => const SizedBox(height: 10),
+                      itemBuilder: (listCtx, index) {
+                        final product = liveFavorites[index];
+                        return _buildLiveWishlistItem(product, homeController);
+                      },
+                    ),
                   ),
-                  _buildWishlistItem(
-                    name: 'Gold Embellished Eid Jalabia',
-                    price: '₦45,000',
-                    imageUrl: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=500&q=80',
-                  ),
-                ],
-              ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildWishlistItem({required String name, required String price, required String imageUrl}) {
+  Widget _buildLiveWishlistItem(ProductModel product, HomeController homeController) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: AppColors.surfaceMuted.withValues(alpha: 0.4),
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.surfaceMuted.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.network(imageUrl, width: 50, height: 50, fit: BoxFit.cover),
+          ProductImage(
+            imageUrl: product.imageUrl,
+            width: 52,
+            height: 52,
+            borderRadius: BorderRadius.circular(10),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                Text(price, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 12)),
+                Text(
+                  product.name,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  CurrencyFormatter.format(product.price),
+                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13),
+                ),
               ],
             ),
+          ),
+          const SizedBox(width: 6),
+          IconButton(
+            icon: const Icon(Icons.delete_outline_rounded, color: AppColors.textSecondary, size: 20),
+            tooltip: 'Remove',
+            onPressed: () {
+              homeController.toggleFavorite(product);
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Removed ${product.name} from wishlist.')),
+              );
+            },
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             onPressed: () {
+              ref.read(cartControllerProvider.notifier).addItem(product);
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Added $name to cart!')),
+                SnackBar(
+                  content: Text('Moved ${product.name} to bag!'),
+                  backgroundColor: AppColors.primary,
+                ),
               );
             },
-            child: const Text('Add to Bag', style: TextStyle(fontSize: 11)),
+            child: const Text('Move to Bag', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
           ),
         ],
       ),

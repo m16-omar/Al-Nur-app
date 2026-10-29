@@ -53,7 +53,7 @@ class _HeroBannerState extends State<HeroBanner> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Container(
-        height: 180,
+        height: 195,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           gradient: const LinearGradient(
@@ -99,10 +99,9 @@ class _HeroBannerState extends State<HeroBanner> {
                       Expanded(
                         flex: 6,
                         child: Padding(
-                          padding: const EdgeInsets.fromLTRB(18, 16, 8, 16),
+                          padding: const EdgeInsets.fromLTRB(18, 14, 8, 14),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -114,6 +113,8 @@ class _HeroBannerState extends State<HeroBanner> {
                                   Text(banner['subtitle']!, style: AppTextStyles.heroSubtitle),
                                 ],
                               ),
+
+                              const Spacer(),
 
                               // Pill Button
                               GestureDetector(
@@ -136,6 +137,34 @@ class _HeroBannerState extends State<HeroBanner> {
                                     children: [
                                       Text(banner['buttonText']!, style: AppTextStyles.heroButton),
                                     ],
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(height: 10),
+
+                              // Page Indicator Dots with generous spacing
+                              Row(
+                                children: List.generate(
+                                  _banners.length,
+                                  (dotIndex) => GestureDetector(
+                                    onTap: () => _pageController.animateToPage(
+                                      dotIndex,
+                                      duration: const Duration(milliseconds: 300),
+                                      curve: Curves.easeInOut,
+                                    ),
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 250),
+                                      margin: const EdgeInsets.only(right: 6),
+                                      width: _currentPage == dotIndex ? 18 : 6,
+                                      height: 6,
+                                      decoration: BoxDecoration(
+                                        color: _currentPage == dotIndex
+                                            ? Colors.white
+                                            : Colors.white.withValues(alpha: 0.4),
+                                        borderRadius: BorderRadius.circular(3),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -180,28 +209,6 @@ class _HeroBannerState extends State<HeroBanner> {
                     ],
                   );
                 },
-              ),
-
-              // Page Indicator Dots
-              Positioned(
-                bottom: 12,
-                left: 18,
-                child: Row(
-                  children: List.generate(
-                    _banners.length,
-                    (index) => Container(
-                      margin: const EdgeInsets.only(right: 5),
-                      width: _currentPage == index ? 14 : 5,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: _currentPage == index
-                            ? Colors.white
-                            : Colors.white.withValues(alpha: 0.4),
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                    ),
-                  ),
-                ),
               ),
             ],
           ),
