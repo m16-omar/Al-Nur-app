@@ -428,6 +428,42 @@ class EndpointOrder extends _i1.EndpointRef {
       'idempotencyKey': idempotencyKey,
     },
   );
+
+  /// Updates an order's fulfillment status (e.g. 'processing', 'dispatched', 'delivered', 'cancelled').
+  _i2.Future<_i8.StoreOrder?> updateOrderStatus({
+    required String orderRef,
+    required String fulfillmentStatus,
+  }) => caller.callServerEndpoint<_i8.StoreOrder?>(
+    'order',
+    'updateOrderStatus',
+    {
+      'orderRef': orderRef,
+      'fulfillmentStatus': fulfillmentStatus,
+    },
+  );
+
+  /// Updates an order's payment status (e.g. 'paid', 'pending', 'refunded', 'failed').
+  _i2.Future<_i8.StoreOrder?> updatePaymentStatus({
+    required String orderRef,
+    required String paymentStatus,
+    String? paymentReference,
+  }) => caller.callServerEndpoint<_i8.StoreOrder?>(
+    'order',
+    'updatePaymentStatus',
+    {
+      'orderRef': orderRef,
+      'paymentStatus': paymentStatus,
+      'paymentReference': paymentReference,
+    },
+  );
+
+  /// Deletes or permanently cancels an order.
+  _i2.Future<bool> deleteOrder({required String orderRef}) =>
+      caller.callServerEndpoint<bool>(
+        'order',
+        'deleteOrder',
+        {'orderRef': orderRef},
+      );
 }
 
 /// {@category Endpoint}

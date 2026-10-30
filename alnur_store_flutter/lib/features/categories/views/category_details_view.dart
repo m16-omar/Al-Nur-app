@@ -132,16 +132,10 @@ class _CategoryDetailsViewState extends ConsumerState<CategoryDetailsView> {
         : defaultCat;
 
     // Retrieve all products belonging to this category
-    final targetId = category.id.toLowerCase();
+    final targetId = category.id.toLowerCase().trim();
     List<ProductModel> products = homeState.allProducts.where((p) {
-      final pid = p.categoryId.toLowerCase();
-      if (pid == targetId) return true;
-      // Handle legacy aliases if any
-      if (targetId == 'perfumes' && (pid == 'abayas' || pid == 'perfumes')) return true;
-      if (targetId == 'wedding-rings' && (pid == 'hijabs' || pid == 'wedding-rings')) return true;
-      if (targetId == 'wristwatches' && (pid == 'jalabias' || pid == 'wristwatches')) return true;
-      if (targetId == 'jewelries' && (pid == 'thobes' || pid == 'jewelries')) return true;
-      return false;
+      final pid = p.categoryId.toLowerCase().trim();
+      return pid == targetId;
     }).toList();
 
     // In-category search filter

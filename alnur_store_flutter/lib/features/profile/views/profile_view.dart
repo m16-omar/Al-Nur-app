@@ -2275,10 +2275,10 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (modalCtx) => StatefulBuilder(
-        builder: (ctx, setModalState) {
-          final liveFavorites = ref.watch(homeControllerProvider).favoriteProducts;
-          final homeController = ref.read(homeControllerProvider.notifier);
+      builder: (modalCtx) => Consumer(
+        builder: (ctx, modalRef, child) {
+          final liveFavorites = modalRef.watch(homeControllerProvider).favoriteProducts;
+          final homeController = modalRef.read(homeControllerProvider.notifier);
 
           return Container(
             height: MediaQuery.of(ctx).size.height * 0.72,
@@ -2301,9 +2301,12 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'My Modesty Wishlist (${liveFavorites.length})',
-                      style: AppTextStyles.productTitle.copyWith(fontSize: 18),
+                    Expanded(
+                      child: Text(
+                        'My Modesty Wishlist (${liveFavorites.length})',
+                        style: AppTextStyles.productTitle.copyWith(fontSize: 18),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                     if (liveFavorites.isNotEmpty)
                       TextButton.icon(
@@ -2314,7 +2317,7 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                         ),
                         onPressed: () {
                           for (final p in liveFavorites) {
-                            ref.read(cartControllerProvider.notifier).addItem(p);
+                            modalRef.read(cartControllerProvider.notifier).addItem(p);
                           }
                           Navigator.pop(modalCtx);
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -2325,6 +2328,13 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                           );
                         },
                       ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, color: AppColors.textSecondary, size: 20),
+                      tooltip: 'Close Wishlist',
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () => Navigator.pop(modalCtx),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -2388,7 +2398,7 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                       separatorBuilder: (context, index) => const SizedBox(height: 10),
                       itemBuilder: (listCtx, index) {
                         final product = liveFavorites[index];
-                        return _buildLiveWishlistItem(product, homeController);
+                        return _buildLiveWishlistItem(product, homeController, modalRef);
                       },
                     ),
                   ),
@@ -2400,7 +2410,7 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
     );
   }
 
-  Widget _buildLiveWishlistItem(ProductModel product, HomeController homeController) {
+  Widget _buildLiveWishlistItem(ProductModel product, HomeController homeController, WidgetRef modalRef) {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -2438,12 +2448,15 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
           const SizedBox(width: 6),
           IconButton(
             icon: const Icon(Icons.delete_outline_rounded, color: AppColors.textSecondary, size: 20),
-            tooltip: 'Remove',
+            tooltip: 'Remove from Wishlist',
             onPressed: () {
-              homeController.toggleFavorite(product);
+              homeController.removeFavorite(product);
               ScaffoldMessenger.of(context).hideCurrentSnackBar();
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Removed ${product.name} from wishlist.')),
+                SnackBar(
+                  content: Text('Removed ${product.name} from wishlist.'),
+                  duration: const Duration(seconds: 2),
+                ),
               );
             },
           ),
@@ -2455,12 +2468,14 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             onPressed: () {
-              ref.read(cartControllerProvider.notifier).addItem(product);
+              modalRef.read(cartControllerProvider.notifier).addItem(product);
+              homeController.removeFavorite(product);
               ScaffoldMessenger.of(context).hideCurrentSnackBar();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Moved ${product.name} to bag!'),
                   backgroundColor: AppColors.primary,
+                  duration: const Duration(seconds: 2),
                 ),
               );
             },

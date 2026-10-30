@@ -609,6 +609,80 @@ class Endpoints extends _i1.EndpointDispatch {
                     idempotencyKey: params['idempotencyKey'],
                   ),
         ),
+        'updateOrderStatus': _i1.MethodConnector(
+          name: 'updateOrderStatus',
+          params: {
+            'orderRef': _i1.ParameterDescription(
+              name: 'orderRef',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'fulfillmentStatus': _i1.ParameterDescription(
+              name: 'fulfillmentStatus',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['order'] as _i7.OrderEndpoint).updateOrderStatus(
+                    session,
+                    orderRef: params['orderRef'],
+                    fulfillmentStatus: params['fulfillmentStatus'],
+                  ),
+        ),
+        'updatePaymentStatus': _i1.MethodConnector(
+          name: 'updatePaymentStatus',
+          params: {
+            'orderRef': _i1.ParameterDescription(
+              name: 'orderRef',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'paymentStatus': _i1.ParameterDescription(
+              name: 'paymentStatus',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'paymentReference': _i1.ParameterDescription(
+              name: 'paymentReference',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['order'] as _i7.OrderEndpoint).updatePaymentStatus(
+                    session,
+                    orderRef: params['orderRef'],
+                    paymentStatus: params['paymentStatus'],
+                    paymentReference: params['paymentReference'],
+                  ),
+        ),
+        'deleteOrder': _i1.MethodConnector(
+          name: 'deleteOrder',
+          params: {
+            'orderRef': _i1.ParameterDescription(
+              name: 'orderRef',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['order'] as _i7.OrderEndpoint).deleteOrder(
+                session,
+                orderRef: params['orderRef'],
+              ),
+        ),
       },
     );
     connectors['product'] = _i1.EndpointConnector(

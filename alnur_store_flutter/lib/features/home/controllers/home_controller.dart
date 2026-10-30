@@ -55,7 +55,13 @@ class HomeState {
       ...jewelriesProducts,
       ...ringsProducts,
     ]) {
-      map[p.id] = p;
+      final key = p.name.trim().toLowerCase();
+      // Deduplicate by name, preserving favorite status if any instance is favorited
+      if (!map.containsKey(key)) {
+        map[key] = p;
+      } else if (p.isFavorite && !map[key]!.isFavorite) {
+        map[key] = p;
+      }
     }
     return map.values.toList();
   }
@@ -709,9 +715,15 @@ class HomeController extends Notifier<HomeState> {
 
   void toggleFavorite(ProductModel product) {
     final updatedFavorites = !product.isFavorite;
+    final targetName = product.name.trim().toLowerCase();
 
     List<ProductModel> updateList(List<ProductModel> list) {
-      return list.map((p) => p.id == product.id ? p.copyWith(isFavorite: updatedFavorites) : p).toList();
+      return list.map((p) {
+        if (p.id == product.id || p.name.trim().toLowerCase() == targetName) {
+          return p.copyWith(isFavorite: updatedFavorites);
+        }
+        return p;
+      }).toList();
     }
 
     state = state.copyWith(
@@ -735,8 +747,15 @@ class HomeController extends Notifier<HomeState> {
   }
 
   void removeFavorite(ProductModel product) {
+    final targetName = product.name.trim().toLowerCase();
+
     List<ProductModel> updateList(List<ProductModel> list) {
-      return list.map((p) => p.id == product.id ? p.copyWith(isFavorite: false) : p).toList();
+      return list.map((p) {
+        if (p.id == product.id || p.name.trim().toLowerCase() == targetName) {
+          return p.copyWith(isFavorite: false);
+        }
+        return p;
+      }).toList();
     }
 
     state = state.copyWith(

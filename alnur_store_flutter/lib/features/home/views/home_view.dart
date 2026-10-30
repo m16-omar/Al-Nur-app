@@ -799,7 +799,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
                           icon: Icons.local_shipping_outlined,
                           iconColor: AppColors.primary,
                           title: 'Order Dispatched #ALN-84920 🚚',
-                          subtitle: 'Courier Driver Ibrahim is en route with your Dubai Gold Noir Abaya. Estimated 4:30 PM.',
+                          subtitle: 'Courier Driver Ibrahim is en route with your Al-Nur luxury order. Estimated 4:30 PM.',
                           time: '2h ago',
                           isUnread: true,
                           onTap: () {

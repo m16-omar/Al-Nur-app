@@ -52,19 +52,17 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
 
     return homeState.allProducts.firstWhere(
       (p) => p.id == widget.productId,
-      orElse: () => ProductModel(
+      orElse: () => widget.initialProduct ?? (homeState.allProducts.isNotEmpty ? homeState.allProducts.first : ProductModel(
         id: widget.productId,
-        name: 'Al-Nur Modest Couture Item',
+        name: 'Al-Nur Modest Item',
         price: 32000,
         originalPrice: 38000,
         rating: 4.9,
         reviewCount: 48,
-        imageUrl:
-            'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80',
-        categoryId: 'abayas',
-        description:
-            'Handcrafted from luxurious imported Medina crepe. Tailored with a modest flowing silhouette that offers maximum opacity, elegance, and comfort.',
-      ),
+        imageUrl: '',
+        categoryId: 'perfumes',
+        description: 'Authentic modest luxury from the Al-Nur collection.',
+      )),
     );
   }
 
@@ -296,10 +294,11 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
 
     // Multi-angle gallery images based on primary product image
     final galleryImages = [
-      product.imageUrl,
-      'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1629200468328-87bf3adfb78b?auto=format&fit=crop&w=800&q=80',
+      if (product.imageUrl.isNotEmpty) product.imageUrl,
     ];
+    if (galleryImages.isEmpty) {
+      galleryImages.add('');
+    }
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -772,9 +771,12 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
                         icon: const Icon(Icons.shopping_bag_outlined, size: 18),
                         label: const Text('Add to Bag', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                         onPressed: () {
-                          for (int i = 0; i < _quantity; i++) {
-                            ref.read(cartControllerProvider.notifier).addItem(product);
-                          }
+                          ref.read(cartControllerProvider.notifier).addItem(
+                                product,
+                                size: _selectedSize,
+                                color: _selectedColor,
+                                quantity: _quantity,
+                              );
                           ScaffoldMessenger.of(context).hideCurrentSnackBar();
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
@@ -802,9 +804,12 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       onPressed: () {
-                        for (int i = 0; i < _quantity; i++) {
-                          ref.read(cartControllerProvider.notifier).addItem(product);
-                        }
+                        ref.read(cartControllerProvider.notifier).addItem(
+                              product,
+                              size: _selectedSize,
+                              color: _selectedColor,
+                              quantity: _quantity,
+                            );
                         context.push(AppRoutes.cart);
                       },
                       child: const Text('Buy Now', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),

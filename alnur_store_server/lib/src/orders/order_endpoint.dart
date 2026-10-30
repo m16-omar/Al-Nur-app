@@ -242,4 +242,84 @@ class OrderEndpoint extends Endpoint {
           : StoreOrder.fromJson(jsonDecode(jsonStr) as Map<String, dynamic>),
     );
   }
+
+  /// Updates an order's fulfillment status (e.g. 'processing', 'dispatched', 'delivered', 'cancelled').
+  Future<StoreOrder?> updateOrderStatus(
+    Session session, {
+    required String orderRef,
+    required String fulfillmentStatus,
+  }) async {
+    final order = await StoreOrder.db.findFirstRow(
+      session,
+      where: (t) => t.orderRef.equals(orderRef),
+    );
+    if (order == null) return null;
+
+    order.fulfillmentStatus = fulfillmentStatus.toLowerCase().trim();
+    order.updatedAt = DateTime.now();
+
+    final updated = await StoreOrder.db.updateRow(session, order);
+
+    // Send dispatch email if marked dispatched or delivered
+    if (order.customerEmail.isNotEmpty &&
+        (fulfillmentStatus.toLowerCase() == 'dispatched' ||
+            fulfillmentStatus.toLowerCase() == 'delivered')) {
+      try {
+        await EmailService.sendNotificationEmail(
+          session,
+          toEmail: order.customerEmail,
+          recipientName: order.customerName,
+          subject: 'Al-Nur Order Update: Order #${order.orderRef} is ${fulfillmentStatus.toUpperCase()}',
+          headerTitle: 'Order Update: #${order.orderRef}',
+          messageHtml: '''
+            <p>Dear ${order.customerName},</p>
+            <p>Your order <strong>#${order.orderRef}</strong> has been updated to: <strong style="color:#0B291E;">${fulfillmentStatus.toUpperCase()}</strong>.</p>
+            <p>Delivery Address: <em>${order.shippingAddress}</em></p>
+            <p style="color:#6B7280;font-size:12px;margin-top:20px;">May Allah bless your purchase with Al-Nur.</p>
+          ''',
+        );
+      } catch (e) {
+        session.log('Email notice: $e', level: LogLevel.info);
+      }
+    }
+
+    return updated;
+  }
+
+  /// Updates an order's payment status (e.g. 'paid', 'pending', 'refunded', 'failed').
+  Future<StoreOrder?> updatePaymentStatus(
+    Session session, {
+    required String orderRef,
+    required String paymentStatus,
+    String? paymentReference,
+  }) async {
+    final order = await StoreOrder.db.findFirstRow(
+      session,
+      where: (t) => t.orderRef.equals(orderRef),
+    );
+    if (order == null) return null;
+
+    order.paymentStatus = paymentStatus.toLowerCase().trim();
+    if (paymentReference != null && paymentReference.isNotEmpty) {
+      order.paymentReference = paymentReference;
+    }
+    order.updatedAt = DateTime.now();
+
+    return await StoreOrder.db.updateRow(session, order);
+  }
+
+  /// Deletes or permanently cancels an order.
+  Future<bool> deleteOrder(
+    Session session, {
+    required String orderRef,
+  }) async {
+    final order = await StoreOrder.db.findFirstRow(
+      session,
+      where: (t) => t.orderRef.equals(orderRef),
+    );
+    if (order == null) return false;
+
+    await StoreOrder.db.deleteRow(session, order);
+    return true;
+  }
 }

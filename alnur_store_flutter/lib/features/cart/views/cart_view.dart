@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../shared/widgets/product_image.dart';
 import '../../authentication/controllers/auth_controller.dart';
 import '../controllers/cart_controller.dart';
 import '../models/cart_item_model.dart';
@@ -132,13 +133,15 @@ class _CartViewState extends ConsumerState<CartView> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
+                            Wrap(
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 6,
+                              runSpacing: 4,
                               children: [
                                 const Text(
                                   'Monnify Dynamic Gateway',
-                                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary),
+                                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5, color: AppColors.textPrimary),
                                 ),
-                                const SizedBox(width: 6),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
@@ -466,20 +469,11 @@ class _CartViewState extends ConsumerState<CartView> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Image
-          ClipRRect(
+          ProductImage(
+            imageUrl: item.imageUrl,
+            width: 72,
+            height: 72,
             borderRadius: BorderRadius.circular(12),
-            child: Image.network(
-              item.imageUrl,
-              width: 72,
-              height: 72,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                width: 72,
-                height: 72,
-                color: AppColors.surfaceMuted,
-                child: const Icon(Icons.dry_cleaning_rounded, color: AppColors.primary),
-              ),
-            ),
           ),
           const SizedBox(width: 14),
 

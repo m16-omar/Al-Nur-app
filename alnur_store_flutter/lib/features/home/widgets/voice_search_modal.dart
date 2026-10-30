@@ -50,12 +50,12 @@ class _VoiceSearchModalState extends State<VoiceSearchModal>
   Timer? _simulatedWaveformTimer;
 
   final List<String> _voicePresets = [
-    'Dubai Gold Noir Abaya',
-    'Medina Silk Hijab',
-    'Men\'s Omani Thobe',
-    'Moroccan Royal Jalabia',
     'Royal Amber Oud',
-    'Prayer Mat & Tasbih',
+    'Gold Plated Wedding Bands',
+    'Geneva Diamond Watch',
+    'Austrian Crystal Bridal Choker',
+    'Pure Musk Tahara',
+    'Lattafa Khamrah Bukhoor',
   ];
 
   @override

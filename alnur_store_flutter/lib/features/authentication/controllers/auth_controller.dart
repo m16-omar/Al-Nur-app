@@ -2,6 +2,7 @@ import 'package:alnur_store_client/alnur_store_client.dart';
 import 'package:serverpod_auth_idp_flutter/serverpod_auth_idp_flutter.dart' hide UserProfile;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/utils/name_formatter.dart';
 import '../../../main.dart';
 import '../../onboarding/services/onboarding_preferences.dart';
 import '../models/user_profile.dart';
@@ -100,7 +101,7 @@ class AuthController extends Notifier<AuthState> {
         state = state.copyWith(
           user: UserProfile(
             id: authInfo?.authUserId.toString() ?? 'usr_authenticated',
-            name: savedName ?? 'Al-Nur Member',
+            name: NameFormatter.formatFirstName(savedName ?? userEmail, fallback: 'Al-Nur Member'),
             email: userEmail,
             phone: savedPhone,
             avatarUrl: savedAvatar,
@@ -184,14 +185,10 @@ class AuthController extends Notifier<AuthState> {
       await client.auth.updateSignedInUser(authSuccess);
 
       final savedName = await OnboardingPreferences.getSavedUserName();
-      final displayName = (savedName != null && savedName.isNotEmpty)
-          ? savedName
-          : (cleanEmail.contains('@')
-              ? cleanEmail.split('@').first
-              : cleanEmail);
-      final capitalized = displayName.isNotEmpty
-          ? '${displayName[0].toUpperCase()}${displayName.substring(1)}'
-          : 'Al-Nur Member';
+      final capitalized = NameFormatter.formatFirstName(
+        savedName != null && savedName.isNotEmpty ? savedName : cleanEmail,
+        fallback: 'Al-Nur Member',
+      );
 
       await OnboardingPreferences.saveUserEmail(cleanEmail);
       await OnboardingPreferences.saveUserName(capitalized);
@@ -214,14 +211,10 @@ class AuthController extends Notifier<AuthState> {
       // 2. Fallback: If in offline mode, demo mode, or network error, validate credentials gracefully
       if (cleanPassword.length >= 6) {
         final savedName = await OnboardingPreferences.getSavedUserName();
-        final displayName = (savedName != null && savedName.isNotEmpty)
-            ? savedName
-            : (cleanEmail.contains('@')
-                ? cleanEmail.split('@').first
-                : cleanEmail);
-        final capitalized = displayName.isNotEmpty
-            ? '${displayName[0].toUpperCase()}${displayName.substring(1)}'
-            : 'Al-Nur Member';
+        final capitalized = NameFormatter.formatFirstName(
+          savedName != null && savedName.isNotEmpty ? savedName : cleanEmail,
+          fallback: 'Al-Nur Member',
+        );
 
         await OnboardingPreferences.saveUserEmail(cleanEmail);
         await OnboardingPreferences.saveUserName(capitalized);

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/utils/name_formatter.dart';
 
 class WelcomeUserDialog extends StatefulWidget {
   final String userName;
@@ -86,9 +87,7 @@ class _WelcomeUserDialogState extends State<WelcomeUserDialog> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
-    final cleanName = widget.userName.trim().isNotEmpty
-        ? widget.userName.trim()
-        : 'Valued Guest';
+    final cleanName = NameFormatter.formatFirstName(widget.userName, fallback: 'Valued Patron');
 
     return Center(
       child: FadeTransition(

@@ -75,53 +75,25 @@ class CartController extends Notifier<CartState> {
 
       if (itemsJson != null && itemsJson.isNotEmpty) {
         final List<dynamic> decoded = json.decode(itemsJson);
-        final loadedItems = decoded.map((e) => CartItemModel.fromMap(e as Map<String, dynamic>)).toList();
+        final loadedItems = decoded
+            .map((e) => CartItemModel.fromMap(e as Map<String, dynamic>))
+            .where((item) =>
+                item.name != 'Dubai Gold Noir Abaya' &&
+                item.name != 'Pure Medina Silk Hijab' &&
+                item.name != 'Royal Emerald Velvet Jalabia')
+            .toList();
         state = state.copyWith(
           items: loadedItems,
           appliedPromoCode: savedPromo.isNotEmpty ? savedPromo : null,
           discountPercent: savedPromo.isNotEmpty ? 0.15 : 0.0,
         );
+        await _saveToStorage(loadedItems);
       } else {
-        // Initial modest items for demo shopping bag
-        final initialItems = [
-          const CartItemModel(
-            id: 'cart_1',
-            productId: 'feat_1',
-            name: 'Dubai Gold Noir Abaya',
-            categoryId: 'abayas',
-            price: 28500,
-            imageUrl: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=500&q=80',
-            size: '56',
-            color: 'Midnight Black / Gold',
-            quantity: 1,
-          ),
-          const CartItemModel(
-            id: 'cart_2',
-            productId: 'hijab_1',
-            name: 'Pure Medina Silk Hijab',
-            categoryId: 'hijabs',
-            price: 8500,
-            imageUrl: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=500&q=80',
-            size: 'Standard (180x75cm)',
-            color: 'Emerald Silk',
-            quantity: 2,
-          ),
-          const CartItemModel(
-            id: 'cart_3',
-            productId: 'jalabia_1',
-            name: 'Royal Emerald Velvet Jalabia',
-            categoryId: 'jalabias',
-            price: 32000,
-            imageUrl: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=500&q=80',
-            size: '58',
-            color: 'Deep Emerald / Gold',
-            quantity: 1,
-          ),
-        ];
-        state = state.copyWith(items: initialItems);
-        await _saveToStorage(initialItems);
+        state = state.copyWith(items: []);
       }
-    } catch (_) {}
+    } catch (_) {
+      state = state.copyWith(items: []);
+    }
   }
 
   Future<void> _saveToStorage(List<CartItemModel> items) async {

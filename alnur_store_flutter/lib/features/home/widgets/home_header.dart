@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/utils/name_formatter.dart';
 
 class HomeHeader extends StatelessWidget {
   final int cartCount;
@@ -266,7 +267,7 @@ class HomeHeader extends StatelessWidget {
 
   void _showUserAccountMenu(BuildContext context) {
     final displayName = (userName != null && userName!.trim().isNotEmpty)
-        ? userName!.trim()
+        ? NameFormatter.formatFirstName(userName, fallback: isGuest ? 'Guest Shopper' : 'Al-Nur Member')
         : (isGuest ? 'Guest Shopper' : 'Al-Nur Member');
     final displayEmail = (userEmail != null && userEmail!.trim().isNotEmpty)
         ? userEmail!.trim()
@@ -276,71 +277,83 @@ class HomeHeader extends StatelessWidget {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (modalCtx) => Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 420),
-          margin: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.12),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // User Account Header matching user screenshot
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundColor: isGuest ? AppColors.surfaceMuted : AppColors.primary,
-                    child: Text(
-                      isGuest ? 'G' : (displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U'),
-                      style: TextStyle(
-                        color: isGuest ? AppColors.textPrimary : Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          displayName,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          displayEmail,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textSecondary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
+      builder: (modalCtx) => GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => Navigator.pop(modalCtx),
+        child: Center(
+          child: GestureDetector(
+            onTap: () {}, // Prevent taps inside the card from closing
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 420),
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.12),
+                    blurRadius: 24,
+                    offset: const Offset(0, 8),
                   ),
                 ],
               ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // User Account Header matching user screenshot
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 24,
+                        backgroundColor: isGuest ? AppColors.surfaceMuted : AppColors.primary,
+                        child: Text(
+                          isGuest ? 'G' : (displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U'),
+                          style: TextStyle(
+                            color: isGuest ? AppColors.textPrimary : Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              displayName,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              displayEmail,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: AppColors.textSecondary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, color: AppColors.textSecondary, size: 22),
+                        tooltip: 'Close Menu',
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: () => Navigator.pop(modalCtx),
+                      ),
+                    ],
+                  ),
 
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 14),
@@ -441,7 +454,9 @@ class HomeHeader extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 
   Widget _buildMenuAction({

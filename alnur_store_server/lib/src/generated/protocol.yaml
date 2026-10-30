@@ -24,6 +24,9 @@ order:
   - getOrders:
   - initializeMonnifyPayment:
   - processPaymentWebhook:
+  - updateOrderStatus:
+  - updatePaymentStatus:
+  - deleteOrder:
 product:
   - getProducts:
   - reseedProducts:

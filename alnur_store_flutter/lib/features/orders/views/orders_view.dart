@@ -8,7 +8,9 @@ import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../main.dart';
+import '../../../shared/widgets/product_image.dart';
 import '../../authentication/controllers/auth_controller.dart';
+import '../../home/controllers/home_controller.dart';
 import '../models/order_model.dart';
 
 class OrdersView extends ConsumerStatefulWidget {
@@ -25,218 +27,6 @@ class _OrdersViewState extends ConsumerState<OrdersView>
   late TabController _tabController;
   bool _isLoading = true;
   List<OrderModel> _allOrders = [];
-
-  final List<OrderModel> _demoOrders = [
-    OrderModel(
-      id: 'ALN-84920',
-      orderDate: DateTime.now().subtract(const Duration(days: 1)),
-      status: OrderStatus.inTransit,
-      trackingNumber: 'ALN-TRK-9920148',
-      deliveryAddress: 'Plot 14, Admiralty Way, Lekki Phase 1, Lagos',
-      estimatedDelivery: 'Today by 4:30 PM',
-      subtotal: 37000,
-      shippingFee: 2500,
-      totalAmount: 39500,
-      items: const [
-        OrderItem(
-          name: 'Dubai Gold Noir Abaya',
-          category: 'Abayas',
-          quantity: 1,
-          size: '56',
-          color: 'Midnight Black / Gold',
-          price: 28500,
-          imageUrl:
-              'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=500&q=80',
-        ),
-        OrderItem(
-          name: 'Pure Medina Silk Hijab',
-          category: 'Hijabs',
-          quantity: 1,
-          size: 'Standard (180x75cm)',
-          color: 'Emerald Silk',
-          price: 8500,
-          imageUrl:
-              'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=500&q=80',
-        ),
-      ],
-      timeline: const [
-        OrderTimelineStep(
-          title: 'Order Placed',
-          subtitle: 'Payment verified successfully via Card',
-          date: 'Yesterday, 10:15 AM',
-          isCompleted: true,
-        ),
-        OrderTimelineStep(
-          title: 'Custom Sizing & Quality Check',
-          subtitle: 'Inspected by Al-Nur Master Tailors',
-          date: 'Yesterday, 03:40 PM',
-          isCompleted: true,
-        ),
-        OrderTimelineStep(
-          title: 'Dispatched from Hub',
-          subtitle: 'En route from Lekki Fulfilment Center',
-          date: 'Today, 09:20 AM',
-          isCompleted: true,
-        ),
-        OrderTimelineStep(
-          title: 'Out for Delivery',
-          subtitle: 'Courier Driver: Ibrahim (+234 803 123 4567)',
-          date: 'Today, 01:10 PM',
-          isCompleted: true,
-          isCurrent: true,
-        ),
-        OrderTimelineStep(
-          title: 'Delivered',
-          subtitle: 'Package signed and handed over',
-          date: 'Estimated by 4:30 PM',
-          isCompleted: false,
-        ),
-      ],
-    ),
-    OrderModel(
-      id: 'ALN-79104',
-      orderDate: DateTime.now().subtract(const Duration(days: 3)),
-      status: OrderStatus.processing,
-      trackingNumber: 'ALN-TRK-7719280',
-      deliveryAddress: 'No. 8, Gana Street, Maitama, Abuja FCT',
-      estimatedDelivery: 'Oct 25, 2026',
-      subtotal: 36000,
-      shippingFee: 3000,
-      totalAmount: 39000,
-      items: const [
-        OrderItem(
-          name: 'Moroccan Royal Jalabia',
-          category: 'Jalabias',
-          quantity: 1,
-          size: 'L',
-          color: 'Royal Emerald / Gold Sfifa',
-          price: 36000,
-          imageUrl:
-              'https://images.unsplash.com/photo-1629200468328-87bf3adfb78b?auto=format&fit=crop&w=500&q=80',
-        ),
-      ],
-      timeline: const [
-        OrderTimelineStep(
-          title: 'Order Confirmed',
-          subtitle: 'Artisanal Moroccan tailoring scheduled',
-          date: 'Oct 20, 02:15 PM',
-          isCompleted: true,
-        ),
-        OrderTimelineStep(
-          title: 'Handcrafted Embroidery',
-          subtitle: 'Applying intricate Sfifa gold threading',
-          date: 'Oct 21, 11:30 AM',
-          isCompleted: true,
-          isCurrent: true,
-        ),
-        OrderTimelineStep(
-          title: 'Packaging & Blessing',
-          subtitle: 'Perfumed with natural Oud & sealed',
-          date: 'Pending',
-          isCompleted: false,
-        ),
-        OrderTimelineStep(
-          title: 'Courier Dispatch',
-          subtitle: 'Waybill generated for Abuja air transit',
-          date: 'Pending',
-          isCompleted: false,
-        ),
-      ],
-    ),
-    OrderModel(
-      id: 'ALN-64218',
-      orderDate: DateTime.now().subtract(const Duration(days: 12)),
-      status: OrderStatus.completed,
-      trackingNumber: 'ALN-TRK-6421800',
-      deliveryAddress: 'Plot 14, Admiralty Way, Lekki Phase 1, Lagos',
-      estimatedDelivery: 'Delivered on Oct 14, 2026',
-      subtotal: 52000,
-      shippingFee: 2500,
-      totalAmount: 54500,
-      items: const [
-        OrderItem(
-          name: 'Emirati Minimalist Thobe',
-          category: 'Thobes',
-          quantity: 2,
-          size: '58L',
-          color: 'Crisp White',
-          price: 26000,
-          imageUrl:
-              'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=500&q=80',
-        ),
-      ],
-      timeline: const [
-        OrderTimelineStep(
-          title: 'Delivered Successfully',
-          subtitle: 'Received and confirmed by customer',
-          date: 'Oct 14, 02:45 PM',
-          isCompleted: true,
-        ),
-      ],
-    ),
-    OrderModel(
-      id: 'ALN-58190',
-      orderDate: DateTime.now().subtract(const Duration(days: 28)),
-      status: OrderStatus.completed,
-      trackingNumber: 'ALN-TRK-5819022',
-      deliveryAddress: 'Plot 14, Admiralty Way, Lekki Phase 1, Lagos',
-      estimatedDelivery: 'Delivered on Sep 29, 2026',
-      subtotal: 38000,
-      shippingFee: 2500,
-      totalAmount: 40500,
-      items: const [
-        OrderItem(
-          name: 'Pearl Beaded Organza Abaya',
-          category: 'Abayas',
-          quantity: 1,
-          size: '54',
-          color: 'Warm Taupe',
-          price: 38000,
-          imageUrl:
-              'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=500&q=80',
-        ),
-      ],
-      timeline: const [
-        OrderTimelineStep(
-          title: 'Delivered Successfully',
-          subtitle: 'Received and verified',
-          date: 'Sep 29, 01:20 PM',
-          isCompleted: true,
-        ),
-      ],
-    ),
-    OrderModel(
-      id: 'ALN-49012',
-      orderDate: DateTime.now().subtract(const Duration(days: 45)),
-      status: OrderStatus.cancelled,
-      trackingNumber: 'ALN-TRK-4901289',
-      deliveryAddress: 'Plot 14, Admiralty Way, Lekki Phase 1, Lagos',
-      estimatedDelivery: 'Refund completed',
-      subtotal: 42000,
-      shippingFee: 0,
-      totalAmount: 42000,
-      items: const [
-        OrderItem(
-          name: 'Velvet Trim Midnight Abaya',
-          category: 'Abayas',
-          quantity: 1,
-          size: '56',
-          color: 'Midnight Blue',
-          price: 42000,
-          imageUrl:
-              'https://images.unsplash.com/photo-1617922001439-4a2e6562f328?auto=format&fit=crop&w=500&q=80',
-        ),
-      ],
-      timeline: const [
-        OrderTimelineStep(
-          title: 'Order Cancelled & Refunded',
-          subtitle: '₦42,000 refunded to original card',
-          date: 'Sep 10, 04:10 PM',
-          isCompleted: true,
-        ),
-      ],
-    ),
-  ];
 
   @override
   void initState() {
@@ -270,7 +60,7 @@ class _OrdersViewState extends ConsumerState<OrdersView>
 
     if (mounted) {
       setState(() {
-        _allOrders = _demoOrders;
+        _allOrders = [];
         _isLoading = false;
       });
     }
@@ -278,21 +68,40 @@ class _OrdersViewState extends ConsumerState<OrdersView>
 
   OrderModel _mapStoreOrderToModel(StoreOrder so) {
     List<OrderItem> items = [];
+    final homeProducts = ref.read(homeControllerProvider).allProducts;
+
     try {
       final decoded = jsonDecode(so.itemsJson) as List;
       for (final it in decoded) {
         if (it is Map<String, dynamic>) {
+          final itemId = it['id']?.toString() ?? '';
+          final itemName = it['name']?.toString() ?? 'Al-Nur Modest Item';
+          String effectiveImage = it['imageUrl']?.toString() ?? '';
+
+          // If image is missing or is the misleading hardcoded abaya image, resolve from live catalog
+          if (effectiveImage.isEmpty || effectiveImage.contains('photo-1583391733956')) {
+            final match = homeProducts.where((p) =>
+              p.id == itemId ||
+              p.name.toLowerCase().trim() == itemName.toLowerCase().trim() ||
+              (itemName.isNotEmpty && p.name.toLowerCase().contains(itemName.toLowerCase())) ||
+              (p.name.isNotEmpty && itemName.toLowerCase().contains(p.name.toLowerCase()))
+            ).firstOrNull;
+            if (match != null) {
+              effectiveImage = match.imageUrl;
+            } else {
+              effectiveImage = '';
+            }
+          }
+
           items.add(
             OrderItem(
-              name: it['name']?.toString() ?? 'Al-Nur Modest Couture',
-              category: it['category']?.toString() ?? 'Abayas & Haute Modesty',
+              name: itemName,
+              category: it['category']?.toString() ?? 'Modesty Collection',
               quantity: (it['quantity'] as num?)?.toInt() ?? 1,
               size: it['selectedSize']?.toString() ?? '56',
               color: it['selectedColor']?.toString() ?? 'Default',
               price: (it['price'] as num?)?.toDouble() ?? 0.0,
-              imageUrl:
-                  it['imageUrl']?.toString() ??
-                  'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=500&q=80',
+              imageUrl: effectiveImage,
             ),
           );
         }
@@ -302,14 +111,13 @@ class _OrdersViewState extends ConsumerState<OrdersView>
     if (items.isEmpty) {
       items.add(
         OrderItem(
-          name: 'Al-Nur Modest Couture Item',
+          name: 'Al-Nur Modest Item',
           category: 'Couture',
           quantity: 1,
           size: 'Standard',
           color: 'Default',
           price: so.totalAmount,
-          imageUrl:
-              'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=500&q=80',
+          imageUrl: '',
         ),
       );
     }
@@ -725,24 +533,11 @@ class _OrdersViewState extends ConsumerState<OrdersView>
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ClipRRect(
+                        ProductImage(
+                          imageUrl: item.imageUrl,
+                          width: 64,
+                          height: 64,
                           borderRadius: BorderRadius.circular(10),
-                          child: Image.network(
-                            item.imageUrl,
-                            width: 64,
-                            height: 64,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                Container(
-                                  width: 64,
-                                  height: 64,
-                                  color: AppColors.primaryContainer,
-                                  child: const Icon(
-                                    Icons.checkroom,
-                                    color: AppColors.primary,
-                                  ),
-                                ),
-                          ),
                         ),
                         const SizedBox(width: 14),
                         Expanded(

@@ -63,6 +63,42 @@ void main() {
       }
     });
 
+    test('removeFavorite explicitly removes product from wishlist', () {
+      final controller = container.read(homeControllerProvider.notifier);
+      final product = container.read(homeControllerProvider).featuredProducts.first;
+
+      // Ensure product is favorited
+      if (!product.isFavorite) {
+        controller.toggleFavorite(product);
+      }
+      expect(container.read(homeControllerProvider).favoriteProducts.any((p) => p.id == product.id), isTrue);
+
+      // Explicitly remove from favorite
+      controller.removeFavorite(product);
+      final stateAfterRemoval = container.read(homeControllerProvider);
+      expect(stateAfterRemoval.favoriteProducts.any((p) => p.id == product.id), isFalse);
+    });
+
+    test('favoriteProducts deduplicates products and removes all instances on delete', () {
+      final controller = container.read(homeControllerProvider.notifier);
+      final product = container.read(homeControllerProvider).featuredProducts.first;
+
+      // Ensure product is favorited
+      if (!product.isFavorite) {
+        controller.toggleFavorite(product);
+      }
+
+      // Check no duplicates in favoriteProducts
+      final favorites = container.read(homeControllerProvider).favoriteProducts;
+      final matchingFavs = favorites.where((p) => p.name.trim().toLowerCase() == product.name.trim().toLowerCase());
+      expect(matchingFavs.length, equals(1));
+
+      // Remove and ensure none remain in favoriteProducts
+      controller.removeFavorite(product);
+      final updatedFavorites = container.read(homeControllerProvider).favoriteProducts;
+      expect(updatedFavorites.any((p) => p.name.trim().toLowerCase() == product.name.trim().toLowerCase()), isFalse);
+    });
+
     test('Search query filters allProducts correctly', () {
       final controller = container.read(homeControllerProvider.notifier);
 
