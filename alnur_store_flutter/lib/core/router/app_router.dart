@@ -4,12 +4,14 @@ import '../../features/authentication/views/login_view.dart';
 import '../../features/authentication/views/sign_up_view.dart';
 import '../../features/cart/views/cart_view.dart';
 import '../../features/cart/views/selar_checkout_view.dart';
+import '../../features/categories/views/category_details_view.dart';
 import '../../features/home/views/home_view.dart';
 import '../../features/onboarding/views/onboarding_view.dart';
 import '../../features/orders/views/orders_view.dart';
 import '../../features/products/views/product_details_view.dart';
 import '../../features/profile/views/profile_view.dart';
 import '../../features/splash/views/splash_view.dart';
+import '../../shared/models/category_model.dart';
 import '../../shared/models/product_model.dart';
 
 class AppRoutes {
@@ -24,6 +26,7 @@ class AppRoutes {
   static const String orders = '/orders';
   static const String profile = '/profile';
   static const String productDetails = '/product/:id';
+  static const String categoryDetails = '/category/:id';
 }
 
 final GoRouter appRouter = GoRouter(
@@ -55,7 +58,10 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: AppRoutes.selarCheckout,
-      builder: (context, state) => const SelarCheckoutView(),
+      builder: (context, state) {
+        final gateway = state.extra is String ? state.extra as String : 'monnify';
+        return SelarCheckoutView(gateway: gateway);
+      },
     ),
     GoRoute(
       path: AppRoutes.orders,
@@ -77,6 +83,17 @@ final GoRouter appRouter = GoRouter(
         return ProductDetailsView(
           productId: id,
           initialProduct: initialProduct,
+        );
+      },
+    ),
+    GoRoute(
+      path: AppRoutes.categoryDetails,
+      builder: (context, state) {
+        final id = state.pathParameters['id'] ?? '';
+        final initialCategory = state.extra as CategoryModel?;
+        return CategoryDetailsView(
+          categoryId: id,
+          initialCategory: initialCategory,
         );
       },
     ),

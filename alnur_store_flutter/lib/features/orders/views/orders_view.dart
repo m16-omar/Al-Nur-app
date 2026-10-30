@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'package:alnur_store_client/alnur_store_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../main.dart';
@@ -17,7 +20,8 @@ class OrdersView extends ConsumerStatefulWidget {
   ConsumerState<OrdersView> createState() => _OrdersViewState();
 }
 
-class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProviderStateMixin {
+class _OrdersViewState extends ConsumerState<OrdersView>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isLoading = true;
   List<OrderModel> _allOrders = [];
@@ -41,7 +45,8 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
           size: '56',
           color: 'Midnight Black / Gold',
           price: 28500,
-          imageUrl: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=500&q=80',
+          imageUrl:
+              'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=500&q=80',
         ),
         OrderItem(
           name: 'Pure Medina Silk Hijab',
@@ -50,7 +55,8 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
           size: 'Standard (180x75cm)',
           color: 'Emerald Silk',
           price: 8500,
-          imageUrl: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=500&q=80',
+          imageUrl:
+              'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=500&q=80',
         ),
       ],
       timeline: const [
@@ -105,7 +111,8 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
           size: 'L',
           color: 'Royal Emerald / Gold Sfifa',
           price: 36000,
-          imageUrl: 'https://images.unsplash.com/photo-1629200468328-87bf3adfb78b?auto=format&fit=crop&w=500&q=80',
+          imageUrl:
+              'https://images.unsplash.com/photo-1629200468328-87bf3adfb78b?auto=format&fit=crop&w=500&q=80',
         ),
       ],
       timeline: const [
@@ -154,7 +161,8 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
           size: '58L',
           color: 'Crisp White',
           price: 26000,
-          imageUrl: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=500&q=80',
+          imageUrl:
+              'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=500&q=80',
         ),
       ],
       timeline: const [
@@ -184,7 +192,8 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
           size: '54',
           color: 'Warm Taupe',
           price: 38000,
-          imageUrl: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=500&q=80',
+          imageUrl:
+              'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=500&q=80',
         ),
       ],
       timeline: const [
@@ -214,7 +223,8 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
           size: '56',
           color: 'Midnight Blue',
           price: 42000,
-          imageUrl: 'https://images.unsplash.com/photo-1617922001439-4a2e6562f328?auto=format&fit=crop&w=500&q=80',
+          imageUrl:
+              'https://images.unsplash.com/photo-1617922001439-4a2e6562f328?auto=format&fit=crop&w=500&q=80',
         ),
       ],
       timeline: const [
@@ -272,35 +282,43 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
       final decoded = jsonDecode(so.itemsJson) as List;
       for (final it in decoded) {
         if (it is Map<String, dynamic>) {
-          items.add(OrderItem(
-            name: it['name']?.toString() ?? 'Al-Nur Modest Couture',
-            category: it['category']?.toString() ?? 'Abayas & Haute Modesty',
-            quantity: (it['quantity'] as num?)?.toInt() ?? 1,
-            size: it['selectedSize']?.toString() ?? '56',
-            color: it['selectedColor']?.toString() ?? 'Default',
-            price: (it['price'] as num?)?.toDouble() ?? 0.0,
-            imageUrl: it['imageUrl']?.toString() ??
-                'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=500&q=80',
-          ));
+          items.add(
+            OrderItem(
+              name: it['name']?.toString() ?? 'Al-Nur Modest Couture',
+              category: it['category']?.toString() ?? 'Abayas & Haute Modesty',
+              quantity: (it['quantity'] as num?)?.toInt() ?? 1,
+              size: it['selectedSize']?.toString() ?? '56',
+              color: it['selectedColor']?.toString() ?? 'Default',
+              price: (it['price'] as num?)?.toDouble() ?? 0.0,
+              imageUrl:
+                  it['imageUrl']?.toString() ??
+                  'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=500&q=80',
+            ),
+          );
         }
       }
     } catch (_) {}
 
     if (items.isEmpty) {
-      items.add(OrderItem(
-        name: 'Al-Nur Modest Couture Item',
-        category: 'Couture',
-        quantity: 1,
-        size: 'Standard',
-        color: 'Default',
-        price: so.totalAmount,
-        imageUrl: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=500&q=80',
-      ));
+      items.add(
+        OrderItem(
+          name: 'Al-Nur Modest Couture Item',
+          category: 'Couture',
+          quantity: 1,
+          size: 'Standard',
+          color: 'Default',
+          price: so.totalAmount,
+          imageUrl:
+              'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=500&q=80',
+        ),
+      );
     }
 
     OrderStatus status = OrderStatus.processing;
     final fStatus = so.fulfillmentStatus.toLowerCase().trim();
-    if (fStatus.contains('transit') || fStatus.contains('shipped') || fStatus.contains('delivery')) {
+    if (fStatus.contains('transit') ||
+        fStatus.contains('shipped') ||
+        fStatus.contains('delivery')) {
       status = OrderStatus.inTransit;
     } else if (fStatus.contains('deliver') || fStatus.contains('completed')) {
       status = OrderStatus.completed;
@@ -308,7 +326,9 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
       status = OrderStatus.cancelled;
     }
 
-    final subtotal = so.totalAmount > 2500 ? so.totalAmount - 2500 : so.totalAmount;
+    final subtotal = so.totalAmount > 2500
+        ? so.totalAmount - 2500
+        : so.totalAmount;
     final shippingFee = so.totalAmount > 2500 ? 2500.0 : 0.0;
     final tracking = 'ALN-TRK-${so.orderRef.replaceAll('ALN-', '')}';
 
@@ -328,8 +348,10 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
       timeline: [
         OrderTimelineStep(
           title: 'Order Placed & Confirmed',
-          subtitle: 'Payment: ${so.paymentStatus.toUpperCase()} (Ref: ${so.paymentReference ?? so.orderRef})',
-          date: '${so.createdAt.day}/${so.createdAt.month}/${so.createdAt.year}',
+          subtitle:
+              'Payment: ${so.paymentStatus.toUpperCase()} (Ref: ${so.paymentReference ?? so.orderRef})',
+          date:
+              '${so.createdAt.day}/${so.createdAt.month}/${so.createdAt.year}',
           isCompleted: true,
         ),
         OrderTimelineStep(
@@ -342,8 +364,13 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
         OrderTimelineStep(
           title: 'Dispatched with Courier',
           subtitle: 'Waybill Track ID: $tracking',
-          date: status == OrderStatus.inTransit || status == OrderStatus.completed ? 'Dispatched' : 'Pending',
-          isCompleted: status == OrderStatus.inTransit || status == OrderStatus.completed,
+          date:
+              status == OrderStatus.inTransit || status == OrderStatus.completed
+              ? 'Dispatched'
+              : 'Pending',
+          isCompleted:
+              status == OrderStatus.inTransit ||
+              status == OrderStatus.completed,
           isCurrent: status == OrderStatus.inTransit,
         ),
         OrderTimelineStep(
@@ -363,7 +390,11 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
   }
 
   List<OrderModel> get _activeOrders => _allOrders
-      .where((o) => o.status == OrderStatus.inTransit || o.status == OrderStatus.processing)
+      .where(
+        (o) =>
+            o.status == OrderStatus.inTransit ||
+            o.status == OrderStatus.processing,
+      )
       .toList();
 
   List<OrderModel> get _completedOrders =>
@@ -372,6 +403,23 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
   List<OrderModel> get _cancelledOrders =>
       _allOrders.where((o) => o.status == OrderStatus.cancelled).toList();
 
+  String _formatOrderDateTime(DateTime date) {
+    final now = DateTime.now();
+    final timeStr = DateFormat('h:mm a').format(date);
+
+    if (now.year == date.year &&
+        now.month == date.month &&
+        now.day == date.day) {
+      return 'Today, $timeStr';
+    } else if (now.year == date.year &&
+        now.month == date.month &&
+        (now.day - date.day == 1)) {
+      return 'Yesterday, $timeStr';
+    } else {
+      return '${DateFormat('d MMM yyyy').format(date)}, $timeStr';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -379,6 +427,23 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0.5,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: AppColors.primary,
+            size: 20,
+          ),
+          onPressed: () {
+            if (widget.onBackToHome != null) {
+              widget.onBackToHome!();
+            } else if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              context.go(AppRoutes.home);
+            }
+          },
+          tooltip: 'Back to Home',
+        ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -394,7 +459,10 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.help_outline_rounded, color: AppColors.primary),
+            icon: const Icon(
+              Icons.help_outline_rounded,
+              color: AppColors.primary,
+            ),
             tooltip: 'Support',
             onPressed: () => _showSupportDialog(context),
           ),
@@ -405,7 +473,10 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
           unselectedLabelColor: AppColors.textSecondary,
           indicatorColor: AppColors.primary,
           indicatorWeight: 3,
-          labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+          labelStyle: const TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+          ),
           tabs: [
             Tab(text: 'Active (${_activeOrders.length})'),
             Tab(text: 'Completed (${_completedOrders.length})'),
@@ -435,7 +506,10 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
     );
   }
 
-  Widget _buildOrdersList(List<OrderModel> orders, {bool isCurrentTabActive = false}) {
+  Widget _buildOrdersList(
+    List<OrderModel> orders, {
+    bool isCurrentTabActive = false,
+  }) {
     if (orders.isEmpty) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -454,18 +528,54 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
                       color: AppColors.primaryContainer,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.inventory_2_outlined, size: 40, color: AppColors.primary),
+                    child: const Icon(
+                      Icons.inventory_2_outlined,
+                      size: 40,
+                      color: AppColors.primary,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   const Text(
                     'No Orders Found',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   const Text(
                     'Your modest clothing orders will appear here once placed.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                    ),
+                    icon: const Icon(Icons.storefront_outlined, size: 18),
+                    label: const Text('Explore Modest Collections'),
+                    onPressed: () {
+                      if (widget.onBackToHome != null) {
+                        widget.onBackToHome!();
+                      } else if (Navigator.canPop(context)) {
+                        Navigator.pop(context);
+                      } else {
+                        context.go(AppRoutes.home);
+                      }
+                    },
                   ),
                 ],
               ),
@@ -509,27 +619,70 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: AppColors.surfaceMuted.withValues(alpha: 0.4),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(16),
+              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Row(
-                  children: [
-                    const Icon(Icons.receipt_long_rounded, size: 16, color: AppColors.primary),
-                    const SizedBox(width: 6),
-                    Text(
-                      order.id,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                        color: AppColors.textPrimary,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.receipt_long_rounded,
+                            size: 16,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              order.id,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                                color: AppColors.textPrimary,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.schedule_rounded,
+                            size: 13,
+                            color: AppColors.textSecondary,
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              _formatOrderDateTime(order.orderDate),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: order.status.backgroundColor,
                     borderRadius: BorderRadius.circular(20),
@@ -566,62 +719,68 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                ...order.items.map((item) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: Image.network(
-                              item.imageUrl,
-                              width: 64,
-                              height: 64,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => Container(
-                                width: 64,
-                                height: 64,
-                                color: AppColors.primaryContainer,
-                                child: const Icon(Icons.checkroom, color: AppColors.primary),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  item.name,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14,
-                                    color: AppColors.textPrimary,
-                                  ),
-                                ),
-                                const SizedBox(height: 3),
-                                Text(
-                                  'Size: ${item.size} • ${item.color} • Qty: ${item.quantity}',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '₦${item.price.toStringAsFixed(0)}',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 13,
+                ...order.items.map(
+                  (item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.network(
+                            item.imageUrl,
+                            width: 64,
+                            height: 64,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Container(
+                                  width: 64,
+                                  height: 64,
+                                  color: AppColors.primaryContainer,
+                                  child: const Icon(
+                                    Icons.checkroom,
                                     color: AppColors.primary,
                                   ),
                                 ),
-                              ],
-                            ),
                           ),
-                        ],
-                      ),
-                    )),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                'Size: ${item.size} • ${item.color} • Qty: ${item.quantity}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '₦${item.price.toStringAsFixed(0)}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
 
                 const Divider(color: AppColors.border),
 
@@ -631,12 +790,18 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
                   children: [
                     Text(
                       '${order.items.length} ${order.items.length == 1 ? 'item' : 'items'} • Free Scenting',
-                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                     RichText(
                       text: TextSpan(
                         text: 'Total: ',
-                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 13,
+                        ),
                         children: [
                           TextSpan(
                             text: '₦${order.totalAmount.toStringAsFixed(0)}',
@@ -679,7 +844,10 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
                           order.status == OrderStatus.completed
                               ? 'Buy Again'
                               : 'Track Order',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         onPressed: () {
                           if (order.status == OrderStatus.completed) {
@@ -714,7 +882,10 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
                           order.status == OrderStatus.completed
                               ? 'Review Item'
                               : 'View Invoice',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         onPressed: () {
                           if (order.status == OrderStatus.completed) {
@@ -763,25 +934,69 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Live Order Tracking', style: AppTextStyles.productTitle.copyWith(fontSize: 18)),
-                    const SizedBox(height: 2),
-                    Text('Tracking ID: ${order.trackingNumber}',
-                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                  ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Live Order Tracking',
+                        style: AppTextStyles.productTitle.copyWith(
+                          fontSize: 18,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Tracking ID: ${order.trackingNumber}',
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 12,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.schedule_rounded,
+                            size: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              'Placed: ${_formatOrderDateTime(order.orderDate)}',
+                              style: const TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 10),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.primaryContainer,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     order.estimatedDelivery,
-                    style: const TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.w700),
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ],
@@ -795,12 +1010,19 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.location_on_outlined, color: AppColors.primary, size: 20),
+                  const Icon(
+                    Icons.location_on_outlined,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       order.deliveryAddress,
-                      style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                   ),
                 ],
@@ -809,7 +1031,11 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
             const SizedBox(height: 16),
             const Text(
               'Delivery Timeline',
-              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary),
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+                color: AppColors.textPrimary,
+              ),
             ),
             const SizedBox(height: 12),
             Expanded(
@@ -862,20 +1088,31 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
                             Text(
                               step.title,
                               style: TextStyle(
-                                fontWeight: step.isCurrent ? FontWeight.w800 : FontWeight.w600,
+                                fontWeight: step.isCurrent
+                                    ? FontWeight.w800
+                                    : FontWeight.w600,
                                 fontSize: 13,
-                                color: step.isCompleted ? AppColors.textPrimary : AppColors.textSecondary,
+                                color: step.isCompleted
+                                    ? AppColors.textPrimary
+                                    : AppColors.textSecondary,
                               ),
                             ),
                             const SizedBox(height: 2),
                             Text(
                               step.subtitle,
-                              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppColors.textSecondary,
+                              ),
                             ),
                             const SizedBox(height: 2),
                             Text(
                               step.date,
-                              style: const TextStyle(fontSize: 10, color: AppColors.primary, fontWeight: FontWeight.w600),
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                             const SizedBox(height: 14),
                           ],
@@ -894,14 +1131,20 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     icon: const Icon(Icons.phone_in_talk_rounded, size: 18),
                     label: const Text('Call Courier Driver'),
                     onPressed: () {
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Connecting to Ibrahim (+234 803 123 4567)...')),
+                        const SnackBar(
+                          content: Text(
+                            'Connecting to Ibrahim (+234 803 123 4567)...',
+                          ),
+                        ),
                       );
                     },
                   ),
@@ -933,81 +1176,182 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
               child: Container(
                 width: 40,
                 height: 4,
-                decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Al-Nur Official Invoice', style: AppTextStyles.productTitle.copyWith(fontSize: 18)),
-                    const SizedBox(height: 2),
-                    Text('Invoice #: INV-${order.id}',
-                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                  ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Al-Nur Official Invoice',
+                        style: AppTextStyles.productTitle.copyWith(
+                          fontSize: 18,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Invoice #: INV-${order.id}',
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 12,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.calendar_today_rounded,
+                            size: 11,
+                            color: AppColors.textSecondary,
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              'Date: ${_formatOrderDateTime(order.orderDate)}',
+                              style: const TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 10),
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: const BoxDecoration(
                     color: AppColors.primaryContainer,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.check, color: AppColors.primary, size: 20),
+                  child: const Icon(
+                    Icons.check,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
                 ),
               ],
             ),
             const Divider(height: 28),
-            const Text('Itemized Breakdown', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+            const Text(
+              'Itemized Breakdown',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+            ),
             const SizedBox(height: 10),
             Expanded(
               child: ListView(
                 children: [
-                  ...order.items.map((item) => Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('${item.name} (${item.size}) x${item.quantity}',
-                                style: const TextStyle(fontSize: 13, color: AppColors.textPrimary)),
-                            Text('₦${(item.price * item.quantity).toStringAsFixed(0)}',
-                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                          ],
-                        ),
-                      )),
+                  ...order.items.map(
+                    (item) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item.name,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Size: ${item.size} • Qty: ${item.quantity}',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            '₦${(item.price * item.quantity).toStringAsFixed(0)}',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                   const Divider(height: 24),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Subtotal', style: TextStyle(color: AppColors.textSecondary)),
-                      Text('₦${order.subtotal.toStringAsFixed(0)}',
-                          style: const TextStyle(fontWeight: FontWeight.w600)),
+                      const Text(
+                        'Subtotal',
+                        style: TextStyle(color: AppColors.textSecondary),
+                      ),
+                      Text(
+                        '₦${order.subtotal.toStringAsFixed(0)}',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Standard Doorstep Delivery', style: TextStyle(color: AppColors.textSecondary)),
-                      Text('₦${order.shippingFee.toStringAsFixed(0)}',
-                          style: const TextStyle(fontWeight: FontWeight.w600)),
+                      const Text(
+                        'Standard Doorstep Delivery',
+                        style: TextStyle(color: AppColors.textSecondary),
+                      ),
+                      Text(
+                        '₦${order.shippingFee.toStringAsFixed(0)}',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
                   const Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Islamic Oud Scenting & Gift Box', style: TextStyle(color: AppColors.textSecondary)),
-                      Text('FREE', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primary)),
+                      Text(
+                        'Islamic Oud Scenting & Gift Box',
+                        style: TextStyle(color: AppColors.textSecondary),
+                      ),
+                      Text(
+                        'FREE',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                        ),
+                      ),
                     ],
                   ),
                   const Divider(height: 24),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Total Paid', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                      const Text(
+                        'Total Paid',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                       Text(
                         '₦${order.totalAmount.toStringAsFixed(0)}',
                         style: const TextStyle(
@@ -1029,14 +1373,20 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     icon: const Icon(Icons.download_rounded, size: 18),
                     label: const Text('Download PDF Receipt'),
                     onPressed: () {
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Invoice ${order.id} downloaded to your device')),
+                        SnackBar(
+                          content: Text(
+                            'Invoice ${order.id} downloaded to your device',
+                          ),
+                        ),
                       );
                     },
                   ),
@@ -1055,14 +1405,22 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text('Rate & Review', style: AppTextStyles.productTitle.copyWith(fontSize: 18)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            'Rate & Review',
+            style: AppTextStyles.productTitle.copyWith(fontSize: 18),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 'How was the quality and modest fit of your ${order.items.first.name}?',
-                style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                ),
               ),
               const SizedBox(height: 16),
               Row(
@@ -1071,7 +1429,9 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
                   5,
                   (index) => IconButton(
                     icon: Icon(
-                      index < rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                      index < rating
+                          ? Icons.star_rounded
+                          : Icons.star_outline_rounded,
                       color: AppColors.starAmber,
                       size: 32,
                     ),
@@ -1082,7 +1442,8 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
               const SizedBox(height: 12),
               TextField(
                 decoration: InputDecoration(
-                  hintText: 'Share fabric texture, drape, and sizing thoughts...',
+                  hintText:
+                      'Share fabric texture, drape, and sizing thoughts...',
                   hintStyle: const TextStyle(fontSize: 12),
                   filled: true,
                   fillColor: AppColors.background,
@@ -1098,19 +1459,26 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Later', style: TextStyle(color: AppColors.textSecondary)),
+              child: const Text(
+                'Later',
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
               onPressed: () {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Jazakallahu Khair! Your review was submitted.'),
+                    content: Text(
+                      'Jazakallahu Khair! Your review was submitted.',
+                    ),
                     backgroundColor: AppColors.primary,
                   ),
                 );
@@ -1126,7 +1494,9 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
   void _handleBuyAgain(OrderModel order) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Added ${order.items.length} items from ${order.id} back to your cart!'),
+        content: Text(
+          'Added ${order.items.length} items from ${order.id} back to your cart!',
+        ),
         backgroundColor: AppColors.primary,
         action: SnackBarAction(
           label: 'View Cart',
@@ -1161,7 +1531,9 @@ class _OrdersViewState extends ConsumerState<OrdersView> with SingleTickerProvid
             onPressed: () {
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Connecting to Al-Nur Concierge...')),
+                const SnackBar(
+                  content: Text('Connecting to Al-Nur Concierge...'),
+                ),
               );
             },
           ),

@@ -13,6 +13,7 @@ jwtRefresh:
   - refreshAccessToken:
 category:
   - getCategories:
+  - reseedCategories:
   - createCategory:
   - updateCategory:
   - deleteCategory:
@@ -21,9 +22,11 @@ greeting:
 order:
   - createOrder:
   - getOrders:
+  - initializeMonnifyPayment:
   - processPaymentWebhook:
 product:
   - getProducts:
+  - reseedProducts:
   - getProductById:
   - toggleFavorite:
   - createProduct:

@@ -287,11 +287,19 @@ class EndpointCategory extends _i1.EndpointRef {
   @override
   String get name => 'category';
 
-  /// Fetches all active store categories, seeding default categories if empty.
+  /// Fetches all active store categories, migrating legacy categories if present.
   _i2.Future<List<_i6.StoreCategory>> getCategories() =>
       caller.callServerEndpoint<List<_i6.StoreCategory>>(
         'category',
         'getCategories',
+        {},
+      );
+
+  /// Explicitly reseeds the store categories to the official 5 luxury departments.
+  _i2.Future<List<_i6.StoreCategory>> reseedCategories() =>
+      caller.callServerEndpoint<List<_i6.StoreCategory>>(
+        'category',
+        'reseedCategories',
         {},
       );
 
@@ -383,6 +391,26 @@ class EndpointOrder extends _i1.EndpointRef {
         {'customerEmail': customerEmail},
       );
 
+  /// Initializes a Monnify payment transaction with exact dynamic Naira amount,
+  /// returning the Monnify hosted checkout URL (supporting Cards, Dynamic Bank Transfer, and USSD).
+  _i2.Future<String?> initializeMonnifyPayment({
+    required double amount,
+    required String customerName,
+    required String customerEmail,
+    required String orderRef,
+    String? customerPhone,
+  }) => caller.callServerEndpoint<String?>(
+    'order',
+    'initializeMonnifyPayment',
+    {
+      'amount': amount,
+      'customerName': customerName,
+      'customerEmail': customerEmail,
+      'orderRef': orderRef,
+      'customerPhone': customerPhone,
+    },
+  );
+
   /// Processes payment gateway webhooks (Selar, Paystack, Flutterwave) idempotently.
   /// Prevents double-crediting or duplicate status notifications.
   _i2.Future<_i8.StoreOrder?> processPaymentWebhook({
@@ -410,7 +438,7 @@ class EndpointProduct extends _i1.EndpointRef {
   String get name => 'product';
 
   /// Fetches products, filtering optionally by categoryId and search query.
-  /// Seeds initial Al-Nur catalog products if empty.
+  /// Automatically synchronizes official Nigerian luxury catalog (Rings, Perfumes, Jewelries, Wedding Rings, Wristwatches, Necklaces, Bangles).
   _i2.Future<List<_i9.StoreProduct>> getProducts({
     String? categoryId,
     String? search,
@@ -422,6 +450,14 @@ class EndpointProduct extends _i1.EndpointRef {
       'search': search,
     },
   );
+
+  /// Explicitly resets and reseeds the catalog with the 28 official Nigerian luxury products.
+  _i2.Future<List<_i9.StoreProduct>> reseedProducts() =>
+      caller.callServerEndpoint<List<_i9.StoreProduct>>(
+        'product',
+        'reseedProducts',
+        {},
+      );
 
   /// Fetches a single product by its database ID.
   _i2.Future<_i9.StoreProduct?> getProductById(int id) =>

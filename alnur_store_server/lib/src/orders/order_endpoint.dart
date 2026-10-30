@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:serverpod/serverpod.dart';
 import '../generated/protocol.dart';
 import '../idempotency/idempotency_manager.dart';
@@ -116,6 +117,89 @@ class OrderEndpoint extends Endpoint {
   /// Official Selar Merchant Integration Credentials
   static const String selarApiKey = 'sat_873skzy08l1889v50814bs77093r4818j38f8';
   static const String selarStoreUrl = 'https://selar.com/h3wa923367';
+
+  /// Official Monnify Merchant Integration Credentials (Sandbox / Live)
+  static const String monnifyApiKey = 'MK_TEST_F0NB310FSJ';
+  static const String monnifySecretKey = 'GH7QBNC73BVC5XWQ4BHTYYHDDHANB35B';
+  static const String monnifyContractCode = '6355760337';
+  static const String monnifyBaseUrl = 'https://sandbox.monnify.com';
+
+  /// Initializes a Monnify payment transaction with exact dynamic Naira amount,
+  /// returning the Monnify hosted checkout URL (supporting Cards, Dynamic Bank Transfer, and USSD).
+  Future<String?> initializeMonnifyPayment(
+    Session session, {
+    required double amount,
+    required String customerName,
+    required String customerEmail,
+    required String orderRef,
+    String? customerPhone,
+  }) async {
+    try {
+      final client = HttpClient()..connectionTimeout = const Duration(seconds: 12);
+
+      // 1. Authenticate with Monnify API to retrieve bearer access token
+      final authStr = '$monnifyApiKey:$monnifySecretKey';
+      final authB64 = base64Encode(utf8.encode(authStr));
+
+      final loginUri = Uri.parse('$monnifyBaseUrl/api/v1/auth/login');
+      final loginReq = await client.postUrl(loginUri);
+      loginReq.headers.set('Authorization', 'Basic $authB64');
+      loginReq.headers.set('User-Agent', 'AlNurStore-Serverpod/1.0 (Darwin)');
+      loginReq.headers.contentType = ContentType.json;
+
+      final loginResp = await loginReq.close().timeout(const Duration(seconds: 10));
+      if (loginResp.statusCode != 200) {
+        final errBody = await loginResp.transform(utf8.decoder).join();
+        session.log('Monnify auth failed: ${loginResp.statusCode} -> $errBody', level: LogLevel.error);
+        return null;
+      }
+
+      final loginBody = await loginResp.transform(utf8.decoder).join();
+      final loginData = jsonDecode(loginBody) as Map<String, dynamic>;
+      final accessToken = loginData['responseBody']?['accessToken'] as String?;
+      if (accessToken == null || accessToken.isEmpty) {
+        session.log('Monnify auth token missing', level: LogLevel.error);
+        return null;
+      }
+
+      // 2. Initialize transaction
+      final initUri = Uri.parse('$monnifyBaseUrl/api/v1/merchant/transactions/init-transaction');
+      final initReq = await client.postUrl(initUri);
+      initReq.headers.set('Authorization', 'Bearer $accessToken');
+      initReq.headers.set('User-Agent', 'AlNurStore-Serverpod/1.0 (Darwin)');
+      initReq.headers.contentType = ContentType.json;
+
+      final paymentRef = '$orderRef-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+      final payload = jsonEncode({
+        'amount': amount,
+        'customerName': customerName.trim().isNotEmpty ? customerName.trim() : 'Al-Nur Customer',
+        'customerEmail': customerEmail.trim().isNotEmpty ? customerEmail.trim() : 'customer@alnurstore.com',
+        'paymentReference': paymentRef,
+        'paymentDescription': 'Al-Nur Store Order $orderRef (₦${amount.toStringAsFixed(0)})',
+        'currencyCode': 'NGN',
+        'contractCode': monnifyContractCode,
+        'redirectUrl': 'https://alnur-store.serverpod.space/app/checkout/success?ref=$orderRef',
+        'paymentMethods': ['CARD', 'ACCOUNT_TRANSFER'],
+      });
+
+      initReq.write(payload);
+      final initResp = await initReq.close().timeout(const Duration(seconds: 15));
+      final initBody = await initResp.transform(utf8.decoder).join();
+
+      if (initResp.statusCode == 200) {
+        final initData = jsonDecode(initBody) as Map<String, dynamic>;
+        final checkoutUrl = initData['responseBody']?['checkoutUrl'] as String?;
+        session.log('Monnify payment initialized successfully: $checkoutUrl', level: LogLevel.info);
+        return checkoutUrl;
+      } else {
+        session.log('Monnify init-transaction failed: ${initResp.statusCode} -> $initBody', level: LogLevel.error);
+        return null;
+      }
+    } catch (e, stack) {
+      session.log('Monnify initialization error: $e\n$stack', level: LogLevel.error);
+      return null;
+    }
+  }
 
   /// Processes payment gateway webhooks (Selar, Paystack, Flutterwave) idempotently.
   /// Prevents double-crediting or duplicate status notifications.

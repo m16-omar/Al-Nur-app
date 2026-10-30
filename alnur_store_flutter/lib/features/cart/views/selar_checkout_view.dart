@@ -12,9 +12,11 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../authentication/controllers/auth_controller.dart';
 import '../controllers/cart_controller.dart';
 import '../services/selar_payment_service.dart';
+import '../services/monnify_payment_service.dart';
 
 class SelarCheckoutView extends ConsumerStatefulWidget {
-  const SelarCheckoutView({super.key});
+  final String gateway;
+  const SelarCheckoutView({super.key, this.gateway = 'monnify'});
 
   @override
   ConsumerState<SelarCheckoutView> createState() => _SelarCheckoutViewState();
@@ -27,15 +29,22 @@ class _SelarCheckoutViewState extends ConsumerState<SelarCheckoutView> {
   String _checkoutUrl = '';
   late final String _orderId;
   bool _hasTriggeredSuccess = false;
+  late String _activeGateway;
 
   @override
   void initState() {
     super.initState();
+    _activeGateway = widget.gateway;
     _orderId = 'ALN-${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}';
     _initializeCheckout();
   }
 
   Future<void> _initializeCheckout() async {
+    setState(() {
+      _isLoading = true;
+      _checkoutUrl = '';
+    });
+
     final authState = ref.read(authControllerProvider);
     final cartState = ref.read(cartControllerProvider);
     final user = authState.user;
@@ -48,20 +57,44 @@ class _SelarCheckoutViewState extends ConsumerState<SelarCheckoutView> {
         : 'guest@alnurstore.com';
     final customerPhone = user?.phone;
 
-    final url = await SelarPaymentService.buildCheckoutUrl(
-      grandTotal: cartState.grandTotal,
-      customerName: customerName,
-      customerEmail: customerEmail,
-      customerPhone: customerPhone,
-      items: cartState.items,
-      orderId: _orderId,
-    );
+    String? url;
+    if (_activeGateway == 'monnify') {
+      url = await MonnifyPaymentService.initializePayment(
+        amount: cartState.grandTotal.toDouble(),
+        customerName: customerName,
+        customerEmail: customerEmail,
+        orderRef: _orderId,
+        customerPhone: customerPhone,
+      );
+      // Fallback to Selar if Monnify returned null
+      if (url == null || url.isEmpty) {
+        url = await SelarPaymentService.buildCheckoutUrl(
+          grandTotal: cartState.grandTotal,
+          customerName: customerName,
+          customerEmail: customerEmail,
+          customerPhone: customerPhone,
+          items: cartState.items,
+          orderId: _orderId,
+        );
+      }
+    } else {
+      url = await SelarPaymentService.buildCheckoutUrl(
+        grandTotal: cartState.grandTotal,
+        customerName: customerName,
+        customerEmail: customerEmail,
+        customerPhone: customerPhone,
+        items: cartState.items,
+        orderId: _orderId,
+      );
+    }
+
+    if (!mounted) return;
 
     setState(() {
-      _checkoutUrl = url;
+      _checkoutUrl = url ?? '';
     });
 
-    if (!kIsWeb) {
+    if (!kIsWeb && url.isNotEmpty) {
       _webViewController = WebViewController()
         ..setJavaScriptMode(JavaScriptMode.unrestricted)
         ..setBackgroundColor(Colors.white)
@@ -91,7 +124,7 @@ class _SelarCheckoutViewState extends ConsumerState<SelarCheckoutView> {
               return NavigationDecision.navigate;
             },
             onWebResourceError: (error) {
-              debugPrint('[SelarCheckout] WebView Error: ${error.description}');
+              debugPrint('[Checkout] WebView Error: ${error.description}');
             },
           ),
         )
@@ -105,7 +138,7 @@ class _SelarCheckoutViewState extends ConsumerState<SelarCheckoutView> {
 
   bool _checkUrlForSuccess(String url) {
     if (_hasTriggeredSuccess) return true;
-    if (SelarPaymentService.isPaymentSuccessUrl(url)) {
+    if (SelarPaymentService.isPaymentSuccessUrl(url) || MonnifyPaymentService.isPaymentSuccessUrl(url)) {
       _hasTriggeredSuccess = true;
       _handlePaymentSuccess();
       return true;
@@ -239,17 +272,35 @@ class _SelarCheckoutViewState extends ConsumerState<SelarCheckoutView> {
             SizedBox(
               width: double.infinity,
               height: 48,
-              child: ElevatedButton(
+              child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                icon: const Icon(Icons.local_shipping_outlined, size: 18),
+                label: const Text('View & Track My Order', style: TextStyle(fontWeight: FontWeight.bold)),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  context.push(AppRoutes.orders);
+                },
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.border),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
                 onPressed: () {
                   Navigator.pop(ctx);
                   context.go(AppRoutes.home);
                 },
-                child: const Text('Back to Home & Shop More', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: const Text('Back to Home & Shop More', style: TextStyle(fontWeight: FontWeight.w600)),
               ),
             ),
           ],
@@ -322,7 +373,98 @@ class _SelarCheckoutViewState extends ConsumerState<SelarCheckoutView> {
     );
   }
 
+  Widget _buildGatewaySwitcher() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceMuted,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: InkWell(
+              onTap: () {
+                if (_activeGateway != 'monnify') {
+                  setState(() => _activeGateway = 'monnify');
+                  _initializeCheckout();
+                }
+              },
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: _activeGateway == 'monnify' ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: _activeGateway == 'monnify'
+                      ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)]
+                      : null,
+                ),
+                alignment: Alignment.center,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.account_balance_rounded, size: 14, color: AppColors.primary),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Monnify (Exact)',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: _activeGateway == 'monnify' ? FontWeight.w700 : FontWeight.w500,
+                        color: _activeGateway == 'monnify' ? AppColors.textPrimary : AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: InkWell(
+              onTap: () {
+                if (_activeGateway != 'selar') {
+                  setState(() => _activeGateway = 'selar');
+                  _initializeCheckout();
+                }
+              },
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: _activeGateway == 'selar' ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: _activeGateway == 'selar'
+                      ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)]
+                      : null,
+                ),
+                alignment: Alignment.center,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.shield_outlined, size: 14, color: AppColors.primary),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Selar Gateway',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: _activeGateway == 'selar' ? FontWeight.w700 : FontWeight.w500,
+                        color: _activeGateway == 'selar' ? AppColors.textPrimary : AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildWebCheckoutFallback(CartState cartState) {
+    final isMonnify = _activeGateway == 'monnify';
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -352,12 +494,16 @@ class _SelarCheckoutViewState extends ConsumerState<SelarCheckoutView> {
                     color: AppColors.primary.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.payment_rounded, color: AppColors.primary, size: 32),
+                  child: Icon(
+                    isMonnify ? Icons.account_balance_rounded : Icons.payment_rounded,
+                    color: AppColors.primary,
+                    size: 32,
+                  ),
                 ),
                 const SizedBox(height: 20),
-                const Text(
-                  'Selar Halal Checkout',
-                  style: TextStyle(
+                Text(
+                  isMonnify ? 'Monnify Dynamic Checkout' : 'Selar Halal Checkout',
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
                     color: AppColors.textPrimary,
@@ -365,10 +511,12 @@ class _SelarCheckoutViewState extends ConsumerState<SelarCheckoutView> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Your payment gateway opens in a secure browser tab to complete your transaction with card, bank transfer, or USSD.',
+                Text(
+                  isMonnify
+                      ? 'Pay exact ₦${cartState.grandTotal.toStringAsFixed(0)} via Dynamic Bank Transfer, Debit Cards (Mastercard, Visa, Verve) or USSD.'
+                      : 'Your payment gateway opens in a secure browser tab to complete your transaction with card, bank transfer, or USSD.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.45),
+                  style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.45),
                 ),
                 const SizedBox(height: 24),
                 Container(
@@ -413,7 +561,10 @@ class _SelarCheckoutViewState extends ConsumerState<SelarCheckoutView> {
                       elevation: 0,
                     ),
                     icon: const Icon(Icons.open_in_new_rounded, size: 18),
-                    label: const Text('Open Selar Payment Page', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    label: Text(
+                      isMonnify ? 'Open Monnify Payment Page' : 'Open Selar Payment Page',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
                     onPressed: _openInExternalBrowser,
                   ),
                 ),
@@ -462,14 +613,16 @@ class _SelarCheckoutViewState extends ConsumerState<SelarCheckoutView> {
                 const Icon(Icons.lock_rounded, color: AppColors.primary, size: 16),
                 const SizedBox(width: 6),
                 Text(
-                  'Selar Halal Checkout',
+                  _activeGateway == 'monnify' ? 'Monnify Dynamic Checkout' : 'Selar Halal Checkout',
                   style: AppTextStyles.productTitle.copyWith(fontSize: 16),
                 ),
               ],
             ),
-            const Text(
-              '256-Bit Encrypted • Multi-Currency Gateway',
-              style: TextStyle(fontSize: 10, color: AppColors.textSecondary),
+            Text(
+              _activeGateway == 'monnify'
+                  ? 'Exact Amount • Virtual Bank Transfer & Cards'
+                  : '256-Bit Encrypted • Multi-Currency Gateway',
+              style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
             ),
           ],
         ),
@@ -480,6 +633,8 @@ class _SelarCheckoutViewState extends ConsumerState<SelarCheckoutView> {
             onPressed: () {
               if (_checkoutUrl.isNotEmpty && _webViewController != null) {
                 _webViewController!.reload();
+              } else {
+                _initializeCheckout();
               }
             },
           ),
@@ -496,6 +651,7 @@ class _SelarCheckoutViewState extends ConsumerState<SelarCheckoutView> {
             )
           : Column(
               children: [
+                _buildGatewaySwitcher(),
                 if (_isLoading)
                   LinearProgressIndicator(
                     value: _loadingProgress > 0 ? _loadingProgress / 100.0 : null,
@@ -571,7 +727,9 @@ class _SelarCheckoutViewState extends ConsumerState<SelarCheckoutView> {
                             const Icon(Icons.shield_outlined, size: 12, color: AppColors.textSecondary),
                             const SizedBox(width: 4),
                             Text(
-                              'Powered by Selar • Cards, Bank Transfer & USSD Supported',
+                              _activeGateway == 'monnify'
+                                  ? 'Powered by Monnify • Central Bank of Nigeria Licensed'
+                                  : 'Powered by Selar • Cards, Bank Transfer & USSD Supported',
                               style: TextStyle(fontSize: 10, color: AppColors.textSecondary.withValues(alpha: 0.8)),
                             ),
                           ],

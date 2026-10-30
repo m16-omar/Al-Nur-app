@@ -277,7 +277,10 @@ class _HomeViewState extends ConsumerState<HomeView> {
               selectedCategoryId: homeState.selectedCategoryId,
               onCategorySelected: (cat) {
                 homeController.selectCategory(cat);
-                setState(() => _currentNavIndex = 1);
+                context.push(
+                  '/category/${cat.id}',
+                  extra: cat,
+                );
               },
             ),
           ),
@@ -309,7 +312,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
               products: homeState.perfumesProducts,
               onProductTap: (product) => _showProductDetailsModal(context, product),
               onFavoriteToggle: (product) => homeController.toggleFavorite(product),
-              onViewAllTap: () => setState(() => _currentNavIndex = 1),
+              onViewAllTap: () => context.push('/category/perfumes'),
             ),
           ),
 
@@ -322,7 +325,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
               products: homeState.weddingRingsProducts,
               onProductTap: (product) => _showProductDetailsModal(context, product),
               onFavoriteToggle: (product) => homeController.toggleFavorite(product),
-              onViewAllTap: () => setState(() => _currentNavIndex = 1),
+              onViewAllTap: () => context.push('/category/wedding-rings'),
             ),
           ),
 
@@ -335,7 +338,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
               products: homeState.wristwatchesProducts,
               onProductTap: (product) => _showProductDetailsModal(context, product),
               onFavoriteToggle: (product) => homeController.toggleFavorite(product),
-              onViewAllTap: () => setState(() => _currentNavIndex = 1),
+              onViewAllTap: () => context.push('/category/wristwatches'),
             ),
           ),
 
@@ -348,7 +351,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
               products: homeState.necklacesProducts,
               onProductTap: (product) => _showProductDetailsModal(context, product),
               onFavoriteToggle: (product) => homeController.toggleFavorite(product),
-              onViewAllTap: () => setState(() => _currentNavIndex = 1),
+              onViewAllTap: () => context.push('/category/necklaces'),
             ),
           ),
 
@@ -361,7 +364,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
               products: homeState.banglesProducts,
               onProductTap: (product) => _showProductDetailsModal(context, product),
               onFavoriteToggle: (product) => homeController.toggleFavorite(product),
-              onViewAllTap: () => setState(() => _currentNavIndex = 1),
+              onViewAllTap: () => context.push('/category/bangles'),
             ),
           ),
 
@@ -374,7 +377,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
               products: homeState.jewelriesProducts,
               onProductTap: (product) => _showProductDetailsModal(context, product),
               onFavoriteToggle: (product) => homeController.toggleFavorite(product),
-              onViewAllTap: () => setState(() => _currentNavIndex = 1),
+              onViewAllTap: () => context.push('/category/jewelries'),
             ),
           ),
 
@@ -387,7 +390,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
               products: homeState.ringsProducts,
               onProductTap: (product) => _showProductDetailsModal(context, product),
               onFavoriteToggle: (product) => homeController.toggleFavorite(product),
-              onViewAllTap: () => setState(() => _currentNavIndex = 1),
+              onViewAllTap: () => context.push('/category/rings'),
             ),
           ),
 

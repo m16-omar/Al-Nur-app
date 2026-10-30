@@ -354,6 +354,16 @@ class Endpoints extends _i1.EndpointDispatch {
               ) async => (endpoints['category'] as _i5.CategoryEndpoint)
                   .getCategories(session),
         ),
+        'reseedCategories': _i1.MethodConnector(
+          name: 'reseedCategories',
+          params: {},
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['category'] as _i5.CategoryEndpoint)
+                  .reseedCategories(session),
+        ),
         'createCategory': _i1.MethodConnector(
           name: 'createCategory',
           params: {
@@ -519,6 +529,49 @@ class Endpoints extends _i1.EndpointDispatch {
                 customerEmail: params['customerEmail'],
               ),
         ),
+        'initializeMonnifyPayment': _i1.MethodConnector(
+          name: 'initializeMonnifyPayment',
+          params: {
+            'amount': _i1.ParameterDescription(
+              name: 'amount',
+              type: _i1.getType<double>(),
+              nullable: false,
+            ),
+            'customerName': _i1.ParameterDescription(
+              name: 'customerName',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'customerEmail': _i1.ParameterDescription(
+              name: 'customerEmail',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'orderRef': _i1.ParameterDescription(
+              name: 'orderRef',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'customerPhone': _i1.ParameterDescription(
+              name: 'customerPhone',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['order'] as _i7.OrderEndpoint)
+                  .initializeMonnifyPayment(
+                    session,
+                    amount: params['amount'],
+                    customerName: params['customerName'],
+                    customerEmail: params['customerEmail'],
+                    orderRef: params['orderRef'],
+                    customerPhone: params['customerPhone'],
+                  ),
+        ),
         'processPaymentWebhook': _i1.MethodConnector(
           name: 'processPaymentWebhook',
           params: {
@@ -586,6 +639,16 @@ class Endpoints extends _i1.EndpointDispatch {
                     categoryId: params['categoryId'],
                     search: params['search'],
                   ),
+        ),
+        'reseedProducts': _i1.MethodConnector(
+          name: 'reseedProducts',
+          params: {},
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['product'] as _i8.ProductEndpoint)
+                  .reseedProducts(session),
         ),
         'getProductById': _i1.MethodConnector(
           name: 'getProductById',

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:alnur_store_flutter/core/router/app_router.dart';
+import 'package:alnur_store_flutter/features/categories/views/category_details_view.dart';
 import 'package:alnur_store_flutter/features/home/widgets/home_header.dart';
 import 'package:alnur_store_flutter/features/onboarding/models/onboarding_item.dart';
 import 'package:alnur_store_flutter/features/onboarding/widgets/onboarding_card.dart';
@@ -131,6 +133,22 @@ void main() {
       expect(favoriteToggled, isTrue);
     });
 
+    testWidgets('CategoryDetailsView renders category header, badges and products', (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: CategoryDetailsView(
+              categoryId: 'perfumes',
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Perfumes & Oud'), findsWidgets);
+      expect(find.text('ROYAL ARABIAN ATTARS & OUD'), findsOneWidget);
+      expect(find.textContaining('Products Available'), findsOneWidget);
+    });
+
     test('AppRouter configuration declares all expected routes', () {
       final routes = appRouter.configuration.routes;
       final paths = routes.map((r) => (r as dynamic).path as String).toList();
@@ -142,6 +160,7 @@ void main() {
       expect(paths.contains(AppRoutes.orders), isTrue);
       expect(paths.contains(AppRoutes.profile), isTrue);
       expect(paths.contains(AppRoutes.productDetails), isTrue);
+      expect(paths.contains(AppRoutes.categoryDetails), isTrue);
       expect(paths.contains(AppRoutes.aiChat), isTrue);
     });
   });
