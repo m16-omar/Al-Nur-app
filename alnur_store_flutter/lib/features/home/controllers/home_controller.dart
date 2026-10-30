@@ -733,6 +733,31 @@ class HomeController extends Notifier<HomeState> {
       });
     }
   }
+
+  void removeFavorite(ProductModel product) {
+    List<ProductModel> updateList(List<ProductModel> list) {
+      return list.map((p) => p.id == product.id ? p.copyWith(isFavorite: false) : p).toList();
+    }
+
+    state = state.copyWith(
+      featuredProducts: updateList(state.featuredProducts),
+      perfumesProducts: updateList(state.perfumesProducts),
+      weddingRingsProducts: updateList(state.weddingRingsProducts),
+      wristwatchesProducts: updateList(state.wristwatchesProducts),
+      necklacesProducts: updateList(state.necklacesProducts),
+      banglesProducts: updateList(state.banglesProducts),
+      jewelriesProducts: updateList(state.jewelriesProducts),
+      ringsProducts: updateList(state.ringsProducts),
+    );
+
+    final id = int.tryParse(product.id);
+    if (id != null) {
+      client.product.toggleFavorite(id).catchError((e) {
+        debugPrint('[HomeController] Failed to toggle favorite on backend: $e');
+        return null;
+      });
+    }
+  }
 }
 
 final homeControllerProvider = NotifierProvider<HomeController, HomeState>(HomeController.new);
