@@ -53,8 +53,12 @@ class AuthState {
 }
 
 class AuthController extends Notifier<AuthState> {
+  bool _isDisposed = false;
+
   @override
   AuthState build() {
+    _isDisposed = false;
+    ref.onDispose(() => _isDisposed = true);
     _checkInitialAuth();
     return const AuthState();
   }
@@ -62,6 +66,7 @@ class AuthController extends Notifier<AuthState> {
   Future<void> _checkInitialAuth() async {
     try {
       final isGuest = await OnboardingPreferences.isGuestMode();
+      if (_isDisposed) return;
       if (isGuest) {
         state = state.copyWith(user: UserProfile.guest());
         return;
@@ -73,6 +78,7 @@ class AuthController extends Notifier<AuthState> {
       final savedAvatar = await OnboardingPreferences.getSavedUserAvatar();
       final savedBio = await OnboardingPreferences.getSavedUserBio();
       final savedCurrency = await OnboardingPreferences.getSavedUserCurrency();
+      if (_isDisposed) return;
 
       if (savedEmail != null && savedEmail.isNotEmpty) {
         state = state.copyWith(
@@ -98,6 +104,7 @@ class AuthController extends Notifier<AuthState> {
       if (client.auth.isAuthenticated) {
         final authInfo = client.auth.authInfo;
         final userEmail = savedEmail ?? 'member@alnur.store';
+        if (_isDisposed) return;
         state = state.copyWith(
           user: UserProfile(
             id: authInfo?.authUserId.toString() ?? 'usr_authenticated',
@@ -114,9 +121,13 @@ class AuthController extends Notifier<AuthState> {
         return;
       }
 
-      state = state.copyWith(user: UserProfile.guest());
+      if (!_isDisposed) {
+        state = state.copyWith(user: UserProfile.guest());
+      }
     } catch (_) {
-      state = state.copyWith(user: UserProfile.guest());
+      if (!_isDisposed) {
+        state = state.copyWith(user: UserProfile.guest());
+      }
     }
   }
 

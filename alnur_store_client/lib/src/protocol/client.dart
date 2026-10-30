@@ -383,12 +383,30 @@ class EndpointOrder extends _i1.EndpointRef {
     },
   );
 
-  /// Retrieves orders from PostgreSQL, optionally filtered by customer email.
-  _i2.Future<List<_i8.StoreOrder>> getOrders({String? customerEmail}) =>
+  /// Retrieves orders from PostgreSQL with strict customer data isolation.
+  ///
+  /// Regular users can ONLY retrieve orders matching their own [customerEmail].
+  /// If [customerEmail] is null or empty, an empty list is returned to strictly
+  /// prevent any privacy data leak across customer accounts.
+  /// Full order history is only returned when authorized with [adminKey].
+  _i2.Future<List<_i8.StoreOrder>> getOrders({
+    String? customerEmail,
+    String? adminKey,
+  }) => caller.callServerEndpoint<List<_i8.StoreOrder>>(
+    'order',
+    'getOrders',
+    {
+      'customerEmail': customerEmail,
+      'adminKey': adminKey,
+    },
+  );
+
+  /// Dedicated admin endpoint to retrieve all customer orders.
+  _i2.Future<List<_i8.StoreOrder>> getAdminOrders({required String adminKey}) =>
       caller.callServerEndpoint<List<_i8.StoreOrder>>(
         'order',
-        'getOrders',
-        {'customerEmail': customerEmail},
+        'getAdminOrders',
+        {'adminKey': adminKey},
       );
 
   /// Initializes a Monnify payment transaction with exact dynamic Naira amount,
@@ -429,7 +447,8 @@ class EndpointOrder extends _i1.EndpointRef {
     },
   );
 
-  /// Updates an order's fulfillment status (e.g. 'processing', 'dispatched', 'delivered', 'cancelled').
+  /// Updates an order's fulfillment status following the unified lifecycle:
+  /// processing -> shipped -> out_for_delivery -> delivered (or cancelled).
   _i2.Future<_i8.StoreOrder?> updateOrderStatus({
     required String orderRef,
     required String fulfillmentStatus,

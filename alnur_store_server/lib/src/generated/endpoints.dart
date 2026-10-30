@@ -519,6 +519,11 @@ class Endpoints extends _i1.EndpointDispatch {
               type: _i1.getType<String?>(),
               nullable: true,
             ),
+            'adminKey': _i1.ParameterDescription(
+              name: 'adminKey',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
           },
           call:
               (
@@ -527,7 +532,27 @@ class Endpoints extends _i1.EndpointDispatch {
               ) async => (endpoints['order'] as _i7.OrderEndpoint).getOrders(
                 session,
                 customerEmail: params['customerEmail'],
+                adminKey: params['adminKey'],
               ),
+        ),
+        'getAdminOrders': _i1.MethodConnector(
+          name: 'getAdminOrders',
+          params: {
+            'adminKey': _i1.ParameterDescription(
+              name: 'adminKey',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['order'] as _i7.OrderEndpoint).getAdminOrders(
+                    session,
+                    adminKey: params['adminKey'],
+                  ),
         ),
         'initializeMonnifyPayment': _i1.MethodConnector(
           name: 'initializeMonnifyPayment',

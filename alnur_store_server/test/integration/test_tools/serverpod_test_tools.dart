@@ -844,6 +844,7 @@ class _OrderEndpoint {
   _i3.Future<List<_i8.StoreOrder>> getOrders(
     _i1.TestSessionBuilder sessionBuilder, {
     String? customerEmail,
+    String? adminKey,
   }) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -856,7 +857,41 @@ class _OrderEndpoint {
           createSessionCallback: (_) => _localUniqueSession,
           endpointPath: 'order',
           methodName: 'getOrders',
-          parameters: _i1.testObjectToJson({'customerEmail': customerEmail}),
+          parameters: _i1.testObjectToJson({
+            'customerEmail': customerEmail,
+            'adminKey': adminKey,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<List<_i8.StoreOrder>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<List<_i8.StoreOrder>> getAdminOrders(
+    _i1.TestSessionBuilder sessionBuilder, {
+    required String adminKey,
+  }) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'order',
+            method: 'getAdminOrders',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'order',
+          methodName: 'getAdminOrders',
+          parameters: _i1.testObjectToJson({'adminKey': adminKey}),
           serializationManager: _serializationManager,
         );
         var _localReturnValue =

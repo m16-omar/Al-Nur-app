@@ -37,32 +37,42 @@ class _OrdersViewState extends ConsumerState<OrdersView>
 
   Future<void> _fetchOrders() async {
     final authState = ref.read(authControllerProvider);
-    final email = authState.user?.email;
+    final email = authState.user?.email.trim().toLowerCase();
+
+    // STRICT ISOLATION: Unauthenticated or guest users must NEVER fetch or see orders.
+    if (email == null ||
+        email.isEmpty ||
+        authState.isGuest ||
+        !authState.isAuthenticated) {
+      if (mounted) {
+        setState(() {
+          _allOrders = [];
+          _isLoading = false;
+        });
+      }
+      return;
+    }
 
     try {
       final serverOrders = await client.order.getOrders(
-        customerEmail: (email != null && email.isNotEmpty) ? email : null,
+        customerEmail: email,
       );
 
-      if (serverOrders.isNotEmpty) {
-        final liveOrders = serverOrders.map(_mapStoreOrderToModel).toList();
-        if (mounted) {
-          setState(() {
-            _allOrders = liveOrders;
-            _isLoading = false;
-          });
-        }
-        return;
+      final liveOrders = serverOrders.map(_mapStoreOrderToModel).toList();
+      if (mounted) {
+        setState(() {
+          _allOrders = liveOrders;
+          _isLoading = false;
+        });
       }
     } catch (e) {
       debugPrint('[OrdersView] Backend live orders fetch notice: $e');
-    }
-
-    if (mounted) {
-      setState(() {
-        _allOrders = [];
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _allOrders = [];
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -123,15 +133,19 @@ class _OrdersViewState extends ConsumerState<OrdersView>
     }
 
     OrderStatus status = OrderStatus.processing;
-    final fStatus = so.fulfillmentStatus.toLowerCase().trim();
-    if (fStatus.contains('transit') ||
-        fStatus.contains('shipped') ||
-        fStatus.contains('delivery')) {
-      status = OrderStatus.inTransit;
-    } else if (fStatus.contains('deliver') || fStatus.contains('completed')) {
-      status = OrderStatus.completed;
-    } else if (fStatus.contains('cancel')) {
+    final fStatus =
+        so.fulfillmentStatus.toLowerCase().trim().replaceAll(' ', '_');
+    if (fStatus.contains('cancel')) {
       status = OrderStatus.cancelled;
+    } else if (fStatus.contains('deliver') || fStatus.contains('completed')) {
+      status = OrderStatus.delivered;
+    } else if (fStatus.contains('out_for_delivery') ||
+        fStatus.contains('transit')) {
+      status = OrderStatus.outForDelivery;
+    } else if (fStatus.contains('ship') || fStatus.contains('dispatch')) {
+      status = OrderStatus.shipped;
+    } else {
+      status = OrderStatus.processing;
     }
 
     final subtotal = so.totalAmount > 2500
@@ -146,9 +160,11 @@ class _OrdersViewState extends ConsumerState<OrdersView>
       status: status,
       trackingNumber: tracking,
       deliveryAddress: so.shippingAddress,
-      estimatedDelivery: status == OrderStatus.completed
+      estimatedDelivery: status == OrderStatus.delivered
           ? 'Delivered'
-          : 'Estimated 2-3 Days via Express Courier',
+          : status == OrderStatus.outForDelivery
+              ? 'Arriving Today via Express Courier'
+              : 'Estimated 2-3 Days via Express Courier',
       subtotal: subtotal,
       shippingFee: shippingFee,
       totalAmount: so.totalAmount,
@@ -163,29 +179,41 @@ class _OrdersViewState extends ConsumerState<OrdersView>
           isCompleted: true,
         ),
         OrderTimelineStep(
-          title: 'Custom Sizing & Master Tailoring',
+          title: 'Processing & Handcrafted Tailoring',
           subtitle: 'Handcrafted according to modesty guidelines',
-          date: 'In Progress',
+          date: status != OrderStatus.cancelled ? 'Completed' : 'Cancelled',
           isCompleted: status != OrderStatus.cancelled,
           isCurrent: status == OrderStatus.processing,
         ),
         OrderTimelineStep(
-          title: 'Dispatched with Courier',
+          title: 'Shipped & Handed to Courier',
           subtitle: 'Waybill Track ID: $tracking',
-          date:
-              status == OrderStatus.inTransit || status == OrderStatus.completed
-              ? 'Dispatched'
+          date: (status == OrderStatus.shipped ||
+                  status == OrderStatus.outForDelivery ||
+                  status == OrderStatus.delivered)
+              ? 'Shipped'
               : 'Pending',
-          isCompleted:
-              status == OrderStatus.inTransit ||
-              status == OrderStatus.completed,
-          isCurrent: status == OrderStatus.inTransit,
+          isCompleted: (status == OrderStatus.shipped ||
+              status == OrderStatus.outForDelivery ||
+              status == OrderStatus.delivered),
+          isCurrent: status == OrderStatus.shipped,
+        ),
+        OrderTimelineStep(
+          title: 'Out for Delivery',
+          subtitle: 'Logistics rider in your delivery zone',
+          date: (status == OrderStatus.outForDelivery ||
+                  status == OrderStatus.delivered)
+              ? 'In Delivery'
+              : 'Pending',
+          isCompleted: (status == OrderStatus.outForDelivery ||
+              status == OrderStatus.delivered),
+          isCurrent: status == OrderStatus.outForDelivery,
         ),
         OrderTimelineStep(
           title: 'Delivered',
           subtitle: 'Delivered to ${so.customerName}',
-          date: status == OrderStatus.completed ? 'Delivered' : 'Pending',
-          isCompleted: status == OrderStatus.completed,
+          date: status == OrderStatus.delivered ? 'Delivered' : 'Pending',
+          isCompleted: status == OrderStatus.delivered,
         ),
       ],
     );
@@ -200,13 +228,14 @@ class _OrdersViewState extends ConsumerState<OrdersView>
   List<OrderModel> get _activeOrders => _allOrders
       .where(
         (o) =>
-            o.status == OrderStatus.inTransit ||
-            o.status == OrderStatus.processing,
+            o.status == OrderStatus.processing ||
+            o.status == OrderStatus.shipped ||
+            o.status == OrderStatus.outForDelivery,
       )
       .toList();
 
   List<OrderModel> get _completedOrders =>
-      _allOrders.where((o) => o.status == OrderStatus.completed).toList();
+      _allOrders.where((o) => o.status == OrderStatus.delivered).toList();
 
   List<OrderModel> get _cancelledOrders =>
       _allOrders.where((o) => o.status == OrderStatus.cancelled).toList();
@@ -230,6 +259,15 @@ class _OrdersViewState extends ConsumerState<OrdersView>
 
   @override
   Widget build(BuildContext context) {
+    // Automatically re-fetch or clear orders whenever user signs in, signs out, or switches accounts
+    ref.listen<AuthState>(authControllerProvider, (previous, next) {
+      if (previous?.user?.email != next.user?.email ||
+          previous?.isAuthenticated != next.isAuthenticated ||
+          previous?.isGuest != next.isGuest) {
+        _fetchOrders();
+      }
+    });
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -630,13 +668,13 @@ class _OrdersViewState extends ConsumerState<OrdersView>
                           elevation: 0,
                         ),
                         icon: Icon(
-                          order.status == OrderStatus.completed
+                          order.status == OrderStatus.delivered
                               ? Icons.refresh_rounded
                               : Icons.local_shipping_outlined,
                           size: 16,
                         ),
                         label: Text(
-                          order.status == OrderStatus.completed
+                          order.status == OrderStatus.delivered
                               ? 'Buy Again'
                               : 'Track Order',
                           style: const TextStyle(
@@ -645,7 +683,7 @@ class _OrdersViewState extends ConsumerState<OrdersView>
                           ),
                         ),
                         onPressed: () {
-                          if (order.status == OrderStatus.completed) {
+                          if (order.status == OrderStatus.delivered) {
                             _handleBuyAgain(order);
                           } else {
                             _showTrackingModal(order);
@@ -667,14 +705,14 @@ class _OrdersViewState extends ConsumerState<OrdersView>
                           ),
                         ),
                         icon: Icon(
-                          order.status == OrderStatus.completed
+                          order.status == OrderStatus.delivered
                               ? Icons.star_border_rounded
                               : Icons.receipt_outlined,
                           size: 16,
                           color: AppColors.primary,
                         ),
                         label: Text(
-                          order.status == OrderStatus.completed
+                          order.status == OrderStatus.delivered
                               ? 'Review Item'
                               : 'View Invoice',
                           style: const TextStyle(
@@ -683,7 +721,7 @@ class _OrdersViewState extends ConsumerState<OrdersView>
                           ),
                         ),
                         onPressed: () {
-                          if (order.status == OrderStatus.completed) {
+                          if (order.status == OrderStatus.delivered) {
                             _showReviewDialog(order);
                           } else {
                             _showInvoiceModal(order);

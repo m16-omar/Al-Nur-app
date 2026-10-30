@@ -2,19 +2,26 @@ import 'package:flutter/material.dart';
 
 enum OrderStatus {
   processing,
-  inTransit,
-  completed,
-  cancelled,
+  shipped,
+  outForDelivery,
+  delivered,
+  cancelled;
+
+  // Aliases for backwards compatibility
+  static OrderStatus get inTransit => outForDelivery;
+  static OrderStatus get completed => delivered;
 }
 
 extension OrderStatusX on OrderStatus {
   String get label {
     switch (this) {
       case OrderStatus.processing:
-        return 'Tailoring & Processing';
-      case OrderStatus.inTransit:
+        return 'Processing & Tailoring';
+      case OrderStatus.shipped:
+        return 'Shipped & Dispatched';
+      case OrderStatus.outForDelivery:
         return 'Out for Delivery';
-      case OrderStatus.completed:
+      case OrderStatus.delivered:
         return 'Delivered';
       case OrderStatus.cancelled:
         return 'Cancelled';
@@ -25,9 +32,11 @@ extension OrderStatusX on OrderStatus {
     switch (this) {
       case OrderStatus.processing:
         return const Color(0xFFD97706);
-      case OrderStatus.inTransit:
+      case OrderStatus.shipped:
         return const Color(0xFF2563EB);
-      case OrderStatus.completed:
+      case OrderStatus.outForDelivery:
+        return const Color(0xFF7C3AED);
+      case OrderStatus.delivered:
         return const Color(0xFF16A34A);
       case OrderStatus.cancelled:
         return const Color(0xFFDC2626);
@@ -38,9 +47,11 @@ extension OrderStatusX on OrderStatus {
     switch (this) {
       case OrderStatus.processing:
         return const Color(0xFFFEF3C7);
-      case OrderStatus.inTransit:
+      case OrderStatus.shipped:
         return const Color(0xFFDBEAFE);
-      case OrderStatus.completed:
+      case OrderStatus.outForDelivery:
+        return const Color(0xFFEDE9FE);
+      case OrderStatus.delivered:
         return const Color(0xFFDCFCE7);
       case OrderStatus.cancelled:
         return const Color(0xFFFEE2E2);

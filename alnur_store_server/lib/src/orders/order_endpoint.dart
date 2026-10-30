@@ -94,18 +94,59 @@ class OrderEndpoint extends Endpoint {
     );
   }
 
-  /// Retrieves orders from PostgreSQL, optionally filtered by customer email.
+  /// Normalizes status strings into the canonical lifecycle flow:
+  /// processing -> shipped -> out_for_delivery -> delivered (or cancelled)
+  static String normalizeFulfillmentStatus(String raw) {
+    final lower = raw.toLowerCase().trim().replaceAll(' ', '_');
+    if (lower.contains('cancel')) return 'cancelled';
+    if (lower.contains('deliver') || lower.contains('complete')) return 'delivered';
+    if (lower.contains('out_for_delivery') || lower.contains('transit')) return 'out_for_delivery';
+    if (lower.contains('ship') || lower.contains('dispatch')) return 'shipped';
+    return 'processing';
+  }
+
+  /// Retrieves orders from PostgreSQL with strict customer data isolation.
+  ///
+  /// Regular users can ONLY retrieve orders matching their own [customerEmail].
+  /// If [customerEmail] is null or empty, an empty list is returned to strictly
+  /// prevent any privacy data leak across customer accounts.
+  /// Full order history is only returned when authorized with [adminKey].
   Future<List<StoreOrder>> getOrders(
     Session session, {
     String? customerEmail,
+    String? adminKey,
   }) async {
-    if (customerEmail != null && customerEmail.isNotEmpty) {
+    // If authorized admin key is provided, return all orders for admin dashboard
+    if (adminKey != null && adminKey.trim() == 'AlNur2026!') {
       return await StoreOrder.db.find(
         session,
-        where: (t) => t.customerEmail.equals(customerEmail.toLowerCase().trim()),
         orderBy: (t) => t.createdAt,
         orderDescending: true,
       );
+    }
+
+    // STRICT ISOLATION: A non-empty customer email is required.
+    final cleanEmail = customerEmail?.trim().toLowerCase();
+    if (cleanEmail == null || cleanEmail.isEmpty) {
+      // NEVER leak all orders to unauthenticated or empty customer email callers.
+      return [];
+    }
+
+    return await StoreOrder.db.find(
+      session,
+      where: (t) => t.customerEmail.equals(cleanEmail),
+      orderBy: (t) => t.createdAt,
+      orderDescending: true,
+    );
+  }
+
+  /// Dedicated admin endpoint to retrieve all customer orders.
+  Future<List<StoreOrder>> getAdminOrders(
+    Session session, {
+    required String adminKey,
+  }) async {
+    if (adminKey.trim() != 'AlNur2026!') {
+      return [];
     }
     return await StoreOrder.db.find(
       session,
@@ -243,7 +284,8 @@ class OrderEndpoint extends Endpoint {
     );
   }
 
-  /// Updates an order's fulfillment status (e.g. 'processing', 'dispatched', 'delivered', 'cancelled').
+  /// Updates an order's fulfillment status following the unified lifecycle:
+  /// processing -> shipped -> out_for_delivery -> delivered (or cancelled).
   Future<StoreOrder?> updateOrderStatus(
     Session session, {
     required String orderRef,
@@ -255,26 +297,56 @@ class OrderEndpoint extends Endpoint {
     );
     if (order == null) return null;
 
-    order.fulfillmentStatus = fulfillmentStatus.toLowerCase().trim();
+    final canonicalStatus = normalizeFulfillmentStatus(fulfillmentStatus);
+    order.fulfillmentStatus = canonicalStatus;
     order.updatedAt = DateTime.now();
 
     final updated = await StoreOrder.db.updateRow(session, order);
 
-    // Send dispatch email if marked dispatched or delivered
-    if (order.customerEmail.isNotEmpty &&
-        (fulfillmentStatus.toLowerCase() == 'dispatched' ||
-            fulfillmentStatus.toLowerCase() == 'delivered')) {
+    // Friendly status metadata for email dispatch
+    String statusLabel;
+    String statusDesc;
+    switch (canonicalStatus) {
+      case 'shipped':
+        statusLabel = 'SHIPPED';
+        statusDesc =
+            'Your package has been carefully prepared and dispatched with our logistics courier.';
+        break;
+      case 'out_for_delivery':
+        statusLabel = 'OUT FOR DELIVERY';
+        statusDesc =
+            'Our courier driver is actively on the road heading to your delivery destination.';
+        break;
+      case 'delivered':
+        statusLabel = 'DELIVERED';
+        statusDesc =
+            'Your order has been signed and delivered. May Allah bless your modest purchase!';
+        break;
+      case 'cancelled':
+        statusLabel = 'CANCELLED';
+        statusDesc =
+            'Your order has been cancelled. If you have questions, please reach out to customer care.';
+        break;
+      default:
+        statusLabel = 'PROCESSING';
+        statusDesc =
+            'Our artisans are tailoring and preparing your modest couture garments.';
+    }
+
+    if (order.customerEmail.isNotEmpty && canonicalStatus != 'processing') {
       try {
         await EmailService.sendNotificationEmail(
           session,
           toEmail: order.customerEmail,
           recipientName: order.customerName,
-          subject: 'Al-Nur Order Update: Order #${order.orderRef} is ${fulfillmentStatus.toUpperCase()}',
+          subject:
+              'Al-Nur Order Update: Order #${order.orderRef} is $statusLabel',
           headerTitle: 'Order Update: #${order.orderRef}',
           messageHtml: '''
-            <p>Dear ${order.customerName},</p>
-            <p>Your order <strong>#${order.orderRef}</strong> has been updated to: <strong style="color:#0B291E;">${fulfillmentStatus.toUpperCase()}</strong>.</p>
-            <p>Delivery Address: <em>${order.shippingAddress}</em></p>
+            <p>Dear ${order.customerName.isNotEmpty ? order.customerName : 'Valued Customer'},</p>
+            <p>Your order <strong>#${order.orderRef}</strong> has been updated to: <strong style="color:#C87A1E;">$statusLabel</strong>.</p>
+            <p style="margin:12px 0;color:#4B5563;">$statusDesc</p>
+            <p><strong>Delivery Address:</strong> <em>${order.shippingAddress}</em></p>
             <p style="color:#6B7280;font-size:12px;margin-top:20px;">May Allah bless your purchase with Al-Nur.</p>
           ''',
         );

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../shared/models/product_model.dart';
+import '../../authentication/controllers/auth_controller.dart';
 import '../models/cart_item_model.dart';
 
 class CartState {
@@ -58,19 +59,52 @@ class CartState {
 }
 
 class CartController extends Notifier<CartState> {
-  static const String _keyCartItems = 'alnur_persisted_cart_items_v2';
   static const String _keyPromoCode = 'alnur_persisted_promo_code';
+  bool _isDisposed = false;
+  bool _hasUserModifiedState = false;
+  String _cachedStorageKey = 'alnur_cart_guest';
+
+  String _getStorageKey() {
+    if (_isDisposed) return _cachedStorageKey;
+    try {
+      final authState = ref.read(authControllerProvider);
+      final email = authState.user?.email.trim().toLowerCase();
+      if (email != null && email.isNotEmpty && !authState.isGuest) {
+        _cachedStorageKey = 'alnur_cart_user_$email';
+        return _cachedStorageKey;
+      }
+    } catch (_) {}
+    _cachedStorageKey = 'alnur_cart_guest';
+    return _cachedStorageKey;
+  }
 
   @override
   CartState build() {
+    _isDisposed = false;
+    _hasUserModifiedState = false;
+    ref.onDispose(() {
+      _isDisposed = true;
+    });
+    _getStorageKey();
     _loadFromStorage();
     return const CartState();
   }
 
+  /// Reloads cart scoped strictly to the current active user
+  Future<void> reloadCartForActiveUser() async {
+    _hasUserModifiedState = false;
+    _getStorageKey();
+    await _loadFromStorage();
+  }
+
   Future<void> _loadFromStorage() async {
+    final storageKey = _cachedStorageKey;
     try {
       final prefs = await SharedPreferences.getInstance();
-      final itemsJson = prefs.getString(_keyCartItems);
+      if (_isDisposed) return;
+      if (_hasUserModifiedState) return;
+
+      final itemsJson = prefs.getString(storageKey);
       final savedPromo = prefs.getString(_keyPromoCode) ?? 'ALNUR15';
 
       if (itemsJson != null && itemsJson.isNotEmpty) {
@@ -82,25 +116,34 @@ class CartController extends Notifier<CartState> {
                 item.name != 'Pure Medina Silk Hijab' &&
                 item.name != 'Royal Emerald Velvet Jalabia')
             .toList();
+
+        if (_isDisposed || _hasUserModifiedState) return;
         state = state.copyWith(
           items: loadedItems,
           appliedPromoCode: savedPromo.isNotEmpty ? savedPromo : null,
           discountPercent: savedPromo.isNotEmpty ? 0.15 : 0.0,
         );
-        await _saveToStorage(loadedItems);
+        await _saveToStorage(loadedItems, storageKey);
       } else {
-        state = state.copyWith(items: []);
+        if (!_isDisposed && !_hasUserModifiedState) {
+          state = state.copyWith(items: const []);
+        }
       }
     } catch (_) {
-      state = state.copyWith(items: []);
+      if (!_isDisposed && !_hasUserModifiedState) {
+        state = state.copyWith(items: const []);
+      }
     }
   }
 
-  Future<void> _saveToStorage(List<CartItemModel> items) async {
+  Future<void> _saveToStorage(List<CartItemModel> items, [String? explicitKey]) async {
+    if (_isDisposed) return;
     try {
       final prefs = await SharedPreferences.getInstance();
+      if (_isDisposed) return;
+      final storageKey = explicitKey ?? _getStorageKey();
       final encoded = json.encode(items.map((e) => e.toMap()).toList());
-      await prefs.setString(_keyCartItems, encoded);
+      await prefs.setString(storageKey, encoded);
     } catch (_) {}
   }
 
@@ -111,6 +154,7 @@ class CartController extends Notifier<CartState> {
     String color = 'Default',
     int quantity = 1,
   }) async {
+    _hasUserModifiedState = true;
     final existingIndex = state.items.indexWhere(
       (item) => item.productId == product.id && item.size == size && item.color == color,
     );
@@ -142,6 +186,7 @@ class CartController extends Notifier<CartState> {
 
   /// Increments or decrements item quantity
   Future<void> updateQuantity(String cartItemId, int delta) async {
+    _hasUserModifiedState = true;
     final updatedList = <CartItemModel>[];
     for (final item in state.items) {
       if (item.id == cartItemId) {
@@ -160,6 +205,7 @@ class CartController extends Notifier<CartState> {
 
   /// Removes an item completely from the cart
   Future<void> removeItem(String cartItemId) async {
+    _hasUserModifiedState = true;
     final updatedList = state.items.where((item) => item.id != cartItemId).toList();
     state = state.copyWith(items: updatedList);
     await _saveToStorage(updatedList);
@@ -181,11 +227,15 @@ class CartController extends Notifier<CartState> {
     }
   }
 
-  /// Clears all cart items upon successful checkout
+  /// Clears all cart items for the active user upon successful checkout
   Future<void> clearCart() async {
+    _hasUserModifiedState = true;
+    final storageKey = _cachedStorageKey;
     state = state.copyWith(items: const []);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_keyCartItems);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(storageKey);
+    } catch (_) {}
   }
 }
 
