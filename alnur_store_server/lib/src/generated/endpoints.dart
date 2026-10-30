@@ -582,6 +582,11 @@ class Endpoints extends _i1.EndpointDispatch {
               type: _i1.getType<String?>(),
               nullable: true,
             ),
+            'redirectUrl': _i1.ParameterDescription(
+              name: 'redirectUrl',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
           },
           call:
               (
@@ -595,6 +600,7 @@ class Endpoints extends _i1.EndpointDispatch {
                     customerEmail: params['customerEmail'],
                     orderRef: params['orderRef'],
                     customerPhone: params['customerPhone'],
+                    redirectUrl: params['redirectUrl'],
                   ),
         ),
         'processPaymentWebhook': _i1.MethodConnector(
@@ -1191,6 +1197,31 @@ class Endpoints extends _i1.EndpointDispatch {
                 id: params['id'],
                 email: params['email'],
               ),
+        ),
+        'sendWelcomeEmail': _i1.MethodConnector(
+          name: 'sendWelcomeEmail',
+          params: {
+            'email': _i1.ParameterDescription(
+              name: 'email',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'name': _i1.ParameterDescription(
+              name: 'name',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['user'] as _i10.UserEndpoint).sendWelcomeEmail(
+                    session,
+                    email: params['email'],
+                    name: params['name'],
+                  ),
         ),
       },
     );

@@ -52,3 +52,4 @@ user:
   - saveAddress:
   - setDefaultAddress:
   - deleteAddress:
+  - sendWelcomeEmail:

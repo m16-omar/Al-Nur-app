@@ -417,6 +417,7 @@ class EndpointOrder extends _i1.EndpointRef {
     required String customerEmail,
     required String orderRef,
     String? customerPhone,
+    String? redirectUrl,
   }) => caller.callServerEndpoint<String?>(
     'order',
     'initializeMonnifyPayment',
@@ -426,6 +427,7 @@ class EndpointOrder extends _i1.EndpointRef {
       'customerEmail': customerEmail,
       'orderRef': orderRef,
       'customerPhone': customerPhone,
+      'redirectUrl': redirectUrl,
     },
   );
 
@@ -744,6 +746,19 @@ class EndpointUser extends _i1.EndpointRef {
     {
       'id': id,
       'email': email,
+    },
+  );
+
+  /// Dispatches the VIP luxury welcome email to a new patron.
+  _i2.Future<bool> sendWelcomeEmail({
+    required String email,
+    String? name,
+  }) => caller.callServerEndpoint<bool>(
+    'user',
+    'sendWelcomeEmail',
+    {
+      'email': email,
+      'name': name,
     },
   );
 }

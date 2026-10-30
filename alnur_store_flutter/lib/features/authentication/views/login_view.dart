@@ -1,3 +1,4 @@
+import 'package:alnur_store_client/alnur_store_client.dart';
 import '../../../main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -406,84 +407,396 @@ class _LoginViewState extends ConsumerState<LoginView> {
   }
 
   void _showForgotPasswordModal() {
-    final resetEmailController = TextEditingController(text: _emailController.text.trim());
+    final resetEmailController =
+        TextEditingController(text: _emailController.text.trim());
+    final otpController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+
+    int step = 1; // 1: Email, 2: Code, 3: New Password
+    UuidValue? resetRequestId;
+    String? finishResetToken;
     bool isSubmitting = false;
+    bool obscureNew = true;
+    bool obscureConfirm = true;
+    String? localError;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => Container(
-          padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(context).viewInsets.bottom + 24),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Reset Password',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
+        builder: (context, setModalState) {
+          Widget stepContent;
+
+          if (step == 1) {
+            stepContent = Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Enter your registered email address to receive an 8-character verification code.',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
+                ),
+                const SizedBox(height: 16),
+                AppTextField(
+                  controller: resetEmailController,
+                  hintText: 'e.g. zainab@alnur.store',
+                  labelText: 'Email Address',
+                  keyboardType: TextInputType.emailAddress,
+                  prefixIcon: const Icon(Icons.email_outlined,
+                      color: AppColors.primary, size: 20),
+                ),
+                if (localError != null) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    localError!,
+                    style: const TextStyle(
+                        color: Colors.redAccent, fontSize: 12),
                   ),
                 ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Enter your registered email address to receive password recovery instructions.',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 13,
-                  color: AppColors.textSecondary,
+                const SizedBox(height: 20),
+                AppButton(
+                  text: 'Send Verification Code',
+                  isLoading: isSubmitting,
+                  onPressed: () async {
+                    final email = resetEmailController.text.trim();
+                    if (email.isEmpty) {
+                      setModalState(() => localError = 'Please enter your email.');
+                      return;
+                    }
+
+                    setModalState(() {
+                      isSubmitting = true;
+                      localError = null;
+                    });
+
+                    try {
+                      final reqId = await client.emailIdp
+                          .startPasswordReset(email: email);
+                      setModalState(() {
+                        resetRequestId = reqId;
+                        step = 2;
+                        isSubmitting = false;
+                        localError = null;
+                      });
+                    } catch (e) {
+                      setModalState(() {
+                        isSubmitting = false;
+                        localError =
+                            'Unable to send reset code: ${e.toString().replaceAll('Exception:', '').trim()}';
+                      });
+                    }
+                  },
                 ),
-              ),
-              const SizedBox(height: 16),
-              AppTextField(
-                controller: resetEmailController,
-                hintText: 'Enter your email',
-                labelText: 'Email Address',
-                keyboardType: TextInputType.emailAddress,
-                prefixIcon: const Icon(Icons.email_outlined, color: AppColors.primary, size: 20),
-              ),
-              const SizedBox(height: 20),
-              AppButton(
-                text: 'Send Reset Instructions',
-                isLoading: isSubmitting,
-                onPressed: () async {
-                  final email = resetEmailController.text.trim();
-                  if (email.isEmpty) return;
-
-                  setModalState(() => isSubmitting = true);
-                  try {
-                    await client.emailIdp.startPasswordReset(email: email);
-                  } catch (_) {}
-
-                  if (context.mounted) {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Password reset code sent to $email'),
-                        backgroundColor: AppColors.primary,
+              ],
+            );
+          } else if (step == 2) {
+            stepContent = Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'A verification code has been dispatched to ${resetEmailController.text.trim()}. Please enter it below:',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                AppTextField(
+                  controller: otpController,
+                  hintText: 'Enter 8-digit OTP code',
+                  labelText: 'Verification Code',
+                  prefixIcon: const Icon(Icons.pin_outlined,
+                      color: AppColors.primary, size: 20),
+                ),
+                if (localError != null) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    localError!,
+                    style: const TextStyle(
+                        color: Colors.redAccent, fontSize: 12),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: isSubmitting
+                        ? null
+                        : () async {
+                            final email = resetEmailController.text.trim();
+                            setModalState(() => isSubmitting = true);
+                            try {
+                              final reqId = await client.emailIdp
+                                  .startPasswordReset(email: email);
+                              setModalState(() {
+                                resetRequestId = reqId;
+                                isSubmitting = false;
+                                localError = 'New code sent to $email';
+                              });
+                            } catch (e) {
+                              setModalState(() {
+                                isSubmitting = false;
+                                localError = 'Failed to resend code';
+                              });
+                            }
+                          },
+                    child: Text(
+                      'Resend Code',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
                       ),
-                    );
-                  }
-                },
-              ),
-            ],
-          ),
-        ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                AppButton(
+                  text: 'Verify Code',
+                  isLoading: isSubmitting,
+                  onPressed: () async {
+                    final code = otpController.text.trim();
+                    if (code.isEmpty) {
+                      setModalState(
+                          () => localError = 'Please enter the verification code.');
+                      return;
+                    }
+                    if (resetRequestId == null) {
+                      setModalState(() {
+                        step = 1;
+                        localError = 'Session expired. Please request a new code.';
+                      });
+                      return;
+                    }
+
+                    setModalState(() {
+                      isSubmitting = true;
+                      localError = null;
+                    });
+
+                    try {
+                      final token = await client.emailIdp
+                          .verifyPasswordResetCode(
+                        passwordResetRequestId: resetRequestId!,
+                        verificationCode: code,
+                      );
+                      setModalState(() {
+                        finishResetToken = token;
+                        step = 3;
+                        isSubmitting = false;
+                        localError = null;
+                      });
+                    } catch (e) {
+                      setModalState(() {
+                        isSubmitting = false;
+                        localError =
+                            'Invalid or expired code. Please check and try again.';
+                      });
+                    }
+                  },
+                ),
+              ],
+            );
+          } else {
+            stepContent = Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Code verified! Create a secure new password for your Al-Nur account.',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                AppTextField(
+                  controller: newPasswordController,
+                  hintText: 'Enter new password',
+                  labelText: 'New Password',
+                  obscureText: obscureNew,
+                  prefixIcon: const Icon(Icons.lock_outline,
+                      color: AppColors.primary, size: 20),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      obscureNew
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      size: 20,
+                      color: AppColors.textSecondary,
+                    ),
+                    onPressed: () =>
+                        setModalState(() => obscureNew = !obscureNew),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                AppTextField(
+                  controller: confirmPasswordController,
+                  hintText: 'Confirm new password',
+                  labelText: 'Confirm Password',
+                  obscureText: obscureConfirm,
+                  prefixIcon: const Icon(Icons.lock_outline,
+                      color: AppColors.primary, size: 20),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      obscureConfirm
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      size: 20,
+                      color: AppColors.textSecondary,
+                    ),
+                    onPressed: () =>
+                        setModalState(() => obscureConfirm = !obscureConfirm),
+                  ),
+                ),
+                if (localError != null) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    localError!,
+                    style: const TextStyle(
+                        color: Colors.redAccent, fontSize: 12),
+                  ),
+                ],
+                const SizedBox(height: 20),
+                AppButton(
+                  text: 'Save New Password',
+                  isLoading: isSubmitting,
+                  onPressed: () async {
+                    final newPass = newPasswordController.text.trim();
+                    final confirmPass = confirmPasswordController.text.trim();
+
+                    if (newPass.isEmpty) {
+                      setModalState(
+                          () => localError = 'Please enter a new password.');
+                      return;
+                    }
+                    if (newPass.length < 8) {
+                      setModalState(() => localError =
+                          'Password must be at least 8 characters long.');
+                      return;
+                    }
+                    if (newPass != confirmPass) {
+                      setModalState(
+                          () => localError = 'Passwords do not match.');
+                      return;
+                    }
+                    if (finishResetToken == null) {
+                      setModalState(() {
+                        step = 1;
+                        localError =
+                            'Reset token missing. Please start over.';
+                      });
+                      return;
+                    }
+
+                    setModalState(() {
+                      isSubmitting = true;
+                      localError = null;
+                    });
+
+                    try {
+                      await client.emailIdp.finishPasswordReset(
+                        finishPasswordResetToken: finishResetToken!,
+                        newPassword: newPass,
+                      );
+
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        _emailController.text =
+                            resetEmailController.text.trim();
+                        _passwordController.text = newPass;
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                                '✨ Password updated successfully! You can now log in.'),
+                            backgroundColor: Color(0xFF0B291E),
+                            duration: Duration(seconds: 4),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      setModalState(() {
+                        isSubmitting = false;
+                        localError =
+                            'Unable to reset password: ${e.toString().replaceAll('Exception:', '').trim()}';
+                      });
+                    }
+                  },
+                ),
+              ],
+            );
+          }
+
+          return Container(
+            padding: EdgeInsets.fromLTRB(
+              24,
+              20,
+              24,
+              MediaQuery.of(context).viewInsets.bottom + 24,
+            ),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          step == 1
+                              ? 'Reset Password'
+                              : step == 2
+                                  ? 'Verify Code'
+                                  : 'New Password',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            'Step $step/3',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                stepContent,
+              ],
+            ),
+          );
+        },
       ),
     );
   }

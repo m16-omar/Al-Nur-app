@@ -205,6 +205,13 @@ class AuthController extends Notifier<AuthState> {
       await OnboardingPreferences.saveUserName(capitalized);
       await OnboardingPreferences.setGuestMode(false);
 
+      // Dispatch luxury Al-Nur VIP welcome email in background
+      try {
+        client.user.sendWelcomeEmail(email: cleanEmail, name: capitalized);
+      } catch (err) {
+        debugPrint('[AuthController] Notice sending welcome email: $err');
+      }
+
       state = state.copyWith(
         isLoading: false,
         errorMessage: null,
@@ -289,6 +296,13 @@ class AuthController extends Notifier<AuthState> {
       await OnboardingPreferences.saveUserPhone(phone.trim());
       await OnboardingPreferences.setGuestMode(false);
 
+      // Dispatch luxury Al-Nur VIP welcome email in background
+      try {
+        client.user.sendWelcomeEmail(email: cleanEmail, name: cleanName);
+      } catch (err) {
+        debugPrint('[AuthController] Notice sending welcome email: $err');
+      }
+
       state = state.copyWith(
         isLoading: false,
         shouldShowWelcomePopup: true,
@@ -309,6 +323,13 @@ class AuthController extends Notifier<AuthState> {
       await OnboardingPreferences.saveUserEmail(cleanEmail);
       await OnboardingPreferences.saveUserPhone(phone.trim());
       await OnboardingPreferences.setGuestMode(false);
+
+      // Dispatch luxury Al-Nur VIP welcome email in background
+      try {
+        client.user.sendWelcomeEmail(email: cleanEmail, name: cleanName);
+      } catch (err) {
+        debugPrint('[AuthController] Notice sending welcome email: $err');
+      }
 
       state = state.copyWith(
         isLoading: false,

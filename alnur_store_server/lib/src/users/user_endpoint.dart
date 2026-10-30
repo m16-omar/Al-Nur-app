@@ -1,5 +1,6 @@
 import 'package:serverpod/serverpod.dart';
 import '../generated/protocol.dart';
+import '../util/email_service.dart';
 
 /// Endpoint for managing user profiles, account details, and delivery addresses.
 class UserEndpoint extends Endpoint {
@@ -169,5 +170,18 @@ class UserEndpoint extends Endpoint {
 
     await UserAddress.db.deleteRow(session, address);
     return true;
+  }
+
+  /// Dispatches the VIP luxury welcome email to a new patron.
+  Future<bool> sendWelcomeEmail(
+    Session session, {
+    required String email,
+    String? name,
+  }) async {
+    return await EmailService.sendWelcomeEmail(
+      session,
+      email: email.trim().toLowerCase(),
+      name: name,
+    );
   }
 }

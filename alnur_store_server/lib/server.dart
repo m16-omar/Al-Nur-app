@@ -32,6 +32,7 @@ void run(List<String> args) async {
       EmailIdpConfigFromPasswords(
         sendRegistrationVerificationCode: _sendRegistrationCode,
         sendPasswordResetVerificationCode: _sendPasswordResetCode,
+        onAfterAccountCreated: _sendWelcomeEmail,
       ),
     ],
   );
@@ -86,30 +87,43 @@ void run(List<String> args) async {
   await pod.start();
 }
 
-void _sendRegistrationCode(
+Future<void> _sendRegistrationCode(
   Session session, {
   required String email,
   required UuidValue accountRequestId,
   required String verificationCode,
   required Transaction? transaction,
-}) {
-  EmailService.sendRegistrationOtp(
+}) async {
+  await EmailService.sendRegistrationOtp(
     session,
     email: email,
     code: verificationCode,
   );
 }
 
-void _sendPasswordResetCode(
+Future<void> _sendPasswordResetCode(
   Session session, {
   required String email,
   required UuidValue passwordResetRequestId,
   required String verificationCode,
   required Transaction? transaction,
-}) {
-  EmailService.sendPasswordResetOtp(
+}) async {
+  await EmailService.sendPasswordResetOtp(
     session,
     email: email,
     code: verificationCode,
+  );
+}
+
+Future<void> _sendWelcomeEmail(
+  Session session, {
+  required String email,
+  required UuidValue authUserId,
+  required UuidValue emailAccountId,
+  required Transaction? transaction,
+}) async {
+  await EmailService.sendWelcomeEmail(
+    session,
+    email: email,
   );
 }

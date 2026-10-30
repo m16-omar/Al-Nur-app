@@ -11,6 +11,7 @@ import '../../../main.dart';
 import '../../../shared/widgets/product_image.dart';
 import '../../authentication/controllers/auth_controller.dart';
 import '../../home/controllers/home_controller.dart';
+import '../../products/widgets/write_review_dialog.dart';
 import '../models/order_model.dart';
 
 class OrdersView extends ConsumerStatefulWidget {
@@ -1233,92 +1234,101 @@ class _OrdersViewState extends ConsumerState<OrdersView>
   }
 
   void _showReviewDialog(OrderModel order) {
-    int rating = 5;
-    showDialog(
+    if (order.items.isEmpty) return;
+
+    final authUser = ref.read(authControllerProvider).user;
+
+    if (order.items.length == 1) {
+      final item = order.items.first;
+      final productId = item.name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_');
+      WriteReviewDialog.show(
+        context,
+        productId: productId,
+        productName: item.name,
+        productImageUrl: item.imageUrl,
+        initialUserName: authUser?.name,
+      );
+      return;
+    }
+
+    // Multiple items in order: Let user select which piece to review
+    showModalBottomSheet(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Text(
-            'Rate & Review',
-            style: AppTextStyles.productTitle.copyWith(fontSize: 18),
-          ),
-          content: Column(
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Select Item to Review',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
               Text(
-                'How was the quality and modest fit of your ${order.items.first.name}?',
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textSecondary,
-                ),
+                'Order #${order.id} contains ${order.items.length} items. Select one to rate and review:',
+                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  5,
-                  (index) => IconButton(
-                    icon: Icon(
-                      index < rating
-                          ? Icons.star_rounded
-                          : Icons.star_outline_rounded,
-                      color: AppColors.starAmber,
-                      size: 32,
+              ...order.items.map((item) {
+                final productId = item.name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_');
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: SizedBox(
+                      width: 48,
+                      height: 48,
+                      child: ProductImage(imageUrl: item.imageUrl, fit: BoxFit.cover),
                     ),
-                    onPressed: () => setDialogState(() => rating = index + 1),
                   ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                decoration: InputDecoration(
-                  hintText:
-                      'Share fabric texture, drape, and sizing thoughts...',
-                  hintStyle: const TextStyle(fontSize: 12),
-                  filled: true,
-                  fillColor: AppColors.background,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide.none,
+                  title: Text(
+                    item.name,
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                maxLines: 3,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text(
-                'Later',
-                style: TextStyle(color: AppColors.textSecondary),
-              ),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              onPressed: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Jazakallahu Khair! Your review was submitted.',
+                  subtitle: Text(
+                    'Size: ${item.size} • ${item.color}',
+                    style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                  ),
+                  trailing: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryContainer,
+                      foregroundColor: AppColors.primary,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
-                    backgroundColor: AppColors.primary,
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      WriteReviewDialog.show(
+                        context,
+                        productId: productId,
+                        productName: item.name,
+                        productImageUrl: item.imageUrl,
+                        initialUserName: authUser?.name,
+                      );
+                    },
+                    child: const Text('Review', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                   ),
                 );
-              },
-              child: const Text('Submit Review'),
-            ),
-          ],
+              }),
+            ],
+          ),
         ),
       ),
     );

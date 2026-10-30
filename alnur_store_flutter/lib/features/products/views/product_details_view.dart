@@ -334,6 +334,7 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
     final homeState = ref.watch(homeControllerProvider);
     final homeController = ref.read(homeControllerProvider.notifier);
     final product = _resolveProduct(homeState);
+    _ensureReviewsLoaded(product);
 
     // Multi-angle gallery images based on primary product image
     final galleryImages = [
@@ -525,15 +526,24 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
                                 ),
                               ),
                             ),
-                            Row(
-                              children: [
-                                const Icon(Icons.star_rounded, size: 18, color: AppColors.starAmber),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${product.rating.toStringAsFixed(1)} (${product.reviewCount} reviews)',
-                                  style: AppTextStyles.productRating.copyWith(fontSize: 13),
+                            InkWell(
+                              onTap: () => _openWriteReviewForm(product),
+                              borderRadius: BorderRadius.circular(8),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.star_rounded, size: 18, color: AppColors.starAmber),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${product.rating.toStringAsFixed(1)} (${product.reviewCount + _additionalReviewCount} reviews)',
+                                      style: AppTextStyles.productRating.copyWith(fontSize: 13),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    const Icon(Icons.rate_review_outlined, size: 14, color: AppColors.primary),
+                                  ],
                                 ),
-                              ],
+                              ),
                             ),
                           ],
                         ),
@@ -733,26 +743,178 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('Verified Client Reviews',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                            Text('4.9 ★ (${product.reviewCount})',
-                                style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13)),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Verified Client Reviews',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                ),
+                                const SizedBox(height: 2),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.star_rounded, size: 16, color: AppColors.starAmber),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '4.9 (${product.reviewCount + _additionalReviewCount} reviews)',
+                                      style: const TextStyle(
+                                        color: AppColors.textSecondary,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 12.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryContainer,
+                                foregroundColor: AppColors.primary,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  side: const BorderSide(color: AppColors.primaryLight, width: 1),
+                                ),
+                              ),
+                              icon: const Icon(Icons.rate_review_outlined, size: 16),
+                              label: const Text(
+                                'Write Review',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
+                              onPressed: () => _openWriteReviewForm(product),
+                            ),
                           ],
                         ),
-                        const SizedBox(height: 12),
-                        _buildReviewCard(
-                          name: 'Amina B.',
-                          date: '3 days ago',
-                          rating: 5,
-                          comment: 'The drape and opacity are absolute perfection. Fabric feels so lightweight yet completely modest for Lagos heat.',
+                        const SizedBox(height: 14),
+
+                        // Rating Summary Card with CTA
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceMuted.withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Row(
+                            children: [
+                              Column(
+                                children: [
+                                  const Text(
+                                    '4.9',
+                                    style: TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.w900,
+                                      color: AppColors.textPrimary,
+                                      height: 1.1,
+                                    ),
+                                  ),
+                                  Row(
+                                    children: List.generate(
+                                      5,
+                                      (i) => const Icon(Icons.star_rounded, size: 14, color: AppColors.starAmber),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${product.reviewCount + _additionalReviewCount} ratings',
+                                    style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(width: 16),
+                              Container(width: 1, height: 48, color: AppColors.border),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Have you experienced this piece?',
+                                      style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    const Text(
+                                      'Help fellow patrons choose authentic modest luxury.',
+                                      style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    InkWell(
+                                      onTap: () => _openWriteReviewForm(product),
+                                      child: const Text(
+                                        '★ Tap to rate & leave feedback →',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.primary,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 10),
-                        _buildReviewCard(
-                          name: 'Fatima Z.',
-                          date: 'Last week',
-                          rating: 5,
-                          comment: 'Size 56 fits floor-length just like bespoke tailoring. The golden packaging made unboxing feel so regal!',
-                        ),
+                        const SizedBox(height: 16),
+
+                        // Dynamic Review List
+                        if (_isLoadingReviews)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 24),
+                            child: Center(
+                              child: SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                              ),
+                            ),
+                          )
+                        else if (_reviews.isEmpty)
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.border),
+                            ),
+                            child: Column(
+                              children: [
+                                const Icon(Icons.star_outline_rounded, size: 36, color: AppColors.primary),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  'Be the First to Review',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                ),
+                                const SizedBox(height: 4),
+                                const Text(
+                                  'Share your honest thoughts about the modest drape, craftsmanship, and fit.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                ),
+                                const SizedBox(height: 12),
+                                ElevatedButton(
+                                  onPressed: () => _openWriteReviewForm(product),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primary,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                  ),
+                                  child: const Text('Write First Review', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          Column(
+                            children: _reviews.map((rev) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _buildReviewCard(rev),
+                            )).toList(),
+                          ),
                       ],
                     ),
                   ),
@@ -893,37 +1055,131 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
     );
   }
 
-  Widget _buildReviewCard({required String name, required String date, required int rating, required String comment}) {
+  Widget _buildReviewCard(ProductReview review) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: AppColors.primaryContainer,
+                child: Text(
+                  review.userInitial,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            review.userName,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (review.isVerifiedBuyer) ...[
+                          const SizedBox(width: 4),
+                          const Icon(Icons.verified_rounded, size: 14, color: AppColors.accentGreen),
+                          const SizedBox(width: 2),
+                          const Text(
+                            'Verified',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.accentGreen,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      review.date,
+                      style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
               Row(
                 children: List.generate(
                   5,
                   (i) => Icon(
                     Icons.star_rounded,
                     size: 14,
-                    color: i < rating ? AppColors.starAmber : Colors.grey.shade300,
+                    color: i < review.rating.round() ? AppColors.starAmber : Colors.grey.shade300,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 2),
-          Text(date, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+          if (review.title.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              review.title,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ],
           const SizedBox(height: 6),
-          Text(comment, style: const TextStyle(fontSize: 12.5, color: AppColors.textPrimary, height: 1.4)),
+          Text(
+            review.comment,
+            style: const TextStyle(
+              fontSize: 12.5,
+              color: AppColors.textPrimary,
+              height: 1.45,
+            ),
+          ),
+          if (review.tags.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: review.tags.map((tag) => Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryContainer.withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  tag,
+                  style: const TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                  ),
+                ),
+              )).toList(),
+            ),
+          ],
         ],
       ),
     );

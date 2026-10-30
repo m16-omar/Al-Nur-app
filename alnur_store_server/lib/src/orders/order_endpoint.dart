@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:serverpod/serverpod.dart';
@@ -61,9 +62,9 @@ class OrderEndpoint extends Endpoint {
         final insertedOrder =
             await StoreOrder.db.insertRow(session, newOrder);
 
-        // Dispatch branded confirmation email to customer
-        try {
-          await EmailService.sendNotificationEmail(
+        // Dispatch branded confirmation email to customer asynchronously without blocking order commit
+        unawaited(
+          EmailService.sendNotificationEmail(
             session,
             toEmail: customerEmail,
             recipientName: customerName,
@@ -80,11 +81,12 @@ class OrderEndpoint extends Endpoint {
               </div>
               <p style="color:#6B7280;font-size:12px;margin-top:14px;">Your modest couture items are carefully packaged in our gold-foil heirloom boxes.</p>
             ''',
-          );
-        } catch (e) {
-          session.log('Failed to dispatch order receipt: $e',
-              level: LogLevel.warning);
-        }
+          ).timeout(const Duration(seconds: 5)).catchError((e) {
+            session.log('Failed to dispatch order receipt: $e',
+                level: LogLevel.warning);
+            return false;
+          }),
+        );
 
         return insertedOrder;
       },
@@ -181,6 +183,7 @@ class OrderEndpoint extends Endpoint {
     required String customerEmail,
     required String orderRef,
     String? customerPhone,
+    String? redirectUrl,
   }) async {
     try {
       final client = HttpClient()..connectionTimeout = const Duration(seconds: 12);
@@ -218,6 +221,9 @@ class OrderEndpoint extends Endpoint {
       initReq.headers.contentType = ContentType.json;
 
       final paymentRef = '$orderRef-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+      final effectiveRedirect = (redirectUrl != null && redirectUrl.trim().isNotEmpty)
+          ? redirectUrl.trim()
+          : 'https://al-nur-tau.vercel.app/orders?success=1&ref=$orderRef';
       final payload = jsonEncode({
         'amount': amount,
         'customerName': customerName.trim().isNotEmpty ? customerName.trim() : 'Al-Nur Customer',
@@ -226,7 +232,7 @@ class OrderEndpoint extends Endpoint {
         'paymentDescription': 'Al-Nur Store Order $orderRef (₦${amount.toStringAsFixed(0)})',
         'currencyCode': 'NGN',
         'contractCode': monnifyContractCode,
-        'redirectUrl': 'https://alnur-store.serverpod.space/app/checkout/success?ref=$orderRef',
+        'redirectUrl': effectiveRedirect,
         'paymentMethods': ['CARD', 'ACCOUNT_TRANSFER'],
       });
 

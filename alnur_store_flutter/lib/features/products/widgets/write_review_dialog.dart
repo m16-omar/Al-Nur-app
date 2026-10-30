@@ -336,12 +336,6 @@ class _WriteReviewDialogState extends State<WriteReviewDialog> {
                     ),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                   ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please provide a short headline';
-                    }
-                    return null;
-                  },
                 ),
 
                 const SizedBox(height: 14),

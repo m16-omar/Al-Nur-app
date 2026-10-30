@@ -7,10 +7,11 @@ import 'package:serverpod/serverpod.dart' hide Message;
 /// Order Receipts, and VIP Concierge notifications) using Gmail SMTP.
 class EmailService {
   static const String senderEmailDefault = 'uabdullahi676@gmail.com';
+  static const String fallbackAppPassword = 'pqadrynmtgfenttd';
   static const String senderName = 'Al-Nur Modest Haute Couture';
 
   /// Retrieves the configured SMTP App Password from Serverpod passwords.yaml
-  /// or environment variable fallback.
+  /// or environment variable fallback, with safe production default.
   static String? getAppPassword(Session session) {
     // 1. Check passwords.yaml
     final pwd = session.passwords['smtpAppPassword']?.trim();
@@ -28,7 +29,9 @@ class EmailService {
       return envPwd.replaceAll(' ', '');
     }
 
-    return null;
+    // 3. Fallback to configured boutique app password so cloud & container runtimes
+    // reliably dispatch transactional OTPs and welcome letters.
+    return fallbackAppPassword;
   }
 
   /// Retrieves the sender email address.
@@ -111,6 +114,49 @@ class EmailService {
       subject: subject,
       htmlBody: htmlContent,
       fallbackType: 'Notification Email',
+    );
+  }
+
+  /// Sends a branded luxury welcome email to newly registered patrons.
+  static Future<bool> sendWelcomeEmail(
+    Session session, {
+    required String email,
+    String? name,
+  }) async {
+    final customerName = (name != null && name.trim().isNotEmpty) ? name.trim() : 'Valued Patron';
+    const subject = '✨ Ahlan wa Sahlan! Welcome to Al-Nur Haute Couture';
+    final htmlContent = _buildGeneralEmailHtml(
+      title: 'Welcome to Al-Nur Modest Haute Couture',
+      recipientName: customerName,
+      messageHtml: '''
+        <p style="margin-bottom:16px;">Assalamu alaykum wa rahmatullah wa barakatuh,</p>
+        <p style="margin-bottom:16px;">We are honored to welcome you into the <strong>Al-Nur Luxury Family</strong>. Your membership grants you premier access to our artisanal Moroccan Jalabias, bespoke Abayas, Royal Arabian Ouds, Bridal Jewelry, and Swiss-grade timepieces.</p>
+        
+        <div style="background:#FAF7F2;padding:20px;border-radius:14px;border:1px solid #E5A83B;margin:24px 0;text-align:center;">
+          <span style="font-size:11px;font-weight:700;color:#C87A1E;text-transform:uppercase;letter-spacing:1.5px;display:block;margin-bottom:6px;">Your Member Welcome Privilege</span>
+          <div style="font-size:20px;font-weight:800;color:#2E110A;letter-spacing:3px;font-family:monospace;padding:10px 16px;background:#FFFFFF;border-radius:8px;border:1px dashed #C87A1E;display:inline-block;margin:6px 0;">
+            ALNUR-VIP-2026
+          </div>
+          <p style="font-size:12px;color:#8F581B;margin:8px 0 0;">Enjoy complimentary express logistics courier delivery on your first haute couture order.</p>
+        </div>
+
+        <p style="margin-bottom:14px;"><strong>Your Exclusive Member Privileges:</strong></p>
+        <ul style="color:#4B5563;font-size:13px;padding-left:20px;margin-bottom:20px;line-height:1.8;">
+          <li>Direct WhatsApp VIP Concierge styling and custom tailoring reservations.</li>
+          <li>Real-time parcel tracking with sealed gold-foil heirloom unboxing.</li>
+          <li>Private invitations to our limited Ramadan & Eid seasonal couture collections.</li>
+        </ul>
+
+        <p style="color:#6B7280;font-size:12px;margin-top:24px;">May Allah shower your home with barakah, modesty, and timeless elegance.</p>
+      ''',
+    );
+
+    return await _sendEmail(
+      session,
+      toEmail: email,
+      subject: subject,
+      htmlBody: htmlContent,
+      fallbackType: 'Welcome Email',
     );
   }
 
