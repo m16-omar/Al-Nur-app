@@ -8,8 +8,12 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../shared/models/product_model.dart';
 import '../../../shared/widgets/product_image.dart';
+import '../../authentication/controllers/auth_controller.dart';
 import '../../cart/controllers/cart_controller.dart';
 import '../../home/controllers/home_controller.dart';
+import '../models/product_review.dart';
+import '../repositories/review_repository.dart';
+import '../widgets/write_review_dialog.dart';
 
 class ProductDetailsView extends ConsumerStatefulWidget {
   final String productId;
@@ -40,6 +44,45 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
   ];
 
   final List<String> _sizes = ['50', '52', '54', '56', '58', '60', '62'];
+
+  List<ProductReview> _reviews = [];
+  bool _isLoadingReviews = true;
+  int _additionalReviewCount = 0;
+  String? _loadedProductId;
+
+  void _ensureReviewsLoaded(ProductModel product) {
+    if (_loadedProductId == product.id) return;
+    _loadedProductId = product.id;
+    ReviewRepository.getReviews(
+      productId: product.id,
+      categoryId: product.categoryId,
+      productName: product.name,
+    ).then((list) {
+      if (mounted) {
+        setState(() {
+          _reviews = list;
+          _isLoadingReviews = false;
+        });
+      }
+    });
+  }
+
+  void _openWriteReviewForm(ProductModel product) async {
+    final authUser = ref.read(authControllerProvider).user;
+    await WriteReviewDialog.show(
+      context,
+      productId: product.id,
+      productName: product.name,
+      productImageUrl: product.imageUrl,
+      initialUserName: authUser?.name,
+      onReviewSubmitted: (newRev) {
+        setState(() {
+          _reviews.insert(0, newRev);
+          _additionalReviewCount++;
+        });
+      },
+    );
+  }
 
   ProductModel _resolveProduct(HomeState homeState) {
     if (widget.initialProduct != null) {

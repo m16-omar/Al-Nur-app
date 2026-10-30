@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:alnur_store_flutter/core/router/app_router.dart';
 import 'package:alnur_store_flutter/features/categories/views/category_details_view.dart';
+import 'package:alnur_store_flutter/features/home/widgets/hero_banner.dart';
 import 'package:alnur_store_flutter/features/home/widgets/home_header.dart';
 import 'package:alnur_store_flutter/features/onboarding/models/onboarding_item.dart';
 import 'package:alnur_store_flutter/features/onboarding/widgets/onboarding_card.dart';
@@ -147,6 +148,27 @@ void main() {
       expect(find.text('Perfumes & Oud'), findsWidgets);
       expect(find.text('ROYAL ARABIAN ATTARS & OUD'), findsOneWidget);
       expect(find.textContaining('Products Available'), findsOneWidget);
+    });
+
+    testWidgets('HeroBanner renders editorial banner content and arch-framed layout', (tester) async {
+      bool shopNowTapped = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: HeroBanner(
+              onShopNowTap: () => shopNowTapped = true,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('ROYAL PERFUMERY'), findsOneWidget);
+      expect(find.text('Explore Scents →'), findsOneWidget);
+      expect(find.byType(HeroBanner), findsOneWidget);
+
+      await tester.tap(find.text('Explore Scents →'));
+      expect(shopNowTapped, isTrue);
     });
 
     test('AppRouter configuration declares all expected routes', () {

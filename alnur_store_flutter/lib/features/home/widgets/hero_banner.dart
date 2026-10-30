@@ -78,23 +78,9 @@ class _HeroBannerState extends State<HeroBanner> {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
-          child: Stack(
-            children: [
-              // Architectural Arch Background Decoration
-              Positioned(
-                right: -30,
-                top: -20,
-                bottom: -20,
-                width: 200,
-                child: CustomPaint(
-                  painter: ArchBackgroundPainter(),
-                ),
-              ),
-
-              // PageView Content
-              PageView.builder(
-                controller: _pageController,
-                itemCount: _banners.length,
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: _banners.length,
                 onPageChanged: (index) {
                   setState(() => _currentPage = index);
                 },
@@ -180,45 +166,53 @@ class _HeroBannerState extends State<HeroBanner> {
                         ),
                       ),
 
-                      // Right Image
+                      // Right Image with Architectural Islamic Arch Framing
                       Expanded(
                         flex: 4,
-                        child: Stack(
-                          alignment: Alignment.bottomRight,
-                          children: [
-                            Positioned.fill(
-                              child: Image.network(
-                                banner['imageUrl']!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    _buildFallbackModel(),
-                              ),
+                        child: CustomPaint(
+                          foregroundPainter: const ArchImageBorderPainter(
+                            radius: 68,
+                            color: AppColors.gold,
+                            strokeWidth: 2.0,
+                          ),
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(68),
+                              topRight: Radius.circular(20),
+                              bottomRight: Radius.circular(20),
                             ),
-                            // Gradient blend
-                            Positioned.fill(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      const Color(0xFF3F2D1E).withValues(alpha: 0.7),
-                                      Colors.transparent,
-                                      Colors.transparent,
-                                    ],
-                                    begin: Alignment.centerLeft,
-                                    end: Alignment.centerRight,
+                            child: Stack(
+                              fit: StackFit.expand,
+                              alignment: Alignment.center,
+                              children: [
+                                Image.network(
+                                  banner['imageUrl']!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      _buildFallbackModel(),
+                                ),
+                                // Gradient blend on the left curve edge
+                                DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        const Color(0xFF3F2D1E).withValues(alpha: 0.35),
+                                        Colors.transparent,
+                                      ],
+                                      begin: Alignment.centerLeft,
+                                      end: Alignment.centerRight,
+                                    ),
                                   ),
                                 ),
-                              ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ],
                   );
                 },
               ),
-            ],
-          ),
         ),
       ),
     );
@@ -234,23 +228,51 @@ class _HeroBannerState extends State<HeroBanner> {
   }
 }
 
-class ArchBackgroundPainter extends CustomPainter {
+/// Paints a luxury gold Islamic arch stroke directly bordering and framing the product image.
+class ArchImageBorderPainter extends CustomPainter {
+  final double radius;
+  final Color color;
+  final double strokeWidth;
+
+  const ArchImageBorderPainter({
+    this.radius = 68,
+    this.color = AppColors.gold,
+    this.strokeWidth = 2.0,
+  });
+
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.08)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3;
-
-    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
-    final rrect = RRect.fromRectAndCorners(
-      rect,
-      topLeft: const Radius.circular(80),
-      topRight: const Radius.circular(80),
+    final halfStroke = strokeWidth / 2;
+    final path = Path();
+    path.moveTo(halfStroke, size.height);
+    path.lineTo(halfStroke, radius);
+    path.arcToPoint(
+      Offset(radius, halfStroke),
+      radius: Radius.circular(radius - halfStroke),
+      clockwise: true,
     );
-    canvas.drawRRect(rrect, paint);
+    path.lineTo(size.width, halfStroke);
+
+    // Subtle luminous soft glow behind the arch
+    final glowPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.22)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth + 2.5
+      ..strokeCap = StrokeCap.round;
+    canvas.drawPath(path, glowPaint);
+
+    // Primary luxury gold stroke
+    final strokePaint = Paint()
+      ..color = color.withValues(alpha: 0.8)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+    canvas.drawPath(path, strokePaint);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant ArchImageBorderPainter oldDelegate) =>
+      oldDelegate.radius != radius ||
+      oldDelegate.color != color ||
+      oldDelegate.strokeWidth != strokeWidth;
 }

@@ -629,25 +629,31 @@
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <!-- Filter Pills -->
             <div class="flex items-center space-x-2 overflow-x-auto pb-1 text-xs">
-              <button onclick="setOrderFilter('all', this)" id="order-chip-all" class="order-chip px-3 py-1.5 rounded-xl font-bold bg-gray-900 text-white shadow-2xs transition">
+              <button onclick="setOrderFilter('all', this)" id="order-chip-all" class="order-chip px-3 py-1.5 rounded-xl font-bold bg-[#C87A1E] text-white shadow-2xs transition">
                 All (<span id="count-all-orders">0</span>)
               </button>
-              <button onclick="setOrderFilter('processing', this)" id="order-chip-processing" class="order-chip px-3 py-1.5 rounded-xl font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
-                Processing (<span id="count-processing-orders">0</span>)
+              <button onclick="setOrderFilter('placed', this)" id="order-chip-placed" class="order-chip px-3 py-1.5 rounded-xl font-semibold bg-gray-100 text-gray-700 hover:bg-[#F9EFE4] hover:text-[#8F581B] transition">
+                1. Placed (<span id="count-placed-orders">0</span>)
               </button>
-              <button onclick="setOrderFilter('shipped', this)" id="order-chip-shipped" class="order-chip px-3 py-1.5 rounded-xl font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
-                Shipped (<span id="count-shipped-orders">0</span>)
+              <button onclick="setOrderFilter('processing', this)" id="order-chip-processing" class="order-chip px-3 py-1.5 rounded-xl font-semibold bg-gray-100 text-gray-700 hover:bg-[#F9EFE4] hover:text-[#8F581B] transition">
+                2. Tailoring (<span id="count-processing-orders">0</span>)
               </button>
-              <button onclick="setOrderFilter('out_for_delivery', this)" id="order-chip-out-for-delivery" class="order-chip px-3 py-1.5 rounded-xl font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
-                Out for Delivery (<span id="count-out-delivery-orders">0</span>)
+              <button onclick="setOrderFilter('shipped', this)" id="order-chip-shipped" class="order-chip px-3 py-1.5 rounded-xl font-semibold bg-gray-100 text-gray-700 hover:bg-[#F9EFE4] hover:text-[#8F581B] transition">
+                3. Shipped (<span id="count-shipped-orders">0</span>)
               </button>
-              <button onclick="setOrderFilter('delivered', this)" id="order-chip-delivered" class="order-chip px-3 py-1.5 rounded-xl font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
-                Delivered (<span id="count-delivered-orders">0</span>)
+              <button onclick="setOrderFilter('out_for_delivery', this)" id="order-chip-out-for-delivery" class="order-chip px-3 py-1.5 rounded-xl font-semibold bg-gray-100 text-gray-700 hover:bg-[#F9EFE4] hover:text-[#8F581B] transition">
+                4. Out for Delivery (<span id="count-out-delivery-orders">0</span>)
               </button>
-              <button onclick="setOrderFilter('paid', this)" id="order-chip-paid" class="order-chip px-3 py-1.5 rounded-xl font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
+              <button onclick="setOrderFilter('delivered', this)" id="order-chip-delivered" class="order-chip px-3 py-1.5 rounded-xl font-semibold bg-gray-100 text-gray-700 hover:bg-[#F9EFE4] hover:text-[#8F581B] transition">
+                5. Delivered (<span id="count-delivered-orders">0</span>)
+              </button>
+              <button onclick="setOrderFilter('cancelled', this)" id="order-chip-cancelled" class="order-chip px-3 py-1.5 rounded-xl font-semibold bg-gray-100 text-gray-700 hover:bg-rose-50 hover:text-rose-700 transition">
+                Cancelled (<span id="count-cancelled-orders">0</span>)
+              </button>
+              <button onclick="setOrderFilter('paid', this)" id="order-chip-paid" class="order-chip px-3 py-1.5 rounded-xl font-semibold bg-gray-100 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition">
                 Verified Paid (<span id="count-paid-orders">0</span>)
               </button>
-              <button onclick="setOrderFilter('pending', this)" id="order-chip-pending" class="order-chip px-3 py-1.5 rounded-xl font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
+              <button onclick="setOrderFilter('pending', this)" id="order-chip-pending" class="order-chip px-3 py-1.5 rounded-xl font-semibold bg-gray-100 text-gray-700 hover:bg-amber-50 hover:text-amber-700 transition">
                 Pending Payment (<span id="count-pending-orders">0</span>)
               </button>
             </div>
@@ -1581,11 +1587,12 @@
             <div>
               <label class="block text-gray-600 text-[11px] mb-1 font-semibold">Change Delivery State</label>
               <select id="modalFulfillmentSelect" class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-900 font-medium focus:outline-none focus:border-brand-primary">
-                <option value="processing">Processing (Tailoring & Crafting)</option>
-                <option value="shipped">Shipped (Dispatched to Courier Hub)</option>
-                <option value="out_for_delivery">Out for Delivery (Rider in Transit)</option>
-                <option value="delivered">Delivered (Handed to Customer)</option>
-                <option value="cancelled">Cancelled</option>
+                <option value="placed">1. Order Placed & Confirmed</option>
+                <option value="processing">2. Processing & Handcrafted Tailoring</option>
+                <option value="shipped">3. Shipped & Handed to Courier</option>
+                <option value="out_for_delivery">4. Out for Delivery</option>
+                <option value="delivered">5. Delivered</option>
+                <option value="cancelled">Cancel Order</option>
               </select>
             </div>
 
@@ -3552,7 +3559,14 @@
 
     function updateOrderBadges() {
       const total = allOrders.length;
-      const processing = allOrders.filter(o => (o.fulfillmentStatus || 'processing').toLowerCase() === 'processing').length;
+      const placed = allOrders.filter(o => {
+        const s = (o.fulfillmentStatus || 'placed').toLowerCase().replaceAll(' ', '_');
+        return s === 'placed' || s === 'confirmed';
+      }).length;
+      const processing = allOrders.filter(o => {
+        const s = (o.fulfillmentStatus || '').toLowerCase().replaceAll(' ', '_');
+        return s === 'processing' || s === 'tailoring';
+      }).length;
       const shipped = allOrders.filter(o => {
         const s = (o.fulfillmentStatus || '').toLowerCase();
         return s === 'shipped' || s === 'dispatched';
@@ -3562,6 +3576,7 @@
         return s === 'out_for_delivery' || s === 'out for delivery' || s.includes('transit');
       }).length;
       const delivered = allOrders.filter(o => (o.fulfillmentStatus || '').toLowerCase() === 'delivered').length;
+      const cancelled = allOrders.filter(o => (o.fulfillmentStatus || '').toLowerCase() === 'cancelled').length;
       const paidOrders = allOrders.filter(o => (o.paymentStatus || '').toLowerCase() === 'paid');
       const paidRevenue = paidOrders.reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0);
       const pendingOrders = allOrders.filter(o => (o.paymentStatus || '').toLowerCase() === 'pending').length;
@@ -3576,7 +3591,7 @@
       if (badgeRev) badgeRev.innerText = `${formatNaira(paidRevenue)} Paid`;
 
       const badgeProc = document.getElementById('badge-orders-processing');
-      if (badgeProc) badgeProc.innerText = `${processing} Processing`;
+      if (badgeProc) badgeProc.innerText = `${processing + placed} In Atelier`;
 
       const badgeDisp = document.getElementById('badge-orders-dispatched');
       if (badgeDisp) badgeDisp.innerText = `${shipped + outDelivery} In Logistics`;
@@ -3587,6 +3602,9 @@
       // Filter chips counts
       const countAll = document.getElementById('count-all-orders');
       if (countAll) countAll.innerText = total;
+
+      const countPlaced = document.getElementById('count-placed-orders');
+      if (countPlaced) countPlaced.innerText = placed;
 
       const countProc = document.getElementById('count-processing-orders');
       if (countProc) countProc.innerText = processing;
@@ -3600,6 +3618,9 @@
       const countDeliv = document.getElementById('count-delivered-orders');
       if (countDeliv) countDeliv.innerText = delivered;
 
+      const countCancelled = document.getElementById('count-cancelled-orders');
+      if (countCancelled) countCancelled.innerText = cancelled;
+
       const countPaid = document.getElementById('count-paid-orders');
       if (countPaid) countPaid.innerText = paidOrders.length;
 
@@ -3610,11 +3631,11 @@
     function setOrderFilter(filter, btn) {
       activeOrderFilter = filter;
       document.querySelectorAll('.order-chip').forEach(c => {
-        c.classList.remove('bg-gray-900', 'text-white', 'shadow-2xs');
+        c.classList.remove('bg-[#C87A1E]', 'text-white', 'shadow-2xs');
         c.classList.add('bg-gray-100', 'text-gray-700');
       });
       if (btn) {
-        btn.classList.add('bg-gray-900', 'text-white', 'shadow-2xs');
+        btn.classList.add('bg-[#C87A1E]', 'text-white', 'shadow-2xs');
         btn.classList.remove('bg-gray-100', 'text-gray-700');
       }
       renderOrdersTable();
@@ -3627,29 +3648,37 @@
     }
 
     function getFulfillmentBadgeHtml(status) {
-      const s = (status || 'processing').toLowerCase().replaceAll(' ', '_');
+      const s = (status || 'placed').toLowerCase().replaceAll(' ', '_');
       if (s === 'delivered') {
-        return `<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center space-x-1"><i data-lucide="check-circle-2" class="w-3 h-3"></i><span>Delivered</span></span>`;
+        return `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap"><i data-lucide="check-circle-2" class="w-3 h-3 mr-1 text-emerald-600"></i><span>5. Delivered</span></span>`;
       } else if (s === 'out_for_delivery' || s.includes('transit')) {
-        return `<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200 flex items-center space-x-1"><i data-lucide="truck" class="w-3 h-3"></i><span>Out for Delivery</span></span>`;
+        return `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200 whitespace-nowrap"><i data-lucide="truck" class="w-3 h-3 mr-1 text-purple-600"></i><span>4. Out for Delivery</span></span>`;
       } else if (s === 'shipped' || s === 'dispatched') {
-        return `<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 flex items-center space-x-1"><i data-lucide="package-check" class="w-3 h-3"></i><span>Shipped</span></span>`;
+        return `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap"><i data-lucide="package-check" class="w-3 h-3 mr-1 text-blue-600"></i><span>3. Shipped to Courier</span></span>`;
       } else if (s === 'cancelled') {
-        return `<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">Cancelled</span>`;
+        return `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 whitespace-nowrap"><i data-lucide="x-circle" class="w-3 h-3 mr-1 text-rose-600"></i><span>Cancelled</span></span>`;
+      } else if (s === 'processing') {
+        return `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 whitespace-nowrap"><i data-lucide="scissors" class="w-3 h-3 mr-1 text-amber-600"></i><span>2. Processing & Tailoring</span></span>`;
       }
-      return `<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center space-x-1"><i data-lucide="clock" class="w-3 h-3"></i><span>Processing</span></span>`;
+      return `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-[#FAF3E8] text-[#8F581B] border border-[#E5A83B]/40 whitespace-nowrap"><i data-lucide="sparkles" class="w-3 h-3 mr-1 text-[#C87A1E]"></i><span>1. Placed & Confirmed</span></span>`;
     }
 
     function getPaymentBadgeHtml(status) {
       const s = (status || 'pending').toLowerCase();
       if (s === 'paid' || s === 'success') {
-        return `<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Verified Paid</span>`;
+        return `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap"><i data-lucide="check" class="w-3 h-3 mr-1 text-emerald-600"></i><span>Verified Paid</span></span>`;
       } else if (s === 'refunded') {
-        return `<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">Refunded</span>`;
+        return `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200 whitespace-nowrap">Refunded</span>`;
       } else if (s === 'failed') {
-        return `<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">Failed</span>`;
+        return `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 whitespace-nowrap">Failed</span>`;
       }
-      return `<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">Pending</span>`;
+      return `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">Pending</span>`;
+    }
+
+    function confirmCancelOrder(orderRef) {
+      if (confirm(`Are you sure you want to cancel Order #${orderRef}? This will notify the customer and mark the order as CANCELLED.`)) {
+        updateOrderStatus(orderRef, 'cancelled');
+      }
     }
 
     function renderOrdersTable() {
@@ -3660,12 +3689,14 @@
 
       let filtered = allOrders.filter(order => {
         // Tab filter
-        const fulfillment = (order.fulfillmentStatus || 'processing').toLowerCase().replaceAll(' ', '_');
+        const fulfillment = (order.fulfillmentStatus || 'placed').toLowerCase().replaceAll(' ', '_');
         const payment = (order.paymentStatus || 'pending').toLowerCase();
+        if (activeOrderFilter === 'placed' && !(fulfillment === 'placed' || fulfillment === 'confirmed')) return false;
         if (activeOrderFilter === 'processing' && fulfillment !== 'processing') return false;
         if (activeOrderFilter === 'shipped' && !(fulfillment === 'shipped' || fulfillment === 'dispatched')) return false;
         if (activeOrderFilter === 'out_for_delivery' && !(fulfillment === 'out_for_delivery' || fulfillment.includes('transit'))) return false;
         if (activeOrderFilter === 'delivered' && fulfillment !== 'delivered') return false;
+        if (activeOrderFilter === 'cancelled' && fulfillment !== 'cancelled') return false;
         if (activeOrderFilter === 'paid' && payment !== 'paid') return false;
         if (activeOrderFilter === 'pending' && payment !== 'pending') return false;
 
@@ -3702,16 +3733,28 @@
           ? `${firstItem.name || 'Artisanal Piece'} + ${items.length - 1} more`
           : (firstItem.name || 'Artisanal Piece');
 
-        const fStatus = (order.fulfillmentStatus || 'processing').toLowerCase().replaceAll(' ', '_');
-        let nextActionBtn;
-        if (fStatus === 'processing') {
-          nextActionBtn = `<button onclick="updateOrderStatus('${order.orderRef}', 'shipped')" class="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-600 hover:text-white border border-blue-200 text-[11px] transition font-semibold text-blue-800">Mark Shipped</button>`;
+        const fStatus = (order.fulfillmentStatus || 'placed').toLowerCase().replaceAll(' ', '_');
+        let nextActionBtn = '';
+        let cancelBtn = '';
+
+        // Unified 5-level forward progression in official brand palette
+        if (fStatus === 'placed' || fStatus === 'confirmed') {
+          nextActionBtn = `<button onclick="updateOrderStatus('${order.orderRef}', 'processing')" class="px-2.5 py-1.5 rounded-lg bg-[#C87A1E] hover:bg-[#8F581B] text-white text-[11px] transition font-semibold shadow-2xs inline-flex items-center space-x-1" title="Move to Level 2: Processing & Handcrafted Tailoring"><i data-lucide="scissors" class="w-3 h-3"></i><span>Start Tailoring →</span></button>`;
+        } else if (fStatus === 'processing') {
+          nextActionBtn = `<button onclick="updateOrderStatus('${order.orderRef}', 'shipped')" class="px-2.5 py-1.5 rounded-lg bg-[#C87A1E] hover:bg-[#8F581B] text-white text-[11px] transition font-semibold shadow-2xs inline-flex items-center space-x-1" title="Move to Level 3: Shipped & Handed to Courier"><i data-lucide="package-check" class="w-3 h-3"></i><span>Mark Shipped →</span></button>`;
         } else if (fStatus === 'shipped' || fStatus === 'dispatched') {
-          nextActionBtn = `<button onclick="updateOrderStatus('${order.orderRef}', 'out_for_delivery')" class="px-2.5 py-1 rounded-lg bg-purple-50 hover:bg-purple-600 hover:text-white border border-purple-200 text-[11px] transition font-semibold text-purple-800">Out for Delivery</button>`;
+          nextActionBtn = `<button onclick="updateOrderStatus('${order.orderRef}', 'out_for_delivery')" class="px-2.5 py-1.5 rounded-lg bg-[#C87A1E] hover:bg-[#8F581B] text-white text-[11px] transition font-semibold shadow-2xs inline-flex items-center space-x-1" title="Move to Level 4: Out for Delivery"><i data-lucide="truck" class="w-3 h-3"></i><span>Out for Delivery →</span></button>`;
         } else if (fStatus === 'out_for_delivery' || fStatus.includes('transit')) {
-          nextActionBtn = `<button onclick="updateOrderStatus('${order.orderRef}', 'delivered')" class="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-600 hover:text-white border border-emerald-200 text-[11px] transition font-semibold text-emerald-800">Mark Delivered</button>`;
-        } else {
-          nextActionBtn = `<button onclick="openOrderDetailModal('${order.orderRef}')" class="px-2.5 py-1 rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-200 text-[11px] transition font-medium text-gray-600">Details</button>`;
+          nextActionBtn = `<button onclick="updateOrderStatus('${order.orderRef}', 'delivered')" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] transition font-semibold shadow-2xs inline-flex items-center space-x-1" title="Move to Level 5: Delivered"><i data-lucide="check-circle-2" class="w-3 h-3"></i><span>Mark Delivered ✓</span></button>`;
+        } else if (fStatus === 'delivered') {
+          nextActionBtn = `<span class="px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-bold inline-flex items-center space-x-1"><i data-lucide="check" class="w-3 h-3 text-emerald-600"></i><span>Delivered ✓</span></span>`;
+        } else if (fStatus === 'cancelled') {
+          nextActionBtn = `<button onclick="updateOrderStatus('${order.orderRef}', 'processing')" class="px-2.5 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 text-[11px] transition font-semibold inline-flex items-center space-x-1" title="Reopen Order"><i data-lucide="rotate-ccw" class="w-3 h-3"></i><span>Reopen Order</span></button>`;
+        }
+
+        // Cancel order button available on all active levels until Delivered
+        if (fStatus !== 'delivered' && fStatus !== 'cancelled') {
+          cancelBtn = `<button onclick="confirmCancelOrder('${order.orderRef}')" class="px-2 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[11px] transition font-semibold inline-flex items-center space-x-1" title="Cancel this Order"><i data-lucide="x" class="w-3 h-3 text-rose-600"></i><span>Cancel</span></button>`;
         }
 
         return `
@@ -3734,14 +3777,15 @@
             <td class="py-3.5 px-4 font-bold text-gray-900 font-mono text-xs">
               ${formatNaira(order.totalAmount)}
             </td>
-            <td class="py-3.5 px-4">
+            <td class="py-3.5 px-4 whitespace-nowrap">
               ${getPaymentBadgeHtml(order.paymentStatus)}
             </td>
-            <td class="py-3.5 px-4">
+            <td class="py-3.5 px-4 whitespace-nowrap">
               ${getFulfillmentBadgeHtml(order.fulfillmentStatus)}
             </td>
             <td class="py-3.5 px-4 text-right space-x-1.5 whitespace-nowrap">
               ${nextActionBtn}
+              ${cancelBtn}
               <button onclick="openOrderDetailModal('${order.orderRef}')" class="p-1.5 rounded-lg bg-gray-50 hover:bg-gray-200 text-gray-600 border border-gray-200 transition" title="Full Order Dossier">
                 <i data-lucide="eye" class="w-3.5 h-3.5"></i>
               </button>
@@ -3759,6 +3803,26 @@
             ? `${firstItem.name || 'Artisanal Piece'} + ${items.length - 1} more`
             : (firstItem.name || 'Artisanal Piece');
 
+          const fStatus = (order.fulfillmentStatus || 'placed').toLowerCase().replaceAll(' ', '_');
+          let nextActionBtn = '';
+          let cancelBtn = '';
+
+          if (fStatus === 'placed' || fStatus === 'confirmed') {
+            nextActionBtn = `<button onclick="updateOrderStatus('${order.orderRef}', 'processing')" class="px-2.5 py-1 rounded-lg bg-[#C87A1E] text-white text-[11px] font-semibold">Start Tailoring →</button>`;
+          } else if (fStatus === 'processing') {
+            nextActionBtn = `<button onclick="updateOrderStatus('${order.orderRef}', 'shipped')" class="px-2.5 py-1 rounded-lg bg-[#C87A1E] text-white text-[11px] font-semibold">Mark Shipped →</button>`;
+          } else if (fStatus === 'shipped' || fStatus === 'dispatched') {
+            nextActionBtn = `<button onclick="updateOrderStatus('${order.orderRef}', 'out_for_delivery')" class="px-2.5 py-1 rounded-lg bg-[#C87A1E] text-white text-[11px] font-semibold">Out for Delivery →</button>`;
+          } else if (fStatus === 'out_for_delivery' || fStatus.includes('transit')) {
+            nextActionBtn = `<button onclick="updateOrderStatus('${order.orderRef}', 'delivered')" class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-[11px] font-semibold">Mark Delivered ✓</button>`;
+          } else if (fStatus === 'cancelled') {
+            nextActionBtn = `<button onclick="updateOrderStatus('${order.orderRef}', 'processing')" class="px-2.5 py-1 rounded-lg bg-gray-100 text-gray-700 border border-gray-300 text-[11px] font-semibold">Reopen Order</button>`;
+          }
+
+          if (fStatus !== 'delivered' && fStatus !== 'cancelled') {
+            cancelBtn = `<button onclick="confirmCancelOrder('${order.orderRef}')" class="px-2 py-1 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 text-[11px] font-semibold">Cancel</button>`;
+          }
+
           return `
             <div class="p-4 rounded-xl border border-gray-200 bg-white space-y-3 shadow-2xs">
               <div class="flex items-center justify-between">
@@ -3768,7 +3832,7 @@
                   </button>
                   <div class="text-[10px] text-gray-400">${formatOrderDate(order.createdAt)}</div>
                 </div>
-                <div class="flex items-center space-x-1.5">
+                <div class="flex items-center space-x-1.5 flex-wrap gap-y-1">
                   ${getPaymentBadgeHtml(order.paymentStatus)}
                   ${getFulfillmentBadgeHtml(order.fulfillmentStatus)}
                 </div>
@@ -3784,9 +3848,11 @@
                 <div class="font-bold font-mono text-gray-900 text-xs">
                   ${formatNaira(order.totalAmount)}
                 </div>
-                <div class="flex items-center space-x-2">
-                  <button onclick="openOrderDetailModal('${order.orderRef}')" class="px-3 py-1 rounded-lg bg-gray-900 text-white text-[11px] font-bold">
-                    Manage Order
+                <div class="flex items-center space-x-1.5">
+                  ${nextActionBtn}
+                  ${cancelBtn}
+                  <button onclick="openOrderDetailModal('${order.orderRef}')" class="px-2 py-1 rounded-lg bg-gray-900 text-white text-[11px] font-bold">
+                    Details
                   </button>
                 </div>
               </div>
@@ -3816,11 +3882,15 @@
       // Ingest status selectors
       const fSelect = document.getElementById('modalFulfillmentSelect');
       if (fSelect) {
-        const rawStatus = (order.fulfillmentStatus || 'processing').toLowerCase().replaceAll(' ', '_');
+        const rawStatus = (order.fulfillmentStatus || 'placed').toLowerCase().replaceAll(' ', '_');
         if (rawStatus === 'dispatched') {
           fSelect.value = 'shipped';
         } else if (rawStatus.includes('transit')) {
           fSelect.value = 'out_for_delivery';
+        } else if (rawStatus === 'confirmed') {
+          fSelect.value = 'placed';
+        } else if (rawStatus === 'tailoring') {
+          fSelect.value = 'processing';
         } else {
           fSelect.value = rawStatus;
         }

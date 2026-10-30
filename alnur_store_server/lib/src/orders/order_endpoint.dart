@@ -50,7 +50,7 @@ class OrderEndpoint extends Endpoint {
           shippingAddress: shippingAddress.trim(),
           totalAmount: totalAmount,
           paymentStatus: paymentReference != null ? 'paid' : 'pending',
-          fulfillmentStatus: 'processing',
+          fulfillmentStatus: 'placed',
           idempotencyKey: idempotencyKey,
           paymentReference: paymentReference,
           itemsJson: itemsJson,
@@ -94,14 +94,21 @@ class OrderEndpoint extends Endpoint {
     );
   }
 
-  /// Normalizes status strings into the canonical lifecycle flow:
-  /// processing -> shipped -> out_for_delivery -> delivered (or cancelled)
+  /// Normalizes status strings into the canonical 5-level lifecycle flow:
+  /// 1. placed (Order Placed & Confirmed)
+  /// 2. processing (Processing & Handcrafted Tailoring)
+  /// 3. shipped (Shipped & Handed to Courier)
+  /// 4. out_for_delivery (Out for Delivery)
+  /// 5. delivered (Delivered)
+  /// or cancelled.
   static String normalizeFulfillmentStatus(String raw) {
     final lower = raw.toLowerCase().trim().replaceAll(' ', '_');
     if (lower.contains('cancel')) return 'cancelled';
     if (lower.contains('deliver') || lower.contains('complete')) return 'delivered';
     if (lower.contains('out_for_delivery') || lower.contains('transit')) return 'out_for_delivery';
-    if (lower.contains('ship') || lower.contains('dispatch')) return 'shipped';
+    if (lower.contains('ship') || lower.contains('dispatch') || lower.contains('courier')) return 'shipped';
+    if (lower.contains('tailor') || lower.contains('process') || lower.contains('craft')) return 'processing';
+    if (lower.contains('place') || lower.contains('confirm')) return 'placed';
     return 'processing';
   }
 
@@ -307,15 +314,25 @@ class OrderEndpoint extends Endpoint {
     String statusLabel;
     String statusDesc;
     switch (canonicalStatus) {
-      case 'shipped':
-        statusLabel = 'SHIPPED';
+      case 'placed':
+        statusLabel = 'ORDER PLACED & CONFIRMED';
         statusDesc =
-            'Your package has been carefully prepared and dispatched with our logistics courier.';
+            'Your order has been officially confirmed and logged in our artisanal atelier.';
+        break;
+      case 'processing':
+        statusLabel = 'PROCESSING & HANDCRAFTED TAILORING';
+        statusDesc =
+            'Our master tailors have begun cutting, embellishing, and handcrafting your bespoke couture.';
+        break;
+      case 'shipped':
+        statusLabel = 'SHIPPED & HANDED TO COURIER';
+        statusDesc =
+            'Your package has been securely sealed in our gold-foil box and handed to our courier partner.';
         break;
       case 'out_for_delivery':
         statusLabel = 'OUT FOR DELIVERY';
         statusDesc =
-            'Our courier driver is actively on the road heading to your delivery destination.';
+            'Our courier rider is actively en route heading to your delivery destination.';
         break;
       case 'delivered':
         statusLabel = 'DELIVERED';
