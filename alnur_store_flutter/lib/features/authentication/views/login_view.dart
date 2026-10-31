@@ -463,7 +463,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
                   text: 'Send Verification Code',
                   isLoading: isSubmitting,
                   onPressed: () async {
-                    final email = resetEmailController.text.trim();
+                    final email = resetEmailController.text.trim().toLowerCase();
                     if (email.isEmpty) {
                       setModalState(() => localError = 'Please enter your email.');
                       return;
@@ -484,10 +484,18 @@ class _LoginViewState extends ConsumerState<LoginView> {
                         localError = null;
                       });
                     } catch (e) {
+                      final err = e.toString().toLowerCase();
+                      String friendly;
+                      if (err.contains('notfound') || err.contains('not found')) {
+                        friendly = 'No account found with this email. Please check your spelling or register.';
+                      } else if (err.contains('toomany') || err.contains('too many')) {
+                        friendly = 'Too many attempts. Please wait 15 minutes before requesting again.';
+                      } else {
+                        friendly = 'Unable to send reset code: ${e.toString().replaceAll('Exception:', '').trim()}';
+                      }
                       setModalState(() {
                         isSubmitting = false;
-                        localError =
-                            'Unable to send reset code: ${e.toString().replaceAll('Exception:', '').trim()}';
+                        localError = friendly;
                       });
                     }
                   },

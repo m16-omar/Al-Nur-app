@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:mailer/mailer.dart';
-import 'package:mailer/smtp_server/gmail.dart';
+import 'package:mailer/smtp_server.dart';
 import 'package:serverpod/serverpod.dart' hide Message;
 
 /// Service for sending transactional emails (Registration OTP, Password Reset,
@@ -181,7 +181,14 @@ class EmailService {
     }
 
     try {
-      final smtpServer = gmail(senderEmail, appPassword);
+      // 1. Primary: Direct SSL on port 465 (Reliable in cloud containers & data centers)
+      final smtpServer = SmtpServer(
+        'smtp.gmail.com',
+        port: 465,
+        ssl: true,
+        username: senderEmail,
+        password: appPassword,
+      );
 
       final message = Message()
         ..from = Address(senderEmail, senderName)
@@ -189,21 +196,50 @@ class EmailService {
         ..subject = subject
         ..html = htmlBody;
 
-      final sendReport = await send(message, smtpServer);
+      final sendReport = await send(message, smtpServer).timeout(
+        const Duration(seconds: 12),
+      );
       session.log(
-        '[EmailService] ✅ Email sent successfully to $toEmail (SMTP code: ${sendReport.toString()})',
+        '[EmailService] ✅ Email sent successfully via Port 465 SSL to $toEmail (SMTP: ${sendReport.toString()})',
       );
       return true;
     } catch (e, stack) {
       session.log(
-        '[EmailService] ❌ Failed to dispatch email via Gmail SMTP: $e\n$stack',
-        level: LogLevel.error,
+        '[EmailService] ⚠️ Port 465 attempt notice: $e. Retrying Port 587 STARTTLS...',
       );
-      // Log fallback code so registration/reset is not blocked if Google temporarily limits
-      session.log(
-        '[EmailService] ⚠️ Fallback delivery reference: $fallbackType to $toEmail',
-      );
-      return false;
+      try {
+        final smtpServer587 = SmtpServer(
+          'smtp.gmail.com',
+          port: 587,
+          ssl: false,
+          username: senderEmail,
+          password: appPassword,
+        );
+
+        final message = Message()
+          ..from = Address(senderEmail, senderName)
+          ..recipients.add(toEmail)
+          ..subject = subject
+          ..html = htmlBody;
+
+        final sendReport = await send(message, smtpServer587).timeout(
+          const Duration(seconds: 8),
+        );
+        session.log(
+          '[EmailService] ✅ Email sent successfully via Port 587 to $toEmail (SMTP: ${sendReport.toString()})',
+        );
+        return true;
+      } catch (err) {
+        session.log(
+          '[EmailService] ❌ Failed to dispatch email via Gmail SMTP: $err\n$stack',
+          level: LogLevel.error,
+        );
+        // Log fallback code so registration/reset is not blocked if Google temporarily limits
+        session.log(
+          '[EmailService] ⚠️ Fallback delivery reference: $fallbackType to $toEmail',
+        );
+        return false;
+      }
     }
   }
 
