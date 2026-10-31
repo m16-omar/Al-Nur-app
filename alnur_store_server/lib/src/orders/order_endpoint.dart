@@ -62,27 +62,18 @@ class OrderEndpoint extends Endpoint {
         final insertedOrder =
             await StoreOrder.db.insertRow(session, newOrder);
 
-        // Dispatch branded confirmation email to customer asynchronously without blocking order commit
+        // Dispatch branded confirmation email (Stage 1: Order Placed & Confirmed) to customer asynchronously
         unawaited(
-          EmailService.sendNotificationEmail(
+          EmailService.sendOrderStatusEmail(
             session,
-            toEmail: customerEmail,
-            recipientName: customerName,
-            subject: '✨ Al-Nur Luxury Order Confirmation [$orderRef]',
-            headerTitle: 'Order Confirmed: $orderRef',
-            messageHtml: '''
-              <p style="margin-bottom:14px;">Assalamu alaykum ${customerName.isNotEmpty ? customerName : 'Valued Customer'},</p>
-              <p style="margin-bottom:16px;">Thank you for shopping with <strong>Al-Nur Modest Haute Couture</strong>. We have received your order and our artisans have commenced fulfillment.</p>
-              <div style="background:#F9FAFB;padding:16px;border-radius:12px;margin:16px 0;border:1px solid #E5E7EB;">
-                <p style="margin:0 0 8px 0;font-size:13px;"><strong>Order Reference:</strong> <span style="font-family:monospace;color:#0B291E;">$orderRef</span></p>
-                <p style="margin:0 0 8px 0;font-size:13px;"><strong>Total Amount:</strong> ₦${totalAmount.toStringAsFixed(0)}</p>
-                <p style="margin:0 0 8px 0;font-size:13px;"><strong>Shipping Address:</strong> $shippingAddress</p>
-                <p style="margin:0;font-size:13px;"><strong>Payment Status:</strong> <span style="color:#059669;font-weight:bold;">${newOrder.paymentStatus.toUpperCase()}</span></p>
-              </div>
-              <p style="color:#6B7280;font-size:12px;margin-top:14px;">Your modest couture items are carefully packaged in our gold-foil heirloom boxes.</p>
-            ''',
-          ).timeout(const Duration(seconds: 5)).catchError((e) {
-            session.log('Failed to dispatch order receipt: $e',
+            orderRef: orderRef,
+            customerEmail: customerEmail.toLowerCase().trim(),
+            customerName: customerName.trim(),
+            shippingAddress: shippingAddress.trim(),
+            totalAmount: totalAmount,
+            canonicalStatus: 'placed',
+          ).timeout(const Duration(seconds: 8)).catchError((e) {
+            session.log('Failed to dispatch order status email: $e',
                 level: LogLevel.warning);
             return false;
           }),
@@ -316,66 +307,28 @@ class OrderEndpoint extends Endpoint {
 
     final updated = await StoreOrder.db.updateRow(session, order);
 
-    // Friendly status metadata for email dispatch
-    String statusLabel;
-    String statusDesc;
-    switch (canonicalStatus) {
-      case 'placed':
-        statusLabel = 'ORDER PLACED & CONFIRMED';
-        statusDesc =
-            'Your order has been officially confirmed and logged in our artisanal atelier.';
-        break;
-      case 'processing':
-        statusLabel = 'PROCESSING & HANDCRAFTED TAILORING';
-        statusDesc =
-            'Our master tailors have begun cutting, embellishing, and handcrafting your bespoke couture.';
-        break;
-      case 'shipped':
-        statusLabel = 'SHIPPED & HANDED TO COURIER';
-        statusDesc =
-            'Your package has been securely sealed in our gold-foil box and handed to our courier partner.';
-        break;
-      case 'out_for_delivery':
-        statusLabel = 'OUT FOR DELIVERY';
-        statusDesc =
-            'Our courier rider is actively en route heading to your delivery destination.';
-        break;
-      case 'delivered':
-        statusLabel = 'DELIVERED';
-        statusDesc =
-            'Your order has been signed and delivered. May Allah bless your modest purchase!';
-        break;
-      case 'cancelled':
-        statusLabel = 'CANCELLED';
-        statusDesc =
-            'Your order has been cancelled. If you have questions, please reach out to customer care.';
-        break;
-      default:
-        statusLabel = 'PROCESSING';
-        statusDesc =
-            'Our artisans are tailoring and preparing your modest couture garments.';
-    }
-
-    if (order.customerEmail.isNotEmpty && canonicalStatus != 'processing') {
-      try {
-        await EmailService.sendNotificationEmail(
+    // Dispatch branded status lifecycle email to customer for all stages:
+    // 1. Order Placed & Confirmed
+    // 2. Processing & Handcrafted Tailoring
+    // 3. Shipped & Handed to Courier
+    // 4. Out for Delivery
+    // 5. Delivered
+    if (order.customerEmail.isNotEmpty) {
+      unawaited(
+        EmailService.sendOrderStatusEmail(
           session,
-          toEmail: order.customerEmail,
-          recipientName: order.customerName,
-          subject:
-              'Al-Nur Order Update: Order #${order.orderRef} is $statusLabel',
-          headerTitle: 'Order Update: #${order.orderRef}',
-          messageHtml: '''
-            <p>Dear ${order.customerName.isNotEmpty ? order.customerName : 'Valued Customer'},</p>
-            <p>Your order <strong>#${order.orderRef}</strong> has been updated to: <strong style="color:#C87A1E;">$statusLabel</strong>.</p>
-            <p style="margin:12px 0;color:#4B5563;">$statusDesc</p>
-            <p><strong>Delivery Address:</strong> <em>${order.shippingAddress}</em></p>
-            <p style="color:#6B7280;font-size:12px;margin-top:20px;">May Allah bless your purchase with Al-Nur.</p>
-          ''',
-        );
-      } catch (e) {
-        session.log('Email notice: $e', level: LogLevel.info);
-      }
+          orderRef: order.orderRef,
+          customerEmail: order.customerEmail.trim(),
+          customerName: order.customerName.trim(),
+          shippingAddress: order.shippingAddress,
+          totalAmount: order.totalAmount,
+          canonicalStatus: canonicalStatus,
+        ).timeout(const Duration(seconds: 8)).catchError((e) {
+          session.log('Failed to dispatch status email: $e',
+              level: LogLevel.warning);
+          return false;
+        }),
+      );
     }
 
     return updated;

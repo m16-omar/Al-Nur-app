@@ -173,6 +173,169 @@ class EmailService {
     );
   }
 
+  /// Dispatches branded status lifecycle emails for all 5 fulfillment stages:
+  /// 1. Order Placed & Confirmed
+  /// 2. Processing & Handcrafted Tailoring
+  /// 3. Shipped & Handed to Courier
+  /// 4. Out for Delivery
+  /// 5. Delivered
+  static Future<bool> sendOrderStatusEmail(
+    Session session, {
+    required String orderRef,
+    required String customerEmail,
+    required String customerName,
+    required String shippingAddress,
+    required double totalAmount,
+    required String canonicalStatus,
+  }) async {
+    final status = canonicalStatus.toLowerCase().trim();
+    int currentStep = 1;
+    String stageNumber = '1';
+    String stageTitle = 'Order Placed & Confirmed';
+    String subjectPrefix = '✨';
+    String description =
+        'Your order has been officially confirmed and registered in our artisanal atelier. Our tailoring team is preparing your garments.';
+
+    if (status.contains('cancel')) {
+      currentStep = 0;
+      stageNumber = '✕';
+      stageTitle = 'Order Cancelled';
+      subjectPrefix = '⚠️';
+      description =
+          'Your order has been cancelled. If this was unexpected or you require assistance, please contact our VIP Concierge support.';
+    } else if (status.contains('deliver')) {
+      currentStep = 5;
+      stageNumber = '5';
+      stageTitle = 'Delivered';
+      subjectPrefix = '🎉';
+      description =
+          'Alhamdulillah! Your haute couture parcel has been successfully delivered and signed for. May Allah shower barakah and modesty upon your home.';
+    } else if (status.contains('out_for_delivery') || status.contains('transit')) {
+      currentStep = 4;
+      stageNumber = '4';
+      stageTitle = 'Out for Delivery';
+      subjectPrefix = '🚚';
+      description =
+          'Our dispatch courier rider is actively en route heading towards your delivery address. Please ensure your contact phone is available for handover.';
+    } else if (status.contains('ship') || status.contains('dispatch') || status.contains('courier')) {
+      currentStep = 3;
+      stageNumber = '3';
+      stageTitle = 'Shipped & Handed to Courier';
+      subjectPrefix = '📦';
+      description =
+          'Your modest garments have been inspected, sealed in our signature gold-foil heirloom box, and handed over to our trusted courier partner.';
+    } else if (status.contains('process') || status.contains('tailor') || status.contains('craft')) {
+      currentStep = 2;
+      stageNumber = '2';
+      stageTitle = 'Processing & Handcrafted Tailoring';
+      subjectPrefix = '✂️';
+      description =
+          'Our master artisans and tailors have commenced cutting, stitching, and handcrafted embellishment on your bespoke couture.';
+    }
+
+    final subject = '$subjectPrefix Al-Nur Order #$orderRef: $stageTitle';
+    final recipient = customerName.trim().isNotEmpty ? customerName.trim() : 'Valued Patron';
+
+    // Build the visual 5-step progress stepper
+    final steps = [
+      {'num': '1', 'name': 'Placed'},
+      {'num': '2', 'name': 'Tailoring'},
+      {'num': '3', 'name': 'Shipped'},
+      {'num': '4', 'name': 'Delivery'},
+      {'num': '5', 'name': 'Delivered'},
+    ];
+
+    final stepperHtml = StringBuffer();
+    stepperHtml.write('<table style="width:100%;border-collapse:collapse;margin:24px 0 16px;"><tr>');
+    for (int i = 0; i < steps.length; i++) {
+      final stepIndex = i + 1;
+      final step = steps[i];
+      final isCompleted = currentStep > stepIndex;
+      final isCurrent = currentStep == stepIndex;
+
+      String circleBg;
+      String circleColor;
+      String circleBorder;
+      String circleContent;
+
+      if (isCompleted) {
+        circleBg = '#0B291E';
+        circleColor = '#FFFFFF';
+        circleBorder = '2px solid #C87A1E';
+        circleContent = '✓';
+      } else if (isCurrent) {
+        circleBg = '#C87A1E';
+        circleColor = '#FFFFFF';
+        circleBorder = '2px solid #2E110A';
+        circleContent = step['num']!;
+      } else {
+        circleBg = '#F3F4F6';
+        circleColor = '#9CA3AF';
+        circleBorder = '2px solid #E5E7EB';
+        circleContent = step['num']!;
+      }
+
+      final labelColor = isCurrent ? '#C87A1E' : (isCompleted ? '#0B291E' : '#9CA3AF');
+      final fontWeight = (isCurrent || isCompleted) ? 'bold' : 'normal';
+
+      stepperHtml.write('''
+        <td style="text-align:center;width:20%;vertical-align:top;padding:0 2px;">
+          <div style="width:30px;height:30px;border-radius:50%;margin:0 auto;line-height:30px;font-size:12px;font-weight:bold;background:$circleBg;color:$circleColor;border:$circleBorder;text-align:center;">
+            $circleContent
+          </div>
+          <div style="font-size:10px;font-weight:$fontWeight;color:$labelColor;margin-top:6px;line-height:1.2;">
+            \${step['name']}
+          </div>
+        </td>
+      ''');
+    }
+    stepperHtml.write('</tr></table>');
+
+    final messageHtml = '''
+      <div style="background:#FAF7F2;border:1px solid #E5A83B;border-radius:14px;padding:18px 20px;margin-bottom:20px;">
+        <span style="font-size:11px;font-weight:700;color:#C87A1E;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Current Order Stage</span>
+        <div style="font-size:18px;font-weight:800;color:#2E110A;margin-bottom:8px;">
+          $stageNumber. $stageTitle
+        </div>
+        <p style="margin:0;font-size:13px;color:#4B5563;line-height:1.6;">$description</p>
+      </div>
+
+      $stepperHtml
+
+      <div style="background:#FFFFFF;border:1px solid #E5E7EB;border-radius:12px;padding:18px 20px;margin:20px 0;">
+        <div style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;border-bottom:1px solid #F3F4F6;padding-bottom:6px;">Order Details</div>
+        <table style="width:100%;font-size:13px;color:#374151;border-collapse:collapse;">
+          <tr>
+            <td style="padding:6px 0;color:#6B7280;">Order Reference:</td>
+            <td style="padding:6px 0;text-align:right;font-family:monospace;font-weight:bold;color:#2E110A;">$orderRef</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;color:#6B7280;">Total Amount:</td>
+            <td style="padding:6px 0;text-align:right;font-weight:bold;color:#059669;">₦\${totalAmount.toStringAsFixed(0)}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;color:#6B7280;vertical-align:top;">Shipping Address:</td>
+            <td style="padding:6px 0;text-align:right;color:#374151;max-width:240px;">$shippingAddress</td>
+          </tr>
+        </table>
+      </div>
+
+      <p style="font-size:12px;color:#6B7280;margin-top:20px;text-align:center;line-height:1.6;">
+        For questions or VIP styling requests, reply directly to this email or contact our WhatsApp Concierge.<br>
+        <strong>Al-Nur Modest Haute Couture • Sealed with Modesty & Barakah</strong>
+      </p>
+    ''';
+
+    return await sendNotificationEmail(
+      session,
+      toEmail: customerEmail,
+      recipientName: recipient,
+      subject: subject,
+      headerTitle: 'Order Update: $orderRef',
+      messageHtml: messageHtml,
+    );
+  }
+
   /// Sends a branded luxury welcome email to newly registered patrons.
   static Future<bool> sendWelcomeEmail(
     Session session, {
