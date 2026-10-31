@@ -296,11 +296,15 @@ class AuthController extends Notifier<AuthState> {
       await OnboardingPreferences.saveUserPhone(phone.trim());
       await OnboardingPreferences.setGuestMode(false);
 
-      // Dispatch luxury Al-Nur VIP welcome email in background
+      // Persist profile to PostgreSQL database
       try {
-        client.user.sendWelcomeEmail(email: cleanEmail, name: cleanName);
+        await client.user.registerCustomer(
+          email: cleanEmail,
+          fullName: cleanName,
+          phoneNumber: phone.trim(),
+        );
       } catch (err) {
-        debugPrint('[AuthController] Notice sending welcome email: $err');
+        debugPrint('[AuthController] Notice registering user profile: $err');
       }
 
       state = state.copyWith(
@@ -324,11 +328,15 @@ class AuthController extends Notifier<AuthState> {
       await OnboardingPreferences.saveUserPhone(phone.trim());
       await OnboardingPreferences.setGuestMode(false);
 
-      // Dispatch luxury Al-Nur VIP welcome email in background
+      // Persist profile to PostgreSQL database
       try {
-        client.user.sendWelcomeEmail(email: cleanEmail, name: cleanName);
+        await client.user.registerCustomer(
+          email: cleanEmail,
+          fullName: cleanName,
+          phoneNumber: phone.trim(),
+        );
       } catch (err) {
-        debugPrint('[AuthController] Notice sending welcome email: $err');
+        debugPrint('[AuthController] Notice registering user profile: $err');
       }
 
       state = state.copyWith(

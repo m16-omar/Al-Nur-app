@@ -1223,6 +1223,47 @@ class Endpoints extends _i1.EndpointDispatch {
                     name: params['name'],
                   ),
         ),
+        'registerCustomer': _i1.MethodConnector(
+          name: 'registerCustomer',
+          params: {
+            'email': _i1.ParameterDescription(
+              name: 'email',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'fullName': _i1.ParameterDescription(
+              name: 'fullName',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'phoneNumber': _i1.ParameterDescription(
+              name: 'phoneNumber',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['user'] as _i10.UserEndpoint).registerCustomer(
+                    session,
+                    email: params['email'],
+                    fullName: params['fullName'],
+                    phoneNumber: params['phoneNumber'],
+                  ),
+        ),
+        'getAdminCustomers': _i1.MethodConnector(
+          name: 'getAdminCustomers',
+          params: {},
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['user'] as _i10.UserEndpoint)
+                  .getAdminCustomers(session),
+        ),
       },
     );
     modules['serverpod_auth_idp'] = _i15.Endpoints()

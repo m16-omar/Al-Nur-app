@@ -53,3 +53,5 @@ user:
   - setDefaultAddress:
   - deleteAddress:
   - sendWelcomeEmail:
+  - registerCustomer:
+  - getAdminCustomers:

@@ -761,6 +761,28 @@ class EndpointUser extends _i1.EndpointRef {
       'name': name,
     },
   );
+
+  /// Registers or updates a customer profile and ensures it is persisted in the PostgreSQL database.
+  _i2.Future<_i11.UserAccountInfo> registerCustomer({
+    required String email,
+    required String fullName,
+    String? phoneNumber,
+  }) => caller.callServerEndpoint<_i11.UserAccountInfo>(
+    'user',
+    'registerCustomer',
+    {
+      'email': email,
+      'fullName': fullName,
+      'phoneNumber': phoneNumber,
+    },
+  );
+
+  /// Retrieves live registered customers and buyers directly from PostgreSQL database.
+  _i2.Future<String> getAdminCustomers() => caller.callServerEndpoint<String>(
+    'user',
+    'getAdminCustomers',
+    {},
+  );
 }
 
 class Modules {

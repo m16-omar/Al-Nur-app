@@ -1,14 +1,70 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
 import 'package:serverpod/serverpod.dart' hide Message;
 
 /// Service for sending transactional emails (Registration OTP, Password Reset,
-/// Order Receipts, and VIP Concierge notifications) using Gmail SMTP.
+/// Order Receipts, and VIP Concierge notifications) using HTTPS Port 443 relay
+/// and Gmail SMTP fallback.
 class EmailService {
   static const String senderEmailDefault = 'uabdullahi676@gmail.com';
   static const String fallbackAppPassword = 'pqadrynmtgfenttd';
   static const String senderName = 'Al-Nur Modest Haute Couture';
+
+  static const String relayUrl = 'https://al-nur-tau.vercel.app/api/send-email';
+  static const String relaySecret = 'alnur_luxury_vault_2026';
+
+  /// Dispatches email over HTTPS Port 443 REST relay to bypass container firewall blocks
+  static Future<bool> _dispatchViaHttpsRelay(
+    Session session, {
+    required String toEmail,
+    required String subject,
+    required String htmlBody,
+  }) async {
+    HttpClient? httpClient;
+    try {
+      httpClient = HttpClient()..connectionTimeout = const Duration(seconds: 8);
+      final request = await httpClient.postUrl(Uri.parse(relayUrl)).timeout(
+        const Duration(seconds: 8),
+      );
+      request.headers.contentType = ContentType.json;
+
+      final payload = jsonEncode({
+        'key': relaySecret,
+        'to': toEmail,
+        'subject': subject,
+        'html': htmlBody,
+      });
+
+      request.write(payload);
+      final response = await request.close().timeout(
+        const Duration(seconds: 10),
+      );
+
+      final responseBody = await response.transform(utf8.decoder).join();
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(responseBody);
+        if (decoded is Map && decoded['success'] == true) {
+          session.log(
+            '[EmailService] ✅ Email dispatched successfully via HTTPS Port 443 relay to $toEmail',
+          );
+          return true;
+        }
+      }
+      session.log(
+        '[EmailService] ⚠️ Relay returned status ${response.statusCode}: $responseBody',
+      );
+      return false;
+    } catch (e) {
+      session.log(
+        '[EmailService] ⚠️ HTTPS relay notice: $e. Falling back to direct SMTP...',
+      );
+      return false;
+    } finally {
+      httpClient?.close();
+    }
+  }
 
   /// Retrieves the configured SMTP App Password from Serverpod passwords.yaml
   /// or environment variable fallback, with safe production default.
@@ -160,7 +216,7 @@ class EmailService {
     );
   }
 
-  /// Core email dispatcher via Gmail SMTP.
+  /// Core email dispatcher via HTTPS Port 443 relay with Gmail SMTP fallback.
   static Future<bool> _sendEmail(
     Session session, {
     required String toEmail,
@@ -168,6 +224,18 @@ class EmailService {
     required String htmlBody,
     required String fallbackType,
   }) async {
+    // 1. Primary: HTTPS Port 443 Relay (Bypasses Serverpod Cloud GCP port 465/587 blocks)
+    final relaySuccess = await _dispatchViaHttpsRelay(
+      session,
+      toEmail: toEmail,
+      subject: subject,
+      htmlBody: htmlBody,
+    );
+    if (relaySuccess) {
+      return true;
+    }
+
+    // 2. Direct SMTP Fallback (for local development or when relay is unreachable)
     final senderEmail = getSenderEmail(session);
     final appPassword = getAppPassword(session);
 

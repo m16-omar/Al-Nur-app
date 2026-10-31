@@ -721,10 +721,10 @@
             </div>
             
             <div class="flex items-center space-x-3">
-              <!-- Live Activity Simulation Toggle -->
-              <button onclick="togglePresenceSimulation()" id="btnSimulation" class="px-3 py-2 rounded-xl border border-emerald-300 text-xs text-emerald-700 bg-emerald-50 font-semibold flex items-center space-x-2 hover:bg-emerald-100 transition shadow-2xs" title="Simulates shoppers browsing, cart actions, and session toggling in real-time">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-                <span id="txtSimulation">Live Stream: Active</span>
+              <!-- Live Sync Customers Button -->
+              <button onclick="loadLiveCustomers()" id="btnSyncCustomers" class="px-3.5 py-2 rounded-xl border border-[#E5A83B]/40 text-xs text-[#8F581B] bg-[#FAF3E8] font-semibold flex items-center space-x-2 hover:bg-[#F5E8D3] transition shadow-2xs" title="Sync real registered users from PostgreSQL database">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-[#C87A1E]"></i>
+                <span>Sync Customers</span>
               </button>
 
               <div class="relative">
@@ -1874,224 +1874,14 @@
       });
     }
 
-    // Default Seeded Modest Shoppers & Administrators with clear definitions:
-    // 1. isOnline: true/false (real-time browsing presence)
-    // 2. Active Buyer: placed orders and last order within 6 months
-    // 3. Inactive (Never Ordered): ordersCount === 0 (registered shopper who never bought anything)
-    // 4. Dormant (6+ Months Inactive): placed order before, but last order is > 6 months ago (break for 6 months)
-    const DEFAULT_USERS = [
-      {
-        id: 1,
-        name: 'Amina Al-Mansoor',
-        email: 'amina@alnur.store',
-        phone: '+234 803 987 6543',
-        role: 'Super Administrator',
-        sizeProfile: 'Abaya 56 • Medina Silk Enthusiast',
-        location: 'Lekki Phase 1, Lagos',
-        ordersCount: 36,
-        lifetimeSpend: 1250000,
-        lastOrderDate: '2 hours ago',
-        isDormantSixMonths: false,
-        status: 'Active',
-        isOnline: false,
-        currentActivity: 'Offline',
-        lastSeen: '15 mins ago'
-      },
-      {
-        id: 2,
-        name: 'Fatima Zahra',
-        email: 'fatima.zahra@alnur.store',
-        phone: '+234 812 345 6789',
-        role: 'VIP Gold Member',
-        sizeProfile: 'Abaya 58 • Korean Nida Weave',
-        location: 'Maitama, Abuja FCT',
-        ordersCount: 14,
-        lifetimeSpend: 420000,
-        lastOrderDate: '3 days ago',
-        isDormantSixMonths: false,
-        status: 'Active',
-        isOnline: false,
-        currentActivity: 'Offline',
-        lastSeen: '2 hours ago'
-      },
-      {
-        id: 3,
-        name: 'Dr. Zainab Al-Hassan',
-        email: 'dr.zainab@hospital.ng',
-        phone: '+234 809 999 8888',
-        role: 'VIP Gold Member',
-        sizeProfile: 'Abaya 54 • Royal Oud Collector',
-        location: 'Victoria Island, Lagos',
-        ordersCount: 18,
-        lifetimeSpend: 680000,
-        lastOrderDate: 'Yesterday',
-        isDormantSixMonths: false,
-        status: 'Active',
-        isOnline: false,
-        currentActivity: 'Offline',
-        lastSeen: 'Yesterday'
-      },
-      {
-        id: 4,
-        name: 'Hajiya Maryam Bello',
-        email: 'maryam.bello@kano.gov.ng',
-        phone: '+234 803 111 2233',
-        role: 'VIP Gold Member',
-        sizeProfile: 'Abaya 58 • Aisha Bridal Sets',
-        location: 'Nassarawa GRA, Kano State',
-        ordersCount: 22,
-        lifetimeSpend: 890000,
-        lastOrderDate: '1 week ago',
-        isDormantSixMonths: false,
-        status: 'Active',
-        isOnline: false,
-        currentActivity: 'Offline',
-        lastSeen: '35 mins ago'
-      },
-      {
-        id: 5,
-        name: 'Ibrahim Danladi',
-        email: 'ibrahim.d@alnur.store',
-        phone: '+234 802 555 4321',
-        role: 'Store Manager',
-        sizeProfile: 'Thobe 56L • Crisp Cotton',
-        location: 'Central Area, Abuja',
-        ordersCount: 8,
-        lifetimeSpend: 195000,
-        lastOrderDate: '4 days ago',
-        isDormantSixMonths: false,
-        status: 'Active',
-        isOnline: false,
-        currentActivity: 'Offline',
-        lastSeen: '45 mins ago'
-      },
-      {
-        id: 6,
-        name: 'Bilkisu Yusuf',
-        email: 'bilkisu.y@outlook.com',
-        phone: '+234 813 444 9876',
-        role: 'Customer',
-        sizeProfile: 'Abaya 56 • Everyday Chiffon',
-        location: 'Kaduna South, Kaduna',
-        ordersCount: 0, // NEVER PLACED AN ORDER
-        lifetimeSpend: 0,
-        lastOrderDate: null,
-        isDormantSixMonths: false,
-        status: 'Active',
-        isOnline: true,
-        currentActivity: 'Browsing Silk Khimars (Cart: ₦0)',
-        lastSeen: 'Now'
-      },
-      {
-        id: 7,
-        name: 'Zahrah El-Bashir',
-        email: 'zahrah@crepe-fashion.ae',
-        phone: '+971 50 123 4567',
-        role: 'VIP Gold Member',
-        sizeProfile: 'Abaya 54 • Double-Layer Organza',
-        location: 'Lagos / Dubai',
-        ordersCount: 15,
-        lifetimeSpend: 540000,
-        lastOrderDate: '2 weeks ago',
-        isDormantSixMonths: false,
-        status: 'Active',
-        isOnline: false,
-        currentActivity: 'Offline',
-        lastSeen: '3 hours ago'
-      },
-      {
-        id: 8,
-        name: 'Khadijah Umar',
-        email: 'khadijah.u@yahoo.com',
-        phone: '+234 818 222 3344',
-        role: 'Customer',
-        sizeProfile: 'Abaya 58 • Silk Khimars',
-        location: 'Port Harcourt, Rivers',
-        ordersCount: 3,
-        lifetimeSpend: 54500,
-        lastOrderDate: 'Oct 14, 2025 (8 months ago)', // DORMANT: 6+ MONTHS BREAK
-        isDormantSixMonths: true,
-        status: 'Active',
-        isOnline: false,
-        currentActivity: 'Offline',
-        lastSeen: '6 days ago'
-      },
-      {
-        id: 9,
-        name: 'Suleiman Al-Mansoor',
-        email: 'suleiman@alnur.store',
-        phone: '+234 803 777 6655',
-        role: 'Super Administrator',
-        sizeProfile: 'Thobe 58XL • Minimalist Collar',
-        location: 'Ikoyi, Lagos',
-        ordersCount: 12,
-        lifetimeSpend: 340000,
-        lastOrderDate: '3 weeks ago',
-        isDormantSixMonths: false,
-        status: 'Active',
-        isOnline: false,
-        currentActivity: 'Offline',
-        lastSeen: 'Yesterday'
-      },
-      {
-        id: 10,
-        name: 'Asiya Mohammed',
-        email: 'asiya.m@gmail.com',
-        phone: '+234 807 888 1234',
-        role: 'Customer',
-        sizeProfile: 'Abaya 52 • Pastel Tones',
-        location: 'Bodija, Ibadan',
-        ordersCount: 0, // NEVER PLACED AN ORDER
-        lifetimeSpend: 0,
-        lastOrderDate: null,
-        isDormantSixMonths: false,
-        status: 'Active',
-        isOnline: false,
-        currentActivity: 'Offline',
-        lastSeen: '2 weeks ago'
-      },
-      {
-        id: 11,
-        name: 'Mansur Bello',
-        email: 'mansur.bello@kano.biz',
-        phone: '+234 803 333 9988',
-        role: 'Customer',
-        sizeProfile: 'Thobe 56L • Royal Amber',
-        location: 'Kano City, Kano',
-        ordersCount: 2,
-        lifetimeSpend: 46000,
-        lastOrderDate: 'Aug 22, 2025 (10 months ago)', // DORMANT: 6+ MONTHS BREAK
-        isDormantSixMonths: true,
-        status: 'Active',
-        isOnline: false,
-        currentActivity: 'Offline',
-        lastSeen: '1 month ago'
-      },
-      {
-        id: 12,
-        name: 'Halima Sadiq',
-        email: 'halima.sadiq@gmail.com',
-        phone: '+234 809 111 4455',
-        role: 'Customer',
-        sizeProfile: 'Abaya 54 • Everyday Chiffon',
-        location: 'Asokoro, Abuja',
-        ordersCount: 1,
-        lifetimeSpend: 24500,
-        lastOrderDate: 'Jan 2026',
-        isDormantSixMonths: false,
-        status: 'Suspended',
-        isOnline: false,
-        currentActivity: 'Offline',
-        lastSeen: '2 months ago'
-      }
-    ];
+    // Real Customer Accounts are fetched dynamically from PostgreSQL via /user/getAdminCustomers
+    const DEFAULT_USERS = [];
 
     // Check Auth Status on Page Load
     document.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
       initUsersData();
       checkAuthSession();
-      startPresenceSimulation();
     });
 
     // ------------------------------------
@@ -2263,40 +2053,59 @@
     // -------------------------------------------------------------
 
     function initUsersData() {
-      // Clear legacy storage key if present to ensure clean realistic state
+      // Clear legacy storage keys containing mock users
       localStorage.removeItem('alnur_admin_users_v2');
-
-      const stored = localStorage.getItem('alnur_admin_users_v3');
-      if (stored) {
-        try {
-          allUsers = JSON.parse(stored);
-          // Safety check: ensure only realistic number of users are online (< 3)
-          const onlineCount = allUsers.filter(u => u.isOnline).length;
-          if (onlineCount > 2) {
-            allUsers.forEach(u => {
-              if (u.id === 6) {
-                u.isOnline = true;
-                u.currentActivity = 'Browsing Silk Khimars (Cart: ₦0)';
-                u.lastSeen = 'Now';
-              } else {
-                u.isOnline = false;
-                u.currentActivity = 'Offline';
-                if (!u.lastSeen || u.lastSeen === 'Now') {
-                  u.lastSeen = u.id === 1 ? '15 mins ago' : u.id === 2 ? '2 hours ago' : u.id === 3 ? 'Yesterday' : u.id === 5 ? '45 mins ago' : 'Recently';
-                }
-              }
-            });
-            localStorage.setItem('alnur_admin_users_v3', JSON.stringify(allUsers));
-          }
-        } catch (e) {
-          allUsers = JSON.parse(JSON.stringify(DEFAULT_USERS));
-          localStorage.setItem('alnur_admin_users_v3', JSON.stringify(allUsers));
-        }
-      } else {
-        allUsers = JSON.parse(JSON.stringify(DEFAULT_USERS));
-        localStorage.setItem('alnur_admin_users_v3', JSON.stringify(allUsers));
-      }
+      localStorage.removeItem('alnur_admin_users_v3');
+      allUsers = [];
       updateUserCounters();
+      loadLiveCustomers();
+    }
+
+    async function loadLiveCustomers() {
+      const btnSync = document.getElementById('btnSyncCustomers');
+      if (btnSync) {
+        btnSync.classList.add('opacity-70');
+        btnSync.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 text-[#C87A1E] animate-spin"></i><span>Syncing...</span>';
+        lucide.createIcons();
+      }
+
+      try {
+        const res = await fetch(`${API_URL}/user/getAdminCustomers`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        if (res.ok) {
+          const raw = await res.json();
+          const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+          if (Array.isArray(parsed)) {
+            allUsers = parsed;
+            updateUserCounters();
+            renderUsersTable();
+            if (btnSync) {
+              btnSync.classList.remove('opacity-70');
+              btnSync.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i><span>Synced</span>';
+              lucide.createIcons();
+              setTimeout(() => {
+                btnSync.innerHTML = '<i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-[#C87A1E]"></i><span>Sync Customers</span>';
+                lucide.createIcons();
+              }, 2000);
+            }
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Error fetching live customers from server:', err);
+      }
+
+      allUsers = [];
+      updateUserCounters();
+      renderUsersTable();
+      if (btnSync) {
+        btnSync.classList.remove('opacity-70');
+        btnSync.innerHTML = '<i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-[#C87A1E]"></i><span>Sync Customers</span>';
+        lucide.createIcons();
+      }
     }
 
     function saveUsersData() {
@@ -3034,6 +2843,9 @@
       if (targetMob) {
         targetMob.classList.add('text-brand-primary', 'font-bold');
         targetMob.classList.remove('text-gray-400', 'font-semibold');
+      }
+      if (tabId === 'users') {
+        loadLiveCustomers();
       }
       if (tabId === 'orders') {
         renderOrdersTable();

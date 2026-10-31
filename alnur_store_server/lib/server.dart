@@ -122,6 +122,29 @@ Future<void> _sendWelcomeEmail(
   required UuidValue emailAccountId,
   required Transaction? transaction,
 }) async {
+  final cleanEmail = email.trim().toLowerCase();
+  try {
+    final existing = await UserAccountInfo.db.findFirstRow(
+      session,
+      where: (t) => t.userEmail.equals(cleanEmail),
+      transaction: transaction,
+    );
+    if (existing == null) {
+      final name = cleanEmail.contains('@') ? cleanEmail.split('@')[0] : 'Valued Customer';
+      await UserAccountInfo.db.insertRow(
+        session,
+        UserAccountInfo(
+          userEmail: cleanEmail,
+          fullName: name,
+          preferredCurrency: 'NGN',
+        ),
+        transaction: transaction,
+      );
+    }
+  } catch (e) {
+    session.log('[Server] Notice auto-creating user account info: $e');
+  }
+
   await EmailService.sendWelcomeEmail(
     session,
     email: email,
