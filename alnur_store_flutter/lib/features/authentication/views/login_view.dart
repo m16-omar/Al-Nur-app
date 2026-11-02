@@ -225,7 +225,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
               AppTextField(
                 controller: _emailController,
                 labelText: 'Email Address or Phone',
-                hintText: 'e.g. aisha@alnur.store',
+                hintText: 'e.g. aisha@gmail.com',
                 keyboardType: TextInputType.emailAddress,
                 prefixIcon: const Icon(
                   Icons.mail_outline_rounded,
@@ -444,7 +444,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
                 const SizedBox(height: 16),
                 AppTextField(
                   controller: resetEmailController,
-                  hintText: 'e.g. zainab@alnur.store',
+                  hintText: 'e.g. zainab@gmail.com',
                   labelText: 'Email Address',
                   keyboardType: TextInputType.emailAddress,
                   prefixIcon: const Icon(Icons.email_outlined,

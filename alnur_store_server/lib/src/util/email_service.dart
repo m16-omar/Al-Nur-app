@@ -387,6 +387,20 @@ class EmailService {
     required String htmlBody,
     required String fallbackType,
   }) async {
+    final cleanTo = toEmail.trim().toLowerCase();
+
+    // Do not dispatch emails to non-existent internal demo domains (prevents Gmail Mail Delivery Subsystem bounces)
+    if (cleanTo.endsWith('@alnur.store') ||
+        cleanTo.endsWith('@alnurstore.com') ||
+        cleanTo.endsWith('@example.com') ||
+        cleanTo.endsWith('@test.com') ||
+        cleanTo == 'guest@alnurstore.com') {
+      session.log(
+        '[EmailService] ℹ️ Skipping delivery to non-routed demo domain: $cleanTo (avoids Mail Delivery Subsystem bounce)',
+      );
+      return true;
+    }
+
     // 1. Primary: HTTPS Port 443 Relay (Bypasses Serverpod Cloud GCP port 465/587 blocks)
     final relaySuccess = await _dispatchViaHttpsRelay(
       session,

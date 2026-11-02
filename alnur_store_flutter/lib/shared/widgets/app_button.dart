@@ -28,6 +28,8 @@ class AppButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final radius = borderRadius ?? BorderRadius.circular(12);
 
     Color bgColor;
@@ -40,17 +42,17 @@ class AppButton extends StatelessWidget {
         fgColor = Colors.white;
         break;
       case AppButtonType.secondary:
-        bgColor = AppColors.primaryContainer;
-        fgColor = AppColors.primary;
+        bgColor = isDark ? AppColors.primary.withValues(alpha: 0.18) : AppColors.primaryContainer;
+        fgColor = isDark ? AppColors.gold : AppColors.primary;
         break;
       case AppButtonType.outline:
         bgColor = Colors.transparent;
-        fgColor = AppColors.primary;
-        borderSide = const BorderSide(color: AppColors.primary, width: 1.5);
+        fgColor = isDark ? AppColors.gold : AppColors.primary;
+        borderSide = BorderSide(color: isDark ? AppColors.gold : AppColors.primary, width: 1.5);
         break;
       case AppButtonType.text:
         bgColor = Colors.transparent;
-        fgColor = AppColors.primary;
+        fgColor = isDark ? AppColors.gold : AppColors.primary;
         break;
     }
 
@@ -71,9 +73,16 @@ class AppButton extends StatelessWidget {
                 icon!,
                 const SizedBox(width: 8),
               ],
-              Text(
-                text,
-                style: AppTextStyles.heroButton.copyWith(color: fgColor),
+              Flexible(
+                child: Text(
+                  text,
+                  style: AppTextStyles.heroButton.copyWith(
+                    color: fgColor,
+                    fontSize: 14,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           );
@@ -86,6 +95,8 @@ class AppButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: bgColor,
           foregroundColor: fgColor,
+          disabledBackgroundColor: isLoading ? bgColor : null,
+          disabledForegroundColor: isLoading ? fgColor : null,
           elevation: type == AppButtonType.primary ? 2 : 0,
           shape: RoundedRectangleBorder(
             borderRadius: radius,

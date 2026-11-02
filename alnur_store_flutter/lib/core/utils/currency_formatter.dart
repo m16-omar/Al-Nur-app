@@ -1,9 +1,10 @@
 import 'package:intl/intl.dart';
+import '../constants/app_constants.dart';
 
 class CurrencyFormatter {
   static final NumberFormat _nairaFormat = NumberFormat.currency(
     locale: 'en_NG',
-    symbol: '₦',
+    symbol: AppConstants.currencySymbol,
     decimalDigits: 0,
   );
 

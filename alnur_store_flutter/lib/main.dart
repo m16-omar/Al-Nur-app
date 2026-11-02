@@ -5,13 +5,23 @@ import 'package:serverpod_auth_idp_flutter/serverpod_auth_idp_flutter.dart';
 import 'package:serverpod_flutter/serverpod_flutter.dart';
 
 import 'app.dart';
+import 'core/constants/api_constants.dart';
 
 late final Client client;
 late String serverUrl;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  serverUrl = await getServerUrl();
+  
+  try {
+    final configuredUrl = await getServerUrl();
+    serverUrl = (configuredUrl.isNotEmpty && configuredUrl != 'http://localhost:8080/')
+        ? configuredUrl
+        : ApiConstants.defaultServerUrl;
+  } catch (_) {
+    serverUrl = ApiConstants.defaultServerUrl;
+  }
+
   debugPrint("🚀 Al-Nur Store connected to Serverpod Cloud: $serverUrl");
 
   client = Client(serverUrl)

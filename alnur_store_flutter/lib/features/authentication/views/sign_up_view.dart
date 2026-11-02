@@ -181,7 +181,7 @@ class _SignUpViewState extends ConsumerState<SignUpView> {
               AppTextField(
                 controller: _emailController,
                 labelText: 'Email Address',
-                hintText: 'e.g. fatima@alnur.store',
+                hintText: 'e.g. fatima@gmail.com',
                 keyboardType: TextInputType.emailAddress,
                 prefixIcon: const Icon(
                   Icons.mail_outline_rounded,
