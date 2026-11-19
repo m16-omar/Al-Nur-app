@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Nupe Songs — Executive Music Studio & CMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Cabinet+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            studio: {
+              950: '#07090E',
+              900: '#0D111A',
+              850: '#121824',
+              800: '#1A2234',
+              700: '#26334D',
+              border: 'rgba(255, 255, 255, 0.08)',
+              accent: '#6366F1',
+              accentLight: '#818CF8',
+              accentGlow: 'rgba(99, 102, 241, 0.25)',
+              violet: '#A855F7',
+              cyan: '#06B6D4',
+              emerald: '#10B981',
+              amber: '#F59E0B',
+              rose: '#F43F5E'
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            display: ['"Cabinet Grotesk"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #07090E;
+      color: #E2E8F0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #0D111A;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #26334D;
+      border-radius: 4px;
+    }
+    .glass-panel {
+      background: rgba(18, 24, 36, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glow-accent {
+      box-shadow: 0 0 25px rgba(99, 102, 241, 0.25);
+    }
+    @keyframes wave {
+      0%, 100% { height: 4px; }
+      50% { height: 18px; }
+    }
+    .wave-bar {
+      animation: wave 1.2s ease-in-out infinite;
+    }
+    .wave-bar:nth-child(2) { animation-delay: 0.2s; }
+    .wave-bar:nth-child(3) { animation-delay: 0.4s; }
+    .wave-bar:nth-child(4) { animation-delay: 0.1s; }
+    .wave-bar:nth-child(5) { animation-delay: 0.3s; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-studio-950 text-slate-100 selection:bg-studio-accent selection:text-white pb-24">
+
+  <!-- TOP APP BAR -->
+  <header class="sticky top-0 z-40 bg-studio-900/90 backdrop-blur-md border-b border-studio-border">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Brand & Studio Title -->
+      <div class="flex items-center space-x-4">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white">
+            <i data-lucide="music-2" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="font-display font-extrabold text-lg tracking-wider text-white">NUPE SONGS</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">Studio CMS</span>
+            </div>
+            <p class="text-xs text-slate-400 hidden sm:block">Nupe Heritage & Modern Audio Broadcast Management</p>
+          </div>
+        </div>
+
+        <!-- Connection Pill -->
+        <div class="hidden md:flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Serverpod Monolith Active</span>
+        </div>
+      </div>
+
+      <!-- Header Actions -->
+      <div class="flex items-center space-x-3">
+        <!-- Switch to Al-Nur Store Admin -->
+        <a href="/admin" class="flex items-center space-x-2 px-3.5 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-400 hover:text-amber-300 text-xs font-semibold transition">
+          <i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i>
+          <span>Switch to Al-Nur Store</span>
+        </a>
+
+        <!-- API Endpoint Badge -->
+        <a href="/api/songs" target="_blank" class="hidden lg:flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-studio-800 hover:bg-studio-700 border border-studio-border text-slate-300 text-xs font-medium transition">
+          <i data-lucide="code" class="w-3.5 h-3.5 text-indigo-400"></i>
+          <span>Live API (/api/songs)</span>
+        </a>
+
+        <!-- Admin Avatar -->
+        <div class="flex items-center space-x-2.5 pl-2 border-l border-studio-border">
+          <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center font-bold text-xs ring-2 ring-indigo-500/30">
+            NS
+          </div>
+          <div class="hidden xl:block text-left text-xs">
+            <p class="font-semibold text-slate-200">Music Admin</p>
+            <p class="text-[10px] text-slate-400">Master Controller</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-1 space-y-8">
+
+    <!-- KPI STATS CARDS -->
+    <section class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      
+      <!-- Total Tracks -->
+      <div class="glass-panel rounded-2xl p-4 sm:p-5 relative overflow-hidden group hover:border-indigo-500/40 transition">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-medium text-slate-400">Total Tracks</span>
+          <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
+            <i data-lucide="disc" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <p class="text-2xl sm:text-3xl font-display font-extrabold text-white mt-3" id="statTotalSongs">3</p>
+        <span class="text-[11px] text-emerald-400 flex items-center space-x-1 mt-1 font-medium">
+          <i data-lucide="trending-up" class="w-3 h-3"></i>
+          <span>100% Streamable</span>
+        </span>
+      </div>
+
+      <!-- Featured Artists -->
+      <div class="glass-panel rounded-2xl p-4 sm:p-5 relative overflow-hidden group hover:border-purple-500/40 transition">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-medium text-slate-400">Roster Artists</span>
+          <div class="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center">
+            <i data-lucide="mic-2" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <p class="text-2xl sm:text-3xl font-display font-extrabold text-white mt-3" id="statTotalArtists">7</p>
+        <span class="text-[11px] text-purple-400 flex items-center space-x-1 mt-1 font-medium">
+          <span>Nupe Pioneers & Stars</span>
+        </span>
+      </div>
+
+      <!-- Released Albums -->
+      <div class="glass-panel rounded-2xl p-4 sm:p-5 relative overflow-hidden group hover:border-cyan-500/40 transition">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-medium text-slate-400">Albums & EPs</span>
+          <div class="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center">
+            <i data-lucide="layers" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <p class="text-2xl sm:text-3xl font-display font-extrabold text-white mt-3" id="statTotalAlbums">1</p>
+        <span class="text-[11px] text-cyan-400 flex items-center space-x-1 mt-1 font-medium">
+          <span>Official Releases</span>
+        </span>
+      </div>
+
+      <!-- Cumulative Streams -->
+      <div class="glass-panel rounded-2xl p-4 sm:p-5 relative overflow-hidden group hover:border-emerald-500/40 transition">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-medium text-slate-400">Cumulative Streams</span>
+          <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+            <i data-lucide="headphones" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <p class="text-2xl sm:text-3xl font-display font-extrabold text-white mt-3" id="statTotalStreams">455</p>
+        <span class="text-[11px] text-emerald-400 flex items-center space-x-1 mt-1 font-medium">
+          <i data-lucide="activity" class="w-3 h-3"></i>
+          <span>Live Stream Counters</span>
+        </span>
+      </div>
+
+      <!-- Cumulative Downloads -->
+      <div class="glass-panel rounded-2xl p-4 sm:p-5 relative overflow-hidden group hover:border-amber-500/40 transition col-span-2 lg:col-span-1">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-medium text-slate-400">Total Offline Downloads</span>
+          <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+            <i data-lucide="download-cloud" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <p class="text-2xl sm:text-3xl font-display font-extrabold text-white mt-3" id="statTotalDownloads">156</p>
+        <span class="text-[11px] text-amber-400 flex items-center space-x-1 mt-1 font-medium">
+          <span>Synced with Mobile App</span>
+        </span>
+      </div>
+
+    </section>
+
+    <!-- NAVIGATION TABS -->
+    <div class="flex items-center justify-between border-b border-studio-border pb-4 flex-wrap gap-4">
+      <div class="flex items-center space-x-2 overflow-x-auto custom-scroll py-1">
+        <button onclick="switchTab('tracks')" id="tabBtnTracks" class="tab-btn px-4 py-2 rounded-xl text-sm font-semibold transition flex items-center space-x-2 bg-indigo-600 text-white shadow-lg shadow-indigo-600/25">
+          <i data-lucide="music" class="w-4 h-4"></i>
+          <span>Tracks & Audio</span>
+        </button>
+        <button onclick="switchTab('artists')" id="tabBtnArtists" class="tab-btn px-4 py-2 rounded-xl text-sm font-semibold transition flex items-center space-x-2 text-slate-400 hover:text-white hover:bg-studio-800">
+          <i data-lucide="users" class="w-4 h-4"></i>
+          <span>Artists</span>
+        </button>
+        <button onclick="switchTab('albums')" id="tabBtnAlbums" class="tab-btn px-4 py-2 rounded-xl text-sm font-semibold transition flex items-center space-x-2 text-slate-400 hover:text-white hover:bg-studio-800">
+          <i data-lucide="disc" class="w-4 h-4"></i>
+          <span>Albums & EPs</span>
+        </button>
+        <button onclick="switchTab('analytics')" id="tabBtnAnalytics" class="tab-btn px-4 py-2 rounded-xl text-sm font-semibold transition flex items-center space-x-2 text-slate-400 hover:text-white hover:bg-studio-800">
+          <i data-lucide="bar-chart-2" class="w-4 h-4"></i>
+          <span>Stream Analytics</span>
+        </button>
+      </div>
+
+      <!-- Action Button Group -->
+      <div class="flex items-center space-x-3">
+        <button onclick="openAddTrackModal()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-xs font-bold flex items-center space-x-2 shadow-lg shadow-indigo-500/25 transition">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          <span>Add New Track</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- TAB 1: TRACKS & CATALOG -->
+    <section id="viewTracks" class="space-y-4">
+      <div class="glass-panel rounded-2xl overflow-hidden">
+        <!-- Table Search & Filter Bar -->
+        <div class="p-4 sm:p-5 border-b border-studio-border flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="relative w-full sm:w-80">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-3 text-slate-400"></i>
+            <input type="text" id="trackSearchInput" oninput="filterTracks()" placeholder="Search track, artist or album..." class="w-full bg-studio-900 border border-studio-border rounded-xl pl-10 pr-4 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
+          </div>
+          <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
+            <span class="text-xs text-slate-400" id="tracksCountLabel">3 Tracks Loaded</span>
+          </div>
+        </div>
+
+        <!-- Tracks Table -->
+        <div class="overflow-x-auto custom-scroll">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="bg-studio-900/60 text-xs uppercase tracking-wider text-slate-400 border-b border-studio-border">
+              <tr>
+                <th class="py-3.5 px-4">Track</th>
+                <th class="py-3.5 px-4">Artist</th>
+                <th class="py-3.5 px-4 hidden md:table-cell">Album</th>
+                <th class="py-3.5 px-4 hidden lg:table-cell">Genre</th>
+                <th class="py-3.5 px-4 text-center">Streams</th>
+                <th class="py-3.5 px-4 text-center hidden sm:table-cell">Downloads</th>
+                <th class="py-3.5 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tracksTableBody" class="divide-y divide-studio-border">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: ARTISTS -->
+    <section id="viewArtists" class="hidden space-y-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-lg font-bold text-white">Nupe Artists & Performers</h2>
+          <p class="text-xs text-slate-400">Manage cultural recording artists and biographies</p>
+        </div>
+        <button onclick="openAddArtistModal()" class="px-3.5 py-2 rounded-xl bg-studio-800 hover:bg-studio-700 border border-studio-border text-white text-xs font-semibold flex items-center space-x-1.5 transition">
+          <i data-lucide="user-plus" class="w-3.5 h-3.5 text-purple-400"></i>
+          <span>Add Artist</span>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" id="artistsGrid">
+        <!-- Dynamically populated -->
+      </div>
+    </section>
+
+    <!-- TAB 3: ALBUMS -->
+    <section id="viewAlbums" class="hidden space-y-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-lg font-bold text-white">Albums & Discography</h2>
+          <p class="text-xs text-slate-400">EPs and full-length albums</p>
+        </div>
+        <button onclick="openAddAlbumModal()" class="px-3.5 py-2 rounded-xl bg-studio-800 hover:bg-studio-700 border border-studio-border text-white text-xs font-semibold flex items-center space-x-1.5 transition">
+          <i data-lucide="folder-plus" class="w-3.5 h-3.5 text-cyan-400"></i>
+          <span>Add Album</span>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" id="albumsGrid">
+        <!-- Dynamically populated -->
+      </div>
+    </section>
+
+    <!-- TAB 4: STREAM ANALYTICS -->
+    <section id="viewAnalytics" class="hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Top Streamed Leaderboard -->
+        <div class="glass-panel rounded-2xl p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+              <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+                <i data-lucide="flame" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-white">Top Streamed Tracks</h3>
+                <p class="text-[11px] text-slate-400">Real-time play counts reported from mobile app</p>
+              </div>
+            </div>
+          </div>
+          <div class="space-y-3 pt-2" id="topStreamsList">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Top Downloads Leaderboard -->
+        <div class="glass-panel rounded-2xl p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+              <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+                <i data-lucide="download" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-white">Top Downloaded Tracks</h3>
+                <p class="text-[11px] text-slate-400">Offline downloads for offline playback</p>
+              </div>
+            </div>
+          </div>
+          <div class="space-y-3 pt-2" id="topDownloadsList">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FIXED BOTTOM AUDIO PLAYER BAR -->
+  <div id="bottomPlayerBar" class="fixed bottom-0 inset-x-0 bg-studio-900/95 backdrop-blur-xl border-t border-studio-border px-4 py-3 z-50 transition transform translate-y-full flex flex-col">
+    <div class="max-w-7xl mx-auto w-full flex items-center justify-between gap-4">
+      
+      <!-- Currently Playing Info -->
+      <div class="flex items-center space-x-3 w-1/4 min-w-[200px]">
+        <img id="playerCover" src="" class="w-12 h-12 rounded-lg object-cover shadow-md border border-studio-border">
+        <div class="truncate">
+          <p id="playerTitle" class="text-xs font-bold text-white truncate">Select a track</p>
+          <p id="playerArtist" class="text-[11px] text-slate-400 truncate">Nupe Artists</p>
+        </div>
+      </div>
+
+      <!-- Controls & Progress -->
+      <div class="flex flex-col items-center w-2/4 max-w-xl">
+        <div class="flex items-center space-x-4">
+          <button onclick="togglePlayPause()" class="w-9 h-9 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center shadow-lg shadow-indigo-600/30 transition">
+            <i data-lucide="play" id="playIcon" class="w-4 h-4 ml-0.5"></i>
+          </button>
+        </div>
+        <div class="flex items-center space-x-3 w-full mt-1.5">
+          <span id="playerCurrentTime" class="text-[10px] text-slate-400 w-8 text-right font-mono">0:00</span>
+          <input type="range" id="playerSeek" value="0" min="0" max="100" class="w-full h-1 bg-studio-700 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+          <span id="playerDuration" class="text-[10px] text-slate-400 w-8 font-mono">0:00</span>
+        </div>
+      </div>
+
+      <!-- Extra Controls (Lyrics, Volume, Close) -->
+      <div class="flex items-center space-x-3 justify-end w-1/4">
+        <button onclick="openLyricsModalForCurrent()" class="px-3 py-1.5 rounded-lg bg-studio-800 hover:bg-studio-700 border border-studio-border text-xs text-indigo-400 flex items-center space-x-1.5 transition">
+          <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+          <span class="hidden sm:inline">Lyrics</span>
+        </button>
+        <button onclick="closePlayer()" class="text-slate-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+    </div>
+    <audio id="audioElement" preload="none"></audio>
+  </div>
+
+  <!-- MODAL: ADD TRACK -->
+  <div id="addTrackModal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-studio-900 border border-studio-border rounded-2xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto custom-scroll">
+      <div class="flex items-center justify-between border-b border-studio-border pb-3">
+        <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+          <i data-lucide="plus-circle" class="w-4 h-4 text-indigo-400"></i>
+          <span>Add New Nupe Song</span>
+        </h3>
+        <button onclick="closeModal('addTrackModal')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      
+      <form id="addTrackForm" onsubmit="submitNewTrack(event)" class="space-y-3.5 text-xs">
+        <div>
+          <label class="block text-slate-400 mb-1">Song Title *</label>
+          <input type="text" id="newTrackTitle" required placeholder="e.g. Dabe Dabe" class="w-full bg-studio-950 border border-studio-border rounded-xl px-3.5 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">Artist Name *</label>
+            <input type="text" id="newTrackArtist" required placeholder="e.g. Mahmud Mokwa" class="w-full bg-studio-950 border border-studio-border rounded-xl px-3.5 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Album Name</label>
+            <input type="text" id="newTrackAlbum" placeholder="e.g. Emigun" class="w-full bg-studio-950 border border-studio-border rounded-xl px-3.5 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">Genre</label>
+            <select id="newTrackGenre" class="w-full bg-studio-950 border border-studio-border rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+              <option value="Traditional / Folk">Traditional / Folk</option>
+              <option value="Afrobeats">Afrobeats</option>
+              <option value="Love & Romance">Love & Romance</option>
+              <option value="Praise & Heritage">Praise & Heritage</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Duration (seconds)</label>
+            <input type="number" id="newTrackDuration" value="240" class="w-full bg-studio-950 border border-studio-border rounded-xl px-3.5 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-400 mb-1">Audio Streaming URL (Cloudinary / R2 / Direct MP3) *</label>
+          <input type="url" id="newTrackAudioUrl" required placeholder="https://res.cloudinary.com/.../song.mp3" class="w-full bg-studio-950 border border-studio-border rounded-xl px-3.5 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div>
+          <label class="block text-slate-400 mb-1">Artwork Cover Image URL</label>
+          <input type="url" id="newTrackArtworkUrl" placeholder="https://res.cloudinary.com/.../cover.png" class="w-full bg-studio-950 border border-studio-border rounded-xl px-3.5 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div>
+          <label class="block text-slate-400 mb-1">Synchronized Lyrics (LRC format or text)</label>
+          <textarea id="newTrackLyrics" rows="4" placeholder="[00:00.00] Intro music..." class="w-full bg-studio-950 border border-studio-border rounded-xl px-3.5 py-2 text-slate-200 font-mono text-[11px] focus:outline-none focus:border-indigo-500"></textarea>
+        </div>
+
+        <div class="pt-2 flex justify-end space-x-2">
+          <button type="button" onclick="closeModal('addTrackModal')" class="px-4 py-2 rounded-xl bg-studio-800 hover:bg-studio-700 text-slate-300 font-medium">Cancel</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-lg shadow-indigo-600/30">Publish Track</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD ARTIST -->
+  <div id="addArtistModal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-studio-900 border border-studio-border rounded-2xl max-w-md w-full p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-studio-border pb-3">
+        <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+          <i data-lucide="user-plus" class="w-4 h-4 text-purple-400"></i>
+          <span>Add Nupe Artist</span>
+        </h3>
+        <button onclick="closeModal('addArtistModal')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+
+      <form onsubmit="submitNewArtist(event)" class="space-y-3.5 text-xs">
+        <div>
+          <label class="block text-slate-400 mb-1">Artist Full Name *</label>
+          <input type="text" id="newArtistName" required placeholder="e.g. Salihu Unity" class="w-full bg-studio-950 border border-studio-border rounded-xl px-3.5 py-2 text-slate-200 focus:outline-none focus:border-purple-500">
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1">Profile Photo Image URL</label>
+          <input type="url" id="newArtistImage" placeholder="https://res.cloudinary.com/.../artist.png" class="w-full bg-studio-950 border border-studio-border rounded-xl px-3.5 py-2 text-slate-200 focus:outline-none focus:border-purple-500">
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1">Short Biography & Cultural Context</label>
+          <textarea id="newArtistBio" rows="3" placeholder="Pioneer of Nupe traditional rhythm..." class="w-full bg-studio-950 border border-studio-border rounded-xl px-3.5 py-2 text-slate-200 focus:outline-none focus:border-purple-500"></textarea>
+        </div>
+        <div class="pt-2 flex justify-end space-x-2">
+          <button type="button" onclick="closeModal('addArtistModal')" class="px-4 py-2 rounded-xl bg-studio-800 hover:bg-studio-700 text-slate-300 font-medium">Cancel</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold shadow-lg shadow-purple-600/30">Save Artist</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD ALBUM -->
+  <div id="addAlbumModal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-studio-900 border border-studio-border rounded-2xl max-w-md w-full p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-studio-border pb-3">
+        <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+          <i data-lucide="disc" class="w-4 h-4 text-cyan-400"></i>
+          <span>New Album / EP</span>
+        </h3>
+        <button onclick="closeModal('addAlbumModal')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+
+      <form onsubmit="submitNewAlbum(event)" class="space-y-3.5 text-xs">
+        <div>
+          <label class="block text-slate-400 mb-1">Album Title *</label>
+          <input type="text" id="newAlbumName" required placeholder="e.g. Mokwa Heritage" class="w-full bg-studio-950 border border-studio-border rounded-xl px-3.5 py-2 text-slate-200 focus:outline-none focus:border-cyan-500">
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1">Lead Artist *</label>
+          <input type="text" id="newAlbumArtist" required placeholder="e.g. Mahmud Mokwa" class="w-full bg-studio-950 border border-studio-border rounded-xl px-3.5 py-2 text-slate-200 focus:outline-none focus:border-cyan-500">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">Release Year</label>
+            <input type="number" id="newAlbumYear" value="2026" class="w-full bg-studio-950 border border-studio-border rounded-xl px-3.5 py-2 text-slate-200 focus:outline-none focus:border-cyan-500">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Artwork URL</label>
+            <input type="url" id="newAlbumArtwork" placeholder="https://..." class="w-full bg-studio-950 border border-studio-border rounded-xl px-3.5 py-2 text-slate-200 focus:outline-none focus:border-cyan-500">
+          </div>
+        </div>
+        <div class="pt-2 flex justify-end space-x-2">
+          <button type="button" onclick="closeModal('addAlbumModal')" class="px-4 py-2 rounded-xl bg-studio-800 hover:bg-studio-700 text-slate-300 font-medium">Cancel</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold shadow-lg shadow-cyan-600/30">Save Album</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: LYRICS VIEWER -->
+  <div id="lyricsModal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-studio-900 border border-studio-border rounded-2xl max-w-lg w-full p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-studio-border pb-3">
+        <div>
+          <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+            <i data-lucide="file-text" class="w-4 h-4 text-indigo-400"></i>
+            <span id="lyricsModalTitle">Track Lyrics</span>
+          </h3>
+          <p class="text-[11px] text-slate-400" id="lyricsModalSubtitle">Nupe Transcriptions & Translations</p>
+        </div>
+        <button onclick="closeModal('lyricsModal')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <div class="bg-studio-950 border border-studio-border rounded-xl p-4 max-h-96 overflow-y-auto custom-scroll">
+        <pre id="lyricsContent" class="text-xs text-slate-300 whitespace-pre-wrap font-mono leading-relaxed"></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    let songs = [];
+    let artists = [];
+    let albums = [];
+    let currentTrack = null;
+    const audio = document.getElementById('audioElement');
+
+    async function loadData() {
+      try {
+        const [songsRes, artistsRes, albumsRes, analyticsRes] = await Promise.all([
+          fetch('/api/songs').then(r => r.json()).catch(() => []),
+          fetch('/api/artists').then(r => r.json()).catch(() => []),
+          fetch('/api/albums').then(r => r.json()).catch(() => []),
+          fetch('/api/analytics').then(r => r.json()).catch(() => ({})),
+        ]);
+
+        songs = songsRes;
+        artists = artistsRes;
+        albums = albumsRes;
+
+        // Update Stats
+        document.getElementById('statTotalSongs').textContent = analyticsRes.total_songs || songs.length;
+        document.getElementById('statTotalArtists').textContent = analyticsRes.total_artists || artists.length;
+        document.getElementById('statTotalAlbums').textContent = analyticsRes.total_albums || albums.length;
+        document.getElementById('statTotalStreams').textContent = (analyticsRes.total_streams || 455).toLocaleString();
+        document.getElementById('statTotalDownloads').textContent = (analyticsRes.total_downloads || 156).toLocaleString();
+
+        renderTracks(songs);
+        renderArtists(artists);
+        renderAlbums(albums);
+        renderAnalytics(songs);
+        lucide.createIcons();
+      } catch (err) {
+        console.error('Failed to load data:', err);
+      }
+    }
+
+    function renderTracks(list) {
+      const tbody = document.getElementById('tracksTableBody');
+      document.getElementById('tracksCountLabel').textContent = `${list.length} Tracks Loaded`;
+
+      if (!list || list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-500">No tracks found. Click "Add New Track" to upload.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = list.map(song => {
+        const artistName = song.artist ? song.artist.name : 'Unknown Artist';
+        const albumName = song.album ? song.album.name : 'Single';
+        const genreName = song.genre ? song.genre.name : 'Nupe Folk';
+        const artwork = song.artwork || song.artwork_url || 'https://res.cloudinary.com/dnexiputv/image/upload/albums/Emigun_Cover.png';
+        const streams = song.stream_count || 0;
+        const downloads = song.download_count || 0;
+
+        return `
+          <tr class="hover:bg-studio-900/40 transition">
+            <td class="py-3 px-4">
+              <div class="flex items-center space-x-3">
+                <div class="relative group cursor-pointer" onclick="playTrack(${song.id})">
+                  <img src="${artwork}" class="w-10 h-10 rounded-lg object-cover border border-studio-border">
+                  <div class="absolute inset-0 bg-indigo-600/70 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                    <i data-lucide="play" class="w-4 h-4 text-white"></i>
+                  </div>
+                </div>
+                <div class="truncate max-w-[200px]">
+                  <p class="font-bold text-white text-xs truncate cursor-pointer hover:text-indigo-400" onclick="playTrack(${song.id})">${song.title}</p>
+                  <p class="text-[11px] text-slate-400 truncate">${artistName}</p>
+                </div>
+              </div>
+            </td>
+            <td class="py-3 px-4 font-medium text-xs text-slate-300">${artistName}</td>
+            <td class="py-3 px-4 hidden md:table-cell text-xs text-slate-400">${albumName}</td>
+            <td class="py-3 px-4 hidden lg:table-cell">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">${genreName}</span>
+            </td>
+            <td class="py-3 px-4 text-center font-mono text-xs text-emerald-400 font-semibold">${streams.toLocaleString()}</td>
+            <td class="py-3 px-4 text-center hidden sm:table-cell font-mono text-xs text-amber-400">${downloads.toLocaleString()}</td>
+            <td class="py-3 px-4 text-right">
+              <div class="flex items-center justify-end space-x-1.5">
+                <button onclick="viewLyrics(${song.id})" title="View Lyrics" class="p-1.5 rounded-lg bg-studio-800 hover:bg-studio-700 text-slate-300 hover:text-white transition">
+                  <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                </button>
+                <button onclick="playTrack(${song.id})" title="Preview Audio" class="p-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-400 hover:text-indigo-300 transition">
+                  <i data-lucide="play" class="w-3.5 h-3.5"></i>
+                </button>
+                <button onclick="deleteTrack(${song.id})" title="Delete Track" class="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    function renderArtists(list) {
+      const grid = document.getElementById('artistsGrid');
+      if (!list || list.length === 0) {
+        grid.innerHTML = '<p class="text-slate-500 text-xs col-span-full">No artists found.</p>';
+        return;
+      }
+      grid.innerHTML = list.map(artist => {
+        const artistSongs = songs.filter(s => s.artist && s.artist.name === artist.name);
+        return `
+          <div class="glass-panel rounded-2xl p-4 flex flex-col justify-between hover:border-purple-500/40 transition group">
+            <div>
+              <div class="flex items-center space-x-3.5 mb-3">
+                <img src="${artist.image || 'https://res.cloudinary.com/dnexiputv/image/upload/artists/Mahmud_Mokwa.png'}" class="w-14 h-14 rounded-2xl object-cover border border-studio-border shadow-md">
+                <div class="truncate">
+                  <h4 class="font-bold text-sm text-white truncate">${artist.name}</h4>
+                  <span class="text-[11px] text-purple-400 font-medium">${artistSongs.length} track(s) in catalog</span>
+                </div>
+              </div>
+              <p class="text-xs text-slate-400 line-clamp-2 leading-relaxed">${artist.bio || 'Nupe cultural musician and community voice.'}</p>
+            </div>
+            <div class="mt-4 pt-3 border-t border-studio-border flex justify-between items-center text-xs">
+              <span class="text-[10px] text-slate-500 font-mono">ID #${artist.id}</span>
+              <button onclick="deleteArtist(${artist.id})" class="text-rose-400 hover:text-rose-300 p-1">
+                <i data-lucide="trash" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    function renderAlbums(list) {
+      const grid = document.getElementById('albumsGrid');
+      if (!list || list.length === 0) {
+        grid.innerHTML = '<p class="text-slate-500 text-xs col-span-full">No albums found.</p>';
+        return;
+      }
+      grid.innerHTML = list.map(album => {
+        const artistName = album.artist ? album.artist.name : 'Unknown Artist';
+        const trackCount = album.songs ? album.songs.length : 3;
+        return `
+          <div class="glass-panel rounded-2xl overflow-hidden hover:border-cyan-500/40 transition group">
+            <div class="relative h-44 overflow-hidden">
+              <img src="${album.artwork || 'https://res.cloudinary.com/dnexiputv/image/upload/albums/Emigun_Cover.png'}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+              <div class="absolute inset-0 bg-gradient-to-t from-studio-950 via-studio-950/40 to-transparent"></div>
+              <div class="absolute bottom-3 left-4 right-4">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 uppercase tracking-wider">${album.release_year || 2026}</span>
+                <h3 class="font-display font-extrabold text-base text-white mt-1">${album.name}</h3>
+                <p class="text-xs text-slate-300 font-medium">${artistName}</p>
+              </div>
+            </div>
+            <div class="p-4 flex items-center justify-between text-xs text-slate-400">
+              <span class="flex items-center space-x-1.5">
+                <i data-lucide="disc" class="w-3.5 h-3.5 text-cyan-400"></i>
+                <span>${trackCount} Tracks</span>
+              </span>
+              <button onclick="deleteAlbum(${album.id})" class="text-rose-400 hover:text-rose-300 p-1">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    function renderAnalytics(list) {
+      const sortedByStreams = [...list].sort((a, b) => (b.stream_count || 0) - (a.stream_count || 0));
+      const sortedByDownloads = [...list].sort((a, b) => (b.download_count || 0) - (a.download_count || 0));
+
+      const streamListEl = document.getElementById('topStreamsList');
+      streamListEl.innerHTML = sortedByStreams.map((s, idx) => `
+        <div class="flex items-center justify-between p-3 rounded-xl bg-studio-900/60 border border-studio-border">
+          <div class="flex items-center space-x-3">
+            <span class="font-display font-bold text-sm ${idx === 0 ? 'text-amber-400' : 'text-slate-500'}">#${idx + 1}</span>
+            <img src="${s.artwork || s.artwork_url}" class="w-9 h-9 rounded-lg object-cover">
+            <div>
+              <p class="text-xs font-bold text-white">${s.title}</p>
+              <p class="text-[10px] text-slate-400">${s.artist ? s.artist.name : ''}</p>
+            </div>
+          </div>
+          <span class="font-mono text-xs font-bold text-emerald-400">${(s.stream_count || 0).toLocaleString()} plays</span>
+        </div>
+      `).join('');
+
+      const downloadListEl = document.getElementById('topDownloadsList');
+      downloadListEl.innerHTML = sortedByDownloads.map((s, idx) => `
+        <div class="flex items-center justify-between p-3 rounded-xl bg-studio-900/60 border border-studio-border">
+          <div class="flex items-center space-x-3">
+            <span class="font-display font-bold text-sm ${idx === 0 ? 'text-amber-400' : 'text-slate-500'}">#${idx + 1}</span>
+            <img src="${s.artwork || s.artwork_url}" class="w-9 h-9 rounded-lg object-cover">
+            <div>
+              <p class="text-xs font-bold text-white">${s.title}</p>
+              <p class="text-[10px] text-slate-400">${s.artist ? s.artist.name : ''}</p>
+            </div>
+          </div>
+          <span class="font-mono text-xs font-bold text-amber-400">${(s.download_count || 0).toLocaleString()} saves</span>
+        </div>
+      `).join('');
+    }
+
+    function filterTracks() {
+      const q = document.getElementById('trackSearchInput').value.toLowerCase();
+      const filtered = songs.filter(s => {
+        const title = (s.title || '').toLowerCase();
+        const artist = (s.artist ? s.artist.name : '').toLowerCase();
+        const album = (s.album ? s.album.name : '').toLowerCase();
+        return title.includes(q) || artist.includes(q) || album.includes(q);
+      });
+      renderTracks(filtered);
+    }
+
+    function switchTab(tab) {
+      ['tracks', 'artists', 'albums', 'analytics'].forEach(t => {
+        const view = document.getElementById('view' + t.charAt(0).toUpperCase() + t.slice(1));
+        const btn = document.getElementById('tabBtn' + t.charAt(0).toUpperCase() + t.slice(1));
+        if (t === tab) {
+          view.classList.remove('hidden');
+          btn.className = 'tab-btn px-4 py-2 rounded-xl text-sm font-semibold transition flex items-center space-x-2 bg-indigo-600 text-white shadow-lg shadow-indigo-600/25';
+        } else {
+          view.classList.add('hidden');
+          btn.className = 'tab-btn px-4 py-2 rounded-xl text-sm font-semibold transition flex items-center space-x-2 text-slate-400 hover:text-white hover:bg-studio-800';
+        }
+      });
+    }
+
+    // AUDIO PLAYER
+    function playTrack(id) {
+      const track = songs.find(s => s.id === id);
+      if (!track) return;
+      currentTrack = track;
+
+      const playerBar = document.getElementById('bottomPlayerBar');
+      playerBar.classList.remove('translate-y-full');
+
+      document.getElementById('playerTitle').textContent = track.title;
+      document.getElementById('playerArtist').textContent = track.artist ? track.artist.name : 'Nupe Artist';
+      document.getElementById('playerCover').src = track.artwork || track.artwork_url || '';
+
+      const audioUrl = track.audio_file || track.stream_url;
+      if (audio.src !== audioUrl) {
+        audio.src = audioUrl;
+      }
+      audio.play().then(() => {
+        updatePlayIcon(true);
+        // Post stream count increment to live Serverpod backend
+        fetch(`/api/songs/${track.id}/play`, { method: 'POST' }).catch(() => {});
+        track.stream_count = (track.stream_count || 0) + 1;
+        renderTracks(songs);
+      }).catch(err => console.log('Audio playback pending interaction:', err));
+    }
+
+    function togglePlayPause() {
+      if (!audio.src) return;
+      if (audio.paused) {
+        audio.play();
+        updatePlayIcon(true);
+      } else {
+        audio.pause();
+        updatePlayIcon(false);
+      }
+    }
+
+    function updatePlayIcon(isPlaying) {
+      const icon = document.getElementById('playIcon');
+      if (isPlaying) {
+        icon.setAttribute('data-lucide', 'pause');
+      } else {
+        icon.setAttribute('data-lucide', 'play');
+      }
+      lucide.createIcons();
+    }
+
+    function closePlayer() {
+      audio.pause();
+      document.getElementById('bottomPlayerBar').classList.add('translate-y-full');
+    }
+
+    audio.ontimeupdate = () => {
+      const cur = audio.currentTime;
+      const dur = audio.duration || 1;
+      document.getElementById('playerCurrentTime').textContent = formatTime(cur);
+      document.getElementById('playerDuration').textContent = formatTime(dur);
+      document.getElementById('playerSeek').value = (cur / dur) * 100;
+    };
+
+    document.getElementById('playerSeek').oninput = (e) => {
+      if (audio.duration) {
+        audio.currentTime = (e.target.value / 100) * audio.duration;
+      }
+    };
+
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return `${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+
+    // LYRICS
+    function viewLyrics(id) {
+      const track = songs.find(s => s.id === id);
+      if (!track) return;
+      document.getElementById('lyricsModalTitle').textContent = track.title + ' — Lyrics';
+      document.getElementById('lyricsModalSubtitle').textContent = `Artist: ${track.artist ? track.artist.name : 'Unknown'}`;
+      document.getElementById('lyricsContent').textContent = track.lyrics || 'No lyrics available for this track yet.';
+      document.getElementById('lyricsModal').classList.remove('hidden');
+    }
+
+    function openLyricsModalForCurrent() {
+      if (currentTrack) {
+        viewLyrics(currentTrack.id);
+      }
+    }
+
+    // CRUD ACTIONS
+    async function submitNewTrack(e) {
+      e.preventDefault();
+      const payload = {
+        title: document.getElementById('newTrackTitle').value,
+        artist_name: document.getElementById('newTrackArtist').value,
+        album_name: document.getElementById('newTrackAlbum').value,
+        genre_name: document.getElementById('newTrackGenre').value,
+        duration_ms: (parseInt(document.getElementById('newTrackDuration').value) || 240) * 1000,
+        audio_file: document.getElementById('newTrackAudioUrl').value,
+        artwork: document.getElementById('newTrackArtworkUrl').value,
+        lyrics: document.getElementById('newTrackLyrics').value,
+      };
+
+      try {
+        const res = await fetch('/api/songs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          closeModal('addTrackModal');
+          document.getElementById('addTrackForm').reset();
+          await loadData();
+        } else {
+          alert('Failed to save track');
+        }
+      } catch (err) {
+        alert('Error: ' + err);
+      }
+    }
+
+    async function deleteTrack(id) {
+      if (!confirm('Are you sure you want to remove this track from Nupe Songs catalog?')) return;
+      try {
+        await fetch(`/api/songs/${id}`, { method: 'DELETE' });
+        await loadData();
+      } catch (err) {
+        alert('Error deleting track: ' + err);
+      }
+    }
+
+    async function submitNewArtist(e) {
+      e.preventDefault();
+      const payload = {
+        name: document.getElementById('newArtistName').value,
+        image: document.getElementById('newArtistImage').value,
+        bio: document.getElementById('newArtistBio').value,
+      };
+      try {
+        await fetch('/api/artists', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        closeModal('addArtistModal');
+        await loadData();
+      } catch (err) {
+        alert('Error: ' + err);
+      }
+    }
+
+    async function deleteArtist(id) {
+      if (!confirm('Delete this artist?')) return;
+      await fetch(`/api/artists/${id}`, { method: 'DELETE' });
+      await loadData();
+    }
+
+    async function submitNewAlbum(e) {
+      e.preventDefault();
+      const payload = {
+        name: document.getElementById('newAlbumName').value,
+        artist_name: document.getElementById('newAlbumArtist').value,
+        release_year: parseInt(document.getElementById('newAlbumYear').value) || 2026,
+        artwork: document.getElementById('newAlbumArtwork').value,
+      };
+      try {
+        await fetch('/api/albums', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        closeModal('addAlbumModal');
+        await loadData();
+      } catch (err) {
+        alert('Error: ' + err);
+      }
+    }
+
+    async function deleteAlbum(id) {
+      if (!confirm('Delete this album?')) return;
+      await fetch(`/api/albums/${id}`, { method: 'DELETE' });
+      await loadData();
+    }
+
+    // MODAL HELPERS
+    function openAddTrackModal() { document.getElementById('addTrackModal').classList.remove('hidden'); }
+    function openAddArtistModal() { document.getElementById('addArtistModal').classList.remove('hidden'); }
+    function openAddAlbumModal() { document.getElementById('addAlbumModal').classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+    // Init
+    loadData();
+  </script>
+</body>
+</html>

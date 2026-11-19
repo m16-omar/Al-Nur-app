@@ -9,6 +9,7 @@ import 'src/generated/protocol.dart';
 import 'src/util/cloudflare_r2_config.dart';
 import 'src/util/email_service.dart';
 import 'src/web/routes/app_config_route.dart';
+import 'src/web/routes/nupe_songs_api_route.dart';
 import 'src/web/routes/root.dart';
 
 /// The starting point of the Serverpod server.
@@ -58,6 +59,13 @@ void run(List<String> args) async {
   // Setup the executive Admin panel routes.
   final adminFile = File(Uri(path: 'web/admin/index.html').toFilePath());
   pod.webServer.addRoute(StaticRoute.file(adminFile), '/admin/**');
+
+  // Setup the executive Nupe Songs Studio & CMS routes.
+  final nupeAdminFile = File(Uri(path: 'web/nupe-admin/index.html').toFilePath());
+  pod.webServer.addRoute(StaticRoute.file(nupeAdminFile), '/nupe-admin/**');
+
+  // Setup Nupe Songs REST API endpoints
+  pod.webServer.addRoute(NupeSongsApiRoute(), '/api/**');
 
   // Checks if the flutter web app has been built and serves it if it has.
   final appDir = Directory(Uri(path: 'web/app').toFilePath());
