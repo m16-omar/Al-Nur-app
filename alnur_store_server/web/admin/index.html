@@ -2,11 +2,22 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Al-Nur Store — Executive Admin Portal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    // Apply saved theme + sidebar state before first paint (prevents a light/dark flash).
+    (function () {
+      try {
+        var t = localStorage.getItem('alnur_admin_theme') || 'light';
+        var dark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (dark) document.documentElement.classList.add('dark');
+        if (localStorage.getItem('alnur_admin_sidebar') === 'collapsed') document.documentElement.classList.add('sidebar-collapsed');
+      } catch (e) {}
+    })();
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script>
@@ -37,99 +48,422 @@
             }
           },
           fontFamily: {
-            serif: ['Cinzel', 'serif'],
-            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            // Headings now use the same clean UI face as body text; Cinzel is kept for the wordmark only.
+            serif: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            brand: ['Cinzel', 'serif'],
           }
         }
       }
     }
   </script>
   <style>
+    /* =====================================================================
+       AL-NUR ADMIN DESIGN SYSTEM
+       Every colour comes from a token below. Change --primary to rebrand.
+       ===================================================================== */
+    :root {
+      --bg: #FAFAF9;
+      --surface: #FFFFFF;
+      --surface-2: #F5F5F4;
+      --surface-3: #ECEBE9;
+      --border: #E7E5E4;
+      --border-strong: #D6D3D1;
+      --text: #1C1917;
+      --text-2: #57534E;
+      --text-3: #8A837D;
+
+      --primary: #A4561A;            /* Al-Nur copper, 5.3:1 on white */
+      --primary-hover: #8E4914;
+      --primary-fg: #FFFFFF;
+      --primary-soft: #FBF1E7;
+      --primary-soft-fg: #8A4513;
+      --ring: rgba(164, 86, 26, 0.28);
+
+      --success: #15803D;  --success-soft: #ECFDF3; --success-border: #BBF7D0; --success-solid: #22C55E;
+      --warning: #B45309;  --warning-soft: #FFFBEB; --warning-border: #FDE68A; --warning-solid: #F59E0B;
+      --danger:  #B91C1C;  --danger-soft:  #FEF2F2; --danger-border:  #FECACA; --danger-solid:  #DC2626;
+      --info:    #6D28D9;  --info-soft:    #F5F3FF; --info-border:    #DDD6FE; --info-solid:    #8B5CF6;
+      --sky-solid: #0EA5E9;
+
+      --shadow-sm: 0 1px 2px rgba(28, 25, 23, 0.05);
+      --shadow-md: 0 4px 16px -4px rgba(28, 25, 23, 0.10), 0 2px 4px -2px rgba(28, 25, 23, 0.05);
+      --shadow-lg: 0 18px 48px -12px rgba(28, 25, 23, 0.22);
+      --radius: 8px;
+      --radius-lg: 12px;
+      --sidebar-w: 244px;
+      --sidebar-w-collapsed: 64px;
+      --topbar-h: 56px;
+    }
+    html.dark {
+      --bg: #0E0D0C;
+      --surface: #171513;
+      --surface-2: #1F1C1A;
+      --surface-3: #2A2623;
+      --border: #2A2623;
+      --border-strong: #3B3531;
+      --text: #F5F4F2;
+      --text-2: #B5AEA7;
+      --text-3: #7F7871;
+
+      --primary: #E3A15A;
+      --primary-hover: #EDB273;
+      --primary-fg: #1A1205;
+      --primary-soft: rgba(227, 161, 90, 0.12);
+      --primary-soft-fg: #EDB273;
+      --ring: rgba(227, 161, 90, 0.35);
+
+      --success: #4ADE80;  --success-soft: rgba(74, 222, 128, 0.10);  --success-border: rgba(74, 222, 128, 0.25);
+      --warning: #FBBF24;  --warning-soft: rgba(251, 191, 36, 0.10);  --warning-border: rgba(251, 191, 36, 0.25);
+      --danger:  #F87171;  --danger-soft:  rgba(248, 113, 113, 0.10); --danger-border:  rgba(248, 113, 113, 0.25);
+      --info:    #A78BFA;  --info-soft:    rgba(167, 139, 250, 0.10); --info-border:    rgba(167, 139, 250, 0.25);
+
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+      --shadow-md: 0 4px 16px -4px rgba(0, 0, 0, 0.5);
+      --shadow-lg: 0 18px 48px -12px rgba(0, 0, 0, 0.7);
+      color-scheme: dark;
+    }
+
+    html, body { background: var(--bg); }
     body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      background-color: #FFFFFF;
-      color: #1F2937;
+      font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+      color: var(--text);
       min-height: 100vh;
+      font-feature-settings: 'cv11', 'ss01';
+      -webkit-font-smoothing: antialiased;
     }
-    .white-card {
-      background: #FFFFFF;
-      border: 1px solid #E5E7EB;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-      transition: all 0.2s ease;
+    .font-brand { font-family: 'Cinzel', serif; }
+    .tabular-nums { font-variant-numeric: tabular-nums; }
+
+    /* Text / surface helpers */
+    .t-1 { color: var(--text); }
+    .t-2 { color: var(--text-2); }
+    .t-3 { color: var(--text-3); }
+    .bd  { border-color: var(--border); }
+    .bg-surface { background: var(--surface); }
+    .bg-subtle  { background: var(--surface-2); }
+
+    /* ---------- App shell ---------- */
+    .app-shell { min-height: 100vh; background: var(--bg); }
+    .sidebar {
+      position: fixed; inset: 0 auto 0 0; z-index: 50;
+      width: var(--sidebar-w);
+      display: flex; flex-direction: column;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      transition: width .2s ease, transform .25s ease;
     }
-    .white-card:hover {
-      border-color: #D1D5DB;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    .app-main { min-width: 0; margin-left: var(--sidebar-w); transition: margin-left .2s ease; }
+    .sidebar-brand { display: flex; align-items: center; gap: 10px; height: var(--topbar-h); padding: 0 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .brand-mark { width: 30px; height: 30px; border-radius: 8px; background: #2E110A; color: #E5C06B; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .brand-mark svg { width: 16px; height: 16px; }
+    .side-nav { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 1px; }
+    .nav-section-title { font-size: 11px; font-weight: 500; color: var(--text-3); padding: 14px 10px 6px; white-space: nowrap; }
+    .side-nav .nav-tab, .nav-item {
+      display: flex; align-items: center; gap: 10px; width: 100%;
+      height: 34px; padding: 0 10px; border-radius: var(--radius);
+      font-size: 13px; font-weight: 500; color: var(--text-2);
+      white-space: nowrap; text-align: left; transition: background .12s, color .12s;
     }
-    body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      background-color: #FCF8F1;
-      color: #2E110A;
-      min-height: 100vh;
+    .side-nav .nav-tab svg, .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .side-nav .nav-tab:hover, .nav-item:hover { background: var(--surface-2); color: var(--text); }
+    .side-nav .nav-tab.active { background: var(--primary-soft); color: var(--primary-soft-fg); font-weight: 600; }
+    .nav-count {
+      margin-left: auto; min-width: 22px; text-align: center;
+      font-size: 11px; font-weight: 600; line-height: 18px; padding: 0 6px; border-radius: 999px;
+      color: var(--text-3); background: var(--surface-2); font-variant-numeric: tabular-nums;
     }
-    .white-card {
-      background: #FFFFFF;
-      border: 1px solid #EBE4D8;
-      box-shadow: 0 1px 4px rgba(46, 17, 10, 0.04);
-      transition: all 0.2s ease;
+    .side-nav .nav-tab.active .nav-count { background: var(--surface); color: var(--primary-soft-fg); }
+    .sidebar-footer { padding: 10px; border-top: 1px solid var(--border); }
+    .sidebar-backdrop { display: none; }
+
+    @media (min-width: 1024px) {
+      html.sidebar-collapsed .sidebar { width: var(--sidebar-w-collapsed); }
+      html.sidebar-collapsed .app-main { margin-left: var(--sidebar-w-collapsed); }
+      html.sidebar-collapsed .nav-label,
+      html.sidebar-collapsed .nav-count,
+      html.sidebar-collapsed .brand-text { display: none; }
+      html.sidebar-collapsed .nav-section-title { font-size: 0; padding: 8px 0; margin: 6px 8px; border-top: 1px solid var(--border); }
+      html.sidebar-collapsed .side-nav .nav-tab,
+      html.sidebar-collapsed .nav-item { justify-content: center; padding: 0; }
+      html.sidebar-collapsed .sidebar-brand { justify-content: center; padding: 0; }
+      html.sidebar-collapsed #btnSidebarCollapse svg { transform: rotate(180deg); }
     }
-    .white-card:hover {
-      border-color: #C87A1E;
-      box-shadow: 0 6px 18px rgba(46, 17, 10, 0.08);
+    @media (max-width: 1023px) {
+      .sidebar { transform: translateX(-100%); box-shadow: var(--shadow-lg); }
+      .app-main { margin-left: 0; }
+      body.drawer-open .sidebar { transform: none; }
+      body.drawer-open .sidebar-backdrop { display: block; position: fixed; inset: 0; z-index: 45; background: rgba(12, 10, 9, 0.45); }
     }
-    .gold-btn {
-      background: linear-gradient(135deg, #E5A83B 0%, #C87A1E 100%);
-      color: #FFFFFF;
-      font-weight: 700;
-      transition: all 0.2s ease;
-      box-shadow: 0 4px 14px rgba(200, 122, 30, 0.25);
+
+    .topbar {
+      position: sticky; top: 0; z-index: 40;
+      height: var(--topbar-h);
+      display: flex; align-items: center; gap: 10px;
+      padding: 0 16px;
+      background: color-mix(in srgb, var(--bg) 88%, transparent);
+      backdrop-filter: saturate(1.4) blur(10px);
+      -webkit-backdrop-filter: saturate(1.4) blur(10px);
+      border-bottom: 1px solid var(--border);
     }
-    .gold-btn:hover {
-      filter: brightness(1.08);
-      transform: translateY(-1px);
-      box-shadow: 0 6px 18px rgba(200, 122, 30, 0.35);
+    @media (min-width: 640px) { .topbar { padding: 0 24px; } }
+    .topbar-search { position: relative; flex: 1; max-width: 420px; margin-left: 8px; }
+    .search-kbd { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+    .search-popover { left: 0; right: auto; width: 100%; min-width: 300px; max-height: 70vh; overflow-y: auto; }
+    .status-pill { align-items: center; gap: 8px; height: 30px; padding: 0 10px; margin-right: 4px; border: 1px solid var(--border); border-radius: 999px; font-size: 12px; color: var(--text-2); background: var(--surface); }
+    .profile-btn { display: flex; align-items: center; gap: 10px; padding: 4px 8px 4px 4px; border-radius: 10px; transition: background .12s; }
+    .profile-btn:hover { background: var(--surface-2); }
+    .notif-dot { position: absolute; top: 7px; right: 7px; width: 7px; height: 7px; border-radius: 999px; background: var(--danger-solid); box-shadow: 0 0 0 2px var(--bg); }
+    .theme-icon-dark { display: none; }
+    html.dark .theme-icon-dark { display: block; }
+    html.dark .theme-icon-light { display: none; }
+
+    .page-container { max-width: 1360px; margin: 0 auto; padding: 24px 16px 96px; }
+    @media (min-width: 640px)  { .page-container { padding: 28px 24px 96px; } }
+    @media (min-width: 768px)  { .page-container { padding-bottom: 40px; } }
+    @media (min-width: 1280px) { .page-container { padding: 32px 32px 48px; } }
+
+    .page-header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 16px; margin-bottom: 20px; }
+    .page-title { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; color: var(--text); line-height: 1.25; }
+    .page-sub { font-size: 13px; color: var(--text-2); margin-top: 4px; }
+
+    /* ---------- Buttons ---------- */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      height: 34px; padding: 0 12px; border-radius: var(--radius);
+      font-size: 13px; font-weight: 500; line-height: 1; white-space: nowrap;
+      border: 1px solid transparent; cursor: pointer; user-select: none;
+      transition: background .12s, border-color .12s, color .12s, box-shadow .12s;
     }
-    .emerald-btn, .brand-btn {
-      background: linear-gradient(135deg, #C87A1E 0%, #8F581B 100%);
-      color: #FFFFFF;
-      font-weight: 700;
-      transition: all 0.2s ease;
-      box-shadow: 0 4px 14px rgba(200, 122, 30, 0.25);
+    .btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+    .btn:disabled, .icon-btn:disabled { opacity: .45; cursor: not-allowed; }
+    .btn-sm { height: 28px; padding: 0 10px; font-size: 12px; }
+    .btn-sm svg { width: 14px; height: 14px; }
+    .btn-primary { background: var(--primary); color: var(--primary-fg); box-shadow: var(--shadow-sm); }
+    .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+    .btn-secondary { background: var(--surface); color: var(--text); border-color: var(--border); box-shadow: var(--shadow-sm); }
+    .btn-secondary:hover:not(:disabled) { background: var(--surface-2); border-color: var(--border-strong); }
+    .btn-ghost { background: transparent; color: var(--text-2); }
+    .btn-ghost:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
+    .btn-danger { background: var(--danger-solid); color: #fff; }
+    .btn-danger:hover:not(:disabled) { background: #B91C1C; }
+    .btn-danger-soft { background: var(--danger-soft); color: var(--danger); border-color: var(--danger-border); }
+    .btn-danger-soft:hover:not(:disabled) { background: var(--danger-solid); color: #fff; border-color: var(--danger-solid); }
+    .icon-btn {
+      display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+      width: 32px; height: 32px; border-radius: var(--radius);
+      color: var(--text-2); transition: background .12s, color .12s;
     }
-    .emerald-btn:hover, .brand-btn:hover {
-      background: linear-gradient(135deg, #E5A83B 0%, #C87A1E 100%);
-      transform: translateY(-1px);
-      box-shadow: 0 6px 18px rgba(200, 122, 30, 0.35);
+    .icon-btn svg { width: 16px; height: 16px; }
+    .icon-btn:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
+    .icon-btn-sm { width: 28px; height: 28px; }
+    .icon-btn-sm svg { width: 15px; height: 15px; }
+    .icon-btn.is-danger:hover:not(:disabled) { background: var(--danger-soft); color: var(--danger); }
+    .icon-btn.is-warning { color: var(--warning); }
+    .icon-btn.is-warning:hover { background: var(--warning-soft); color: var(--warning); }
+    .icon-btn.is-on { color: var(--warning); }
+    .link-btn { color: var(--primary); font-weight: 500; }
+    .link-btn:hover { text-decoration: underline; }
+    .btn:focus-visible, .icon-btn:focus-visible, .nav-tab:focus-visible, .nav-item:focus-visible, .tab:focus-visible,
+    .menu-item:focus-visible, .profile-btn:focus-visible, .link-btn:focus-visible, .list-row:focus-visible {
+      outline: none; box-shadow: 0 0 0 3px var(--ring);
     }
-    .dark-btn {
-      background: #2E110A;
-      color: #FFFFFF;
-      font-weight: 700;
-      transition: all 0.2s ease;
+
+    /* ---------- Cards, KPIs ---------- */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
+    .card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+    .card-title { font-size: 14px; font-weight: 600; color: var(--text); }
+    .card-sub { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+    .kpi { padding: 18px; }
+    .kpi-label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--text-2); }
+    .kpi-icon { width: 28px; height: 28px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; background: var(--surface-2); color: var(--text-2); }
+    .kpi-icon svg { width: 15px; height: 15px; }
+    .kpi-value { margin-top: 14px; font-size: 26px; font-weight: 600; letter-spacing: -0.02em; color: var(--text); line-height: 1.1; font-variant-numeric: tabular-nums; min-height: 29px; }
+    .kpi-meta { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--text-3); min-height: 18px; }
+    .kpi-meta > span { display: inline-flex; align-items: center; gap: 6px; }
+
+    /* ---------- Badges, dots ---------- */
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      height: 22px; padding: 0 8px; border-radius: 999px;
+      font-size: 11.5px; font-weight: 500; white-space: nowrap;
+      border: 1px solid var(--border); background: var(--surface-2); color: var(--text-2);
     }
-    .dark-btn:hover {
-      background: #4A1E0F;
-      transform: translateY(-1px);
+    .badge svg { width: 12px; height: 12px; }
+    .badge-success { background: var(--success-soft); color: var(--success); border-color: var(--success-border); }
+    .badge-warning { background: var(--warning-soft); color: var(--warning); border-color: var(--warning-border); }
+    .badge-danger  { background: var(--danger-soft);  color: var(--danger);  border-color: var(--danger-border); }
+    .badge-info    { background: var(--info-soft);    color: var(--info);    border-color: var(--info-border); }
+    .badge-primary { background: var(--primary-soft); color: var(--primary-soft-fg); border-color: transparent; }
+    .dot { display: inline-block; width: 6px; height: 6px; border-radius: 999px; background: currentColor; flex-shrink: 0; }
+    .dot-live { background: var(--success-solid); box-shadow: 0 0 0 3px color-mix(in srgb, var(--success-solid) 20%, transparent); }
+
+    /* ---------- Inputs ---------- */
+    .input {
+      height: 34px; width: 100%; padding: 0 10px;
+      background: var(--surface); color: var(--text);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      font-size: 13px; transition: border-color .12s, box-shadow .12s;
     }
-    .nav-tab.active {
-      background: #F9EFE4;
-      color: #C87A1E;
-      border-bottom: 2px solid #C87A1E;
-      font-weight: 700;
+    .input::placeholder { color: var(--text-3); }
+    .input:hover { border-color: var(--border-strong); }
+    .input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--ring); }
+    .input-sm { height: 28px; font-size: 12px; padding: 0 8px; }
+    select.input { padding-right: 28px; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238A837D' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; }
+    .search-field { position: relative; }
+    .search-field > svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: var(--text-3); pointer-events: none; }
+    .search-field > .input { padding-left: 32px; }
+    .checkbox { width: 15px; height: 15px; accent-color: var(--primary); cursor: pointer; vertical-align: middle; }
+    .kbd { display: inline-flex; align-items: center; height: 20px; padding: 0 6px; font-size: 11px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--text-3); background: var(--surface-2); border: 1px solid var(--border); border-radius: 5px; }
+
+    /* ---------- Tabs (filters) ---------- */
+    .tabs { display: flex; gap: 4px; overflow-x: auto; padding: 0 12px; border-bottom: 1px solid var(--border); scrollbar-width: none; }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab {
+      display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
+      height: 42px; padding: 0 8px; margin-bottom: -1px;
+      font-size: 13px; font-weight: 500; color: var(--text-3);
+      border-bottom: 2px solid transparent; transition: color .12s, border-color .12s;
     }
-    
-    /* Touch & Mobile Utilities */
+    .tab:hover { color: var(--text); }
+    .tab.is-active { color: var(--text); border-bottom-color: var(--primary); }
+    .tab-count { font-size: 11px; line-height: 18px; padding: 0 6px; border-radius: 999px; background: var(--surface-2); color: var(--text-3); font-variant-numeric: tabular-nums; }
+    .tab.is-active .tab-count { background: var(--primary-soft); color: var(--primary-soft-fg); }
+
+    /* ---------- Tables ---------- */
+    .table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+    .table thead th {
+      text-align: left; white-space: nowrap;
+      font-size: 12px; font-weight: 500; color: var(--text-3);
+      padding: 9px 14px; background: var(--surface-2);
+      border-bottom: 1px solid var(--border);
+    }
+    .table tbody td { padding: 12px 14px; border-bottom: 1px solid var(--border); color: var(--text-2); vertical-align: middle; }
+    .table tbody tr:last-child td { border-bottom: 0; }
+    .table tbody tr { transition: background .1s; }
+    .table tbody tr:hover td { background: color-mix(in srgb, var(--surface-2) 65%, transparent); }
+    .table tbody tr.is-selected td { background: var(--primary-soft); }
+    .table tbody tr.is-clickable { cursor: pointer; }
+    .row-actions { display: flex; justify-content: flex-end; align-items: center; gap: 2px; }
+
+    .avatar {
+      position: relative; flex-shrink: 0;
+      width: 34px; height: 34px; border-radius: 999px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 600; background: var(--surface-3); color: var(--text-2);
+    }
+    .avatar-sm { width: 30px; height: 30px; font-size: 11px; }
+    .avatar-staff { background: #2E110A; color: #E5C06B; }
+    .avatar-vip { background: var(--warning-soft); color: var(--warning); }
+    .presence { position: absolute; right: -2px; bottom: -2px; width: 12px; height: 12px; border-radius: 999px; border: 2px solid var(--surface); background: var(--border-strong); cursor: pointer; transition: transform .12s; }
+    .presence:hover { transform: scale(1.2); }
+    .presence.on { background: var(--success-solid); }
+
+    .bulk-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; padding: 8px 14px; background: var(--primary-soft); border-bottom: 1px solid var(--border); font-size: 13px; color: var(--primary-soft-fg); }
+    .pager { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--border); font-size: 12.5px; color: var(--text-3); }
+    .pager b { color: var(--text); font-weight: 500; }
+
+    /* ---------- States ---------- */
+    .skeleton { display: inline-block; border-radius: 6px; background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 37%, var(--surface-2) 63%); background-size: 400% 100%; animation: skeleton 1.4s ease infinite; }
+    @keyframes skeleton { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+    .empty { padding: 48px 16px; text-align: center; }
+    .empty-icon { width: 40px; height: 40px; margin: 0 auto 12px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: var(--surface-2); color: var(--text-3); border: 1px solid var(--border); }
+    .empty-icon svg { width: 18px; height: 18px; }
+    .empty-icon.is-danger { background: var(--danger-soft); color: var(--danger); border-color: var(--danger-border); }
+    .empty-title { font-size: 14px; font-weight: 600; color: var(--text); }
+    .empty-text { font-size: 13px; color: var(--text-3); max-width: 380px; margin: 4px auto 0; }
+    .empty .btn { margin-top: 16px; }
+    .alert { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: var(--radius-lg); border: 1px solid; font-size: 13px; }
+    .alert svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; }
+    .alert-danger { background: var(--danger-soft); border-color: var(--danger-border); color: var(--danger); }
+
+    /* ---------- Popovers, menus, list rows ---------- */
+    .popover { position: absolute; right: 0; top: calc(100% + 6px); z-index: 60; min-width: 220px; padding: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); }
+    .menu-label { padding: 8px 10px 4px; font-size: 11px; font-weight: 500; color: var(--text-3); }
+    .menu-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 10px; border-radius: var(--radius); font-size: 13px; color: var(--text-2); text-align: left; transition: background .1s, color .1s; }
+    .menu-item svg { width: 15px; height: 15px; flex-shrink: 0; }
+    .menu-item:hover, .menu-item.is-highlighted { background: var(--surface-2); color: var(--text); }
+    .menu-item-danger:hover { background: var(--danger-soft); color: var(--danger); }
+    .menu-sep { height: 1px; background: var(--border); margin: 6px 0; }
+    .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px; padding: 2px; margin: 0 6px 4px; background: var(--surface-2); border-radius: var(--radius); }
+    .seg button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; height: 26px; border-radius: 6px; font-size: 12px; font-weight: 500; color: var(--text-3); }
+    .seg button svg { width: 13px; height: 13px; }
+    .seg button.is-active { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); }
+    .list-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border-radius: var(--radius); text-align: left; transition: background .1s; }
+    .list-row:hover { background: var(--surface-2); }
+    .list-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .list-icon svg { width: 15px; height: 15px; }
+    .tone-primary { background: var(--primary-soft); color: var(--primary-soft-fg); }
+    .tone-success { background: var(--success-soft); color: var(--success); }
+    .tone-warning { background: var(--warning-soft); color: var(--warning); }
+    .tone-danger  { background: var(--danger-soft);  color: var(--danger); }
+    .tone-info    { background: var(--info-soft);    color: var(--info); }
+    .tone-neutral { background: var(--surface-2);    color: var(--text-2); }
+
+    .pipeline-bar { display: flex; gap: 2px; height: 10px; border-radius: 999px; overflow: hidden; background: var(--surface-2); }
+    .pipeline-bar > span { height: 100%; transition: width .4s ease; }
+    .stage-btn { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 10px 12px; border-radius: var(--radius); border: 1px solid var(--border); text-align: left; transition: border-color .12s, background .12s; }
+    .stage-btn:hover { border-color: var(--border-strong); background: var(--surface-2); }
+
+    /* Mobile bottom navigation */
+    .bottom-nav { position: fixed; inset: auto 0 0 0; z-index: 40; display: flex; justify-content: space-around; padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid var(--border); }
+    .mob-nav-btn { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 5px 4px; border-radius: 10px; font-size: 10.5px; font-weight: 500; color: var(--text-3); }
+    .mob-nav-btn svg { width: 20px; height: 20px; }
+    .mob-nav-btn.is-active { color: var(--primary); }
+    @media (min-width: 768px) { .bottom-nav { display: none; } }
+
+    /* =====================================================================
+       LEGACY CLASS RESTYLE
+       Older pages (Products, Orders, AI, Health, Trash, modals) still use
+       these classes; restyling them here moves them onto the new system
+       until each page gets its own redesign pass.
+       ===================================================================== */
+    .white-card { background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-sm); transition: border-color .15s; }
+    .white-card:hover { border-color: var(--border-strong); }
+    .gold-btn, .emerald-btn, .brand-btn { background: var(--primary); color: var(--primary-fg); font-weight: 600; box-shadow: var(--shadow-sm); transition: background .12s; }
+    .gold-btn:hover, .emerald-btn:hover, .brand-btn:hover { background: var(--primary-hover); }
+    .dark-btn { background: var(--text); color: var(--surface); font-weight: 600; transition: opacity .12s; }
+    .dark-btn:hover { opacity: .9; }
+    #adminDashboardScreen .font-serif { letter-spacing: -0.01em; }
+
+    /* Dark-mode compatibility for legacy utility classes used by not-yet-redesigned pages and modals */
+    html.dark .bg-white, html.dark .bg-\[\#FCF8F1\], html.dark .bg-white\/95 { background-color: var(--surface) !important; }
+    html.dark .bg-gray-50, html.dark .bg-gray-50\/80, html.dark .bg-gray-100, html.dark .bg-brand-cream { background-color: var(--surface-2) !important; }
+    html.dark .hover\:bg-gray-50:hover, html.dark .hover\:bg-gray-100:hover, html.dark .hover\:bg-gray-200:hover, html.dark .hover\:bg-gray-50\/70:hover { background-color: var(--surface-3) !important; }
+    html.dark .bg-gray-200 { background-color: var(--surface-3) !important; }
+    html.dark .text-gray-900, html.dark .text-gray-800, html.dark .text-brand-primaryDark { color: var(--text) !important; }
+    html.dark .text-gray-700, html.dark .text-gray-600 { color: var(--text-2) !important; }
+    html.dark .text-gray-500, html.dark .text-gray-400 { color: var(--text-3) !important; }
+    html.dark .border-gray-100, html.dark .border-gray-200, html.dark .border-gray-300, html.dark .border-brand-border { border-color: var(--border) !important; }
+    html.dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]) { border-color: var(--border) !important; }
+    html.dark .bg-emerald-50 { background-color: var(--success-soft) !important; }
+    html.dark .text-emerald-600, html.dark .text-emerald-700, html.dark .text-emerald-800 { color: var(--success) !important; }
+    html.dark .border-emerald-200 { border-color: var(--success-border) !important; }
+    html.dark .bg-amber-50, html.dark .bg-orange-50 { background-color: var(--warning-soft) !important; }
+    html.dark .text-amber-700, html.dark .text-amber-800, html.dark .text-orange-800 { color: var(--warning) !important; }
+    html.dark .border-amber-200, html.dark .border-amber-300, html.dark .border-orange-300 { border-color: var(--warning-border) !important; }
+    html.dark .bg-rose-50 { background-color: var(--danger-soft) !important; }
+    html.dark .text-rose-600, html.dark .text-rose-700 { color: var(--danger) !important; }
+    html.dark .border-rose-200, html.dark .border-rose-100 { border-color: var(--danger-border) !important; }
+    html.dark .bg-\[\#FAF3E8\], html.dark .bg-\[\#F9EFE4\], html.dark .bg-\[\#F5EBE1\], html.dark .bg-\[\#ECE2D0\], html.dark .bg-brand-primaryContainer, html.dark .bg-brand-goldLight { background-color: var(--primary-soft) !important; }
+    html.dark .text-\[\#8F581B\], html.dark .text-\[\#7A4917\], html.dark .text-\[\#5C3710\], html.dark .text-brand-primary, html.dark .text-brand-goldDark { color: var(--primary-soft-fg) !important; }
+    html.dark input:not(.input):not([type=checkbox]):not([type=radio]), html.dark select:not(.input), html.dark textarea { color: var(--text); }
+
+    /* Hidden toast must not swallow taps (it overlaps the mobile bottom nav) */
+    #toast.opacity-0 { pointer-events: none; }
+
+    /* Touch & mobile utilities (unchanged) */
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     .touch-pan-x { -webkit-overflow-scrolling: touch; }
     @media (max-width: 640px) {
-      input, select, textarea { font-size: 14px !important; }
+      input, select, textarea { font-size: 16px !important; } /* 16px stops iOS zoom-on-focus */
     }
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #F3F4F6; }
-    ::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 8px; border: 2px solid var(--bg); }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
   </style>
 </head>
 <body class="antialiased bg-[#FCF8F1] text-brand-primaryDark selection:bg-brand-primary/20 selection:text-brand-primaryDark">
@@ -150,7 +484,7 @@
         <div class="inline-flex w-14 h-14 rounded-2xl bg-brand-primaryDark items-center justify-center shadow-lg shadow-brand-primary/15 mb-3 border border-brand-gold/30">
           <i data-lucide="sparkles" class="w-7 h-7 text-brand-gold"></i>
         </div>
-        <h1 class="font-serif text-2xl font-bold tracking-wider text-gray-900">AL-NUR</h1>
+        <h1 class="font-brand text-2xl font-bold tracking-wider text-gray-900">AL-NUR</h1>
         <p class="text-xs uppercase tracking-widest text-brand-primary font-bold mt-0.5">Executive Admin Portal</p>
         <p class="text-xs text-gray-500 mt-2">Sign in to manage modest collections, inventory, and fulfillment</p>
       </div>
@@ -287,196 +621,274 @@
   <!-- 2. ADMIN DASHBOARD SCREEN (AUTHENTICATED)   -->
   <!-- ========================================== -->
   <div id="adminDashboardScreen" class="hidden">
-    
-    <!-- Top Global Header -->
-    <header class="border-b border-brand-border bg-[#FCF8F1]/95 backdrop-blur sticky top-0 z-40">
-      <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3.5 flex items-center justify-between">
-        
-        <!-- Brand Logo -->
-        <div class="flex items-center space-x-2.5 sm:space-x-3">
-          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-brand-primaryDark flex items-center justify-center shadow-md shadow-brand-primary/10 shrink-0">
-            <i data-lucide="sparkles" class="w-4 h-4 sm:w-5 sm:h-5 text-brand-gold"></i>
-          </div>
-          <div>
-            <div class="flex items-center space-x-1.5 sm:space-x-2">
-              <span class="font-serif tracking-wider text-lg sm:text-xl font-bold text-gray-900">AL-NUR</span>
-              <span class="text-[10px] sm:text-xs uppercase tracking-widest text-brand-primary font-bold px-1.5 sm:px-2 py-0.5 rounded bg-brand-primaryContainer border border-emerald-200">Admin</span>
-            </div>
-            <p class="text-[10px] sm:text-xs text-gray-500 font-medium hidden sm:block">Modest Haute Couture & Fine Scents</p>
-          </div>
-        </div>
+    <div class="app-shell">
 
-        <!-- Quick Serverpod Status -->
-        <div class="hidden md:flex items-center space-x-4">
-          <div class="flex items-center space-x-2 bg-gray-50 px-3.5 py-1.5 rounded-full border border-gray-200 text-xs">
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span class="text-gray-700 font-medium">Serverpod Monolith Active</span>
-            <span class="text-gray-400">•</span>
-            <span id="badge-api-host" class="text-brand-primary font-semibold font-mono">Port 8080 API • 8082 Web</span>
+      <!-- ========================================== -->
+      <!-- SIDEBAR NAVIGATION (collapsible)            -->
+      <!-- ========================================== -->
+      <aside id="appSidebar" class="sidebar" aria-label="Primary navigation">
+        <div class="sidebar-brand">
+          <div class="brand-mark"><i data-lucide="sparkles"></i></div>
+          <div class="brand-text min-w-0">
+            <div class="font-brand text-[15px] font-bold tracking-wider t-1 leading-none">AL-NUR</div>
+            <div class="text-[11px] t-3 mt-1">Admin console</div>
           </div>
-          <button onclick="fetchInitialData()" class="p-2 rounded-lg bg-gray-50 text-gray-600 hover:text-brand-primary hover:bg-gray-100 border border-gray-200 transition" title="Refresh Live Data">
-            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+          <button class="icon-btn icon-btn-sm ml-auto lg:hidden" onclick="closeMobileSidebar()" aria-label="Close navigation">
+            <i data-lucide="x"></i>
           </button>
         </div>
 
-        <!-- Admin Profile & Sign Out Controls -->
-        <div class="flex items-center space-x-3">
-          <a href="http://localhost:8082/app" target="_blank" class="hidden sm:inline-flex items-center space-x-1.5 text-xs text-gray-600 hover:text-brand-primary px-3.5 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition font-medium">
-            <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
-            <span>View Mobile Web</span>
-          </a>
-          
-          <div class="flex items-center space-x-3 pl-3 border-l border-gray-200">
-            <div class="flex items-center space-x-2.5">
-              <div class="w-8 h-8 rounded-full bg-brand-primaryDark text-brand-gold flex items-center justify-center font-bold text-xs shadow-sm" id="adminAvatarInitials">
-                AM
-              </div>
-              <div class="text-left hidden lg:block">
-                <p class="text-xs font-bold text-gray-900" id="adminDisplayName">Amina Al-Mansoor</p>
-                <p class="text-[10px] text-gray-500 font-medium" id="adminRoleName">Super Administrator</p>
-              </div>
-            </div>
+        <nav class="side-nav">
+          <button onclick="switchTab('overview')" id="tab-overview" class="nav-tab active" aria-current="page" title="Dashboard">
+            <i data-lucide="layout-dashboard"></i><span class="nav-label">Dashboard</span>
+          </button>
 
-            <!-- Sign Out Button -->
-            <button 
-              onclick="handleAdminLogout()" 
-              class="p-2 sm:px-3 sm:py-1.5 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-semibold flex items-center space-x-1.5 transition ml-2" 
-              title="Sign Out of Admin Portal"
-            >
-              <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
-              <span class="hidden sm:inline">Sign Out</span>
+          <div class="nav-section-title">Commerce</div>
+          <button onclick="switchTab('orders')" id="tab-orders" class="nav-tab" title="Orders">
+            <i data-lucide="shopping-bag"></i><span class="nav-label">Orders</span>
+            <span id="badge-orders-nav" class="nav-count" title="Active orders (not delivered or cancelled)">0</span>
+          </button>
+          <button onclick="switchTab('products')" id="tab-products" class="nav-tab" title="Products">
+            <i data-lucide="gem"></i><span class="nav-label">Products</span>
+            <span id="badge-product-count" class="nav-count">0</span>
+          </button>
+          <button onclick="switchTab('categories')" id="tab-categories" class="nav-tab" title="Collections">
+            <i data-lucide="layout-grid"></i><span class="nav-label">Collections</span>
+            <span id="badge-category-count" class="nav-count">0</span>
+          </button>
+
+          <div class="nav-section-title">People</div>
+          <button onclick="switchTab('users')" id="tab-users" class="nav-tab" title="Customers">
+            <i data-lucide="users"></i><span class="nav-label">Customers</span>
+            <span id="badge-users-count" class="nav-count">0</span>
+          </button>
+
+          <div class="nav-section-title">Tools</div>
+          <button onclick="switchTab('ai')" id="tab-ai" class="nav-tab" title="AI Stylist">
+            <i data-lucide="bot"></i><span class="nav-label">AI Stylist</span>
+          </button>
+
+          <div class="nav-section-title">System</div>
+          <button onclick="switchTab('health')" id="tab-health" class="nav-tab" title="Health">
+            <i data-lucide="activity"></i><span class="nav-label">Health</span>
+          </button>
+          <button onclick="switchTab('trash')" id="tab-trash" class="nav-tab" title="Trash">
+            <i data-lucide="trash-2"></i><span class="nav-label">Trash</span>
+            <span id="badge-trash-count" class="nav-count">0</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-footer hidden lg:block">
+          <button id="btnSidebarCollapse" class="nav-item" onclick="toggleSidebarCollapsed()" title="Collapse / expand sidebar">
+            <i data-lucide="panel-left-close"></i><span class="nav-label">Collapse</span>
+          </button>
+        </div>
+      </aside>
+      <div class="sidebar-backdrop" onclick="closeMobileSidebar()"></div>
+
+      <div class="app-main">
+
+        <!-- ========================================== -->
+        <!-- TOPBAR: search, status, notifications, profile -->
+        <!-- ========================================== -->
+        <header class="topbar">
+          <button class="icon-btn lg:hidden -ml-1" onclick="openMobileSidebar()" aria-label="Open navigation">
+            <i data-lucide="menu"></i>
+          </button>
+          <div class="hidden md:flex items-center gap-1.5 text-[13px] min-w-0 shrink-0">
+            <span class="t-3">Al-Nur</span>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 t-3"></i>
+            <span id="topbarPageTitle" class="t-1 font-medium truncate">Dashboard</span>
+          </div>
+
+          <div class="topbar-search" id="globalSearchWrap">
+            <div class="search-field">
+              <i data-lucide="search"></i>
+              <input id="globalSearchInput" type="text" class="input" autocomplete="off" spellcheck="false"
+                placeholder="Search orders, products, customers…" aria-label="Search the admin"
+                oninput="handleGlobalSearch(this.value)" onfocus="handleGlobalSearch(this.value)" onkeydown="handleGlobalSearchKey(event)">
+              <span class="kbd search-kbd hidden md:inline-flex" id="globalSearchKbd">⌘K</span>
+            </div>
+            <div id="globalSearchResults" class="popover search-popover hidden" role="listbox"></div>
+          </div>
+
+          <div class="ml-auto flex items-center gap-0.5">
+            <div class="status-pill hidden xl:flex" id="apiStatusPill" title="Serverpod API">
+              <span class="dot dot-live" id="apiStatusDot"></span>
+              <span id="badge-api-host" class="font-mono text-[11.5px]">Port 8080 API • 8082 Web</span>
+            </div>
+            <button onclick="refreshAllData()" class="icon-btn" title="Refresh live data" aria-label="Refresh live data">
+              <i data-lucide="refresh-cw" id="iconRefreshAll"></i>
             </button>
+            <button onclick="toggleTheme()" class="icon-btn hidden sm:inline-flex" title="Toggle dark mode" aria-label="Toggle dark mode">
+              <i data-lucide="moon" class="theme-icon-light"></i>
+              <i data-lucide="sun" class="theme-icon-dark"></i>
+            </button>
+
+            <div class="relative" id="notifWrap">
+              <button onclick="toggleNotifications()" class="icon-btn relative" title="Notifications" aria-label="Notifications">
+                <i data-lucide="bell"></i>
+                <span id="notifDot" class="notif-dot hidden"></span>
+              </button>
+              <div id="notifPanel" class="popover hidden !p-0 w-[340px] max-w-[calc(100vw-24px)]">
+                <div class="flex items-center justify-between px-4 py-3 border-b bd">
+                  <span class="text-[13px] font-semibold t-1">Notifications</span>
+                  <span id="notifCount" class="text-[12px] t-3"></span>
+                </div>
+                <div id="notifList" class="max-h-[380px] overflow-y-auto p-1.5"></div>
+              </div>
+            </div>
+
+            <div class="relative ml-1" id="profileWrap">
+              <button onclick="toggleProfileMenu()" class="profile-btn" aria-label="Account menu">
+                <div class="avatar avatar-sm avatar-staff" id="adminAvatarInitials">AM</div>
+                <div class="text-left hidden lg:block leading-tight">
+                  <p class="text-[13px] font-medium t-1" id="adminDisplayName">Amina Al-Mansoor</p>
+                  <p class="text-[11px] t-3" id="adminRoleName">Super Administrator</p>
+                </div>
+                <i data-lucide="chevrons-up-down" class="w-3.5 h-3.5 t-3 hidden lg:block"></i>
+              </button>
+              <div id="profileMenu" class="popover hidden w-60">
+                <div class="px-2.5 py-2">
+                  <p class="text-[13px] font-semibold t-1" id="profileMenuName">Administrator</p>
+                  <p class="text-[12px] t-3" id="profileMenuRole"></p>
+                </div>
+                <div class="menu-sep"></div>
+                <div class="menu-label">Theme</div>
+                <div class="seg" role="group" aria-label="Theme">
+                  <button data-theme-option="light" onclick="setTheme('light')"><i data-lucide="sun"></i>Light</button>
+                  <button data-theme-option="dark" onclick="setTheme('dark')"><i data-lucide="moon"></i>Dark</button>
+                  <button data-theme-option="system" onclick="setTheme('system')"><i data-lucide="monitor"></i>Auto</button>
+                </div>
+                <div class="menu-sep"></div>
+                <a href="http://localhost:8082/app" target="_blank" rel="noopener" class="menu-item">
+                  <i data-lucide="external-link"></i><span>View mobile web</span>
+                </a>
+                <button onclick="refreshAllData(); closeAllPopovers();" class="menu-item">
+                  <i data-lucide="refresh-cw"></i><span>Refresh live data</span>
+                </button>
+                <div class="menu-sep"></div>
+                <button onclick="closeAllPopovers(); handleAdminLogout();" class="menu-item menu-item-danger">
+                  <i data-lucide="log-out"></i><span>Sign out</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <!-- Main Container -->
+        <main id="mainContent" class="page-container">
+
+      <!-- ========================================== -->
+      <!-- PAGE: DASHBOARD (OVERVIEW)                  -->
+      <!-- ========================================== -->
+      <section id="section-overview" class="tab-section">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title" id="dashGreeting">Dashboard</h1>
+            <p class="page-sub">Here's what's happening across your store today. <span id="dashUpdatedAt" class="t-3"></span></p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="switchTab('orders')" class="btn btn-secondary"><i data-lucide="shopping-bag"></i><span>View orders</span></button>
+            <button onclick="openAddProductModal()" class="btn btn-primary"><i data-lucide="plus"></i><span>New product</span></button>
           </div>
         </div>
 
-      </div>
-    </header>
+        <div id="dashErrorBanner" class="hidden mb-5"></div>
 
-    <!-- Navigation Tabs Sub-header -->
-    <div class="border-b border-brand-border bg-white sticky top-14 sm:top-16 z-30 shadow-2xs">
-      <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 flex space-x-2 overflow-x-auto no-scrollbar touch-pan-x py-1.5">
-        <button onclick="switchTab('products')" id="tab-products" class="nav-tab active px-4 py-2.5 rounded-t-lg text-xs font-semibold flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition">
-          <i data-lucide="checkroom" class="w-4 h-4"></i>
-          <span>Catalog Products (<span id="badge-product-count">0</span>)</span>
-        </button>
-        <button onclick="switchTab('categories')" id="tab-categories" class="nav-tab px-4 py-2.5 rounded-t-lg text-xs font-semibold flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition">
-          <i data-lucide="layout-grid" class="w-4 h-4"></i>
-          <span>Store Collections (<span id="badge-category-count">0</span>)</span>
-        </button>
-        <button onclick="switchTab('orders')" id="tab-orders" class="nav-tab px-4 py-2.5 rounded-t-lg text-xs font-semibold flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition">
-          <i data-lucide="shopping-bag" class="w-4 h-4"></i>
-          <span>Live Orders (<span id="badge-orders-nav" class="text-emerald-700 font-bold">0 Active</span>)</span>
-        </button>
-        <button onclick="switchTab('users')" id="tab-users" class="nav-tab px-4 py-2.5 rounded-t-lg text-xs font-semibold flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition">
-          <div class="flex items-center space-x-1.5">
-            <i data-lucide="users" class="w-4 h-4"></i>
-            <span>Customers & Staff (<span id="badge-users-count">10</span>)</span>
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse ml-1" title="Real-time presence tracking active"></span>
+        <!-- KPI cards (IDs kpi-*, txt-kpi-* are written by updateInventoryKpis / updateUserCounters) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
+          <div class="card kpi">
+            <div class="kpi-label"><span class="kpi-icon"><i data-lucide="wallet"></i></span>Revenue collected</div>
+            <div class="kpi-value" id="dash-kpi-revenue"><span class="skeleton w-28 h-7"></span></div>
+            <div class="kpi-meta" id="dash-kpi-revenue-sub"><span class="skeleton w-40 h-3.5"></span></div>
           </div>
-        </button>
-        <button onclick="switchTab('ai')" id="tab-ai" class="nav-tab px-4 py-2.5 rounded-t-lg text-xs font-semibold flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition">
-          <i data-lucide="bot" class="w-4 h-4 text-brand-goldDark"></i>
-          <span>AI Stylist Engine</span>
-        </button>
-        <button onclick="switchTab('health')" id="tab-health" class="nav-tab px-4 py-2.5 rounded-t-lg text-xs font-semibold flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition">
-          <i data-lucide="database" class="w-4 h-4"></i>
-          <span>Database & Health</span>
-        </button>
-        <button onclick="switchTab('trash')" id="tab-trash" class="nav-tab px-4 py-2.5 rounded-t-lg text-xs font-semibold flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition">
-          <i data-lucide="trash-2" class="w-4 h-4 text-rose-500"></i>
-          <span>Trash Bin (<span id="badge-trash-count">0</span>)</span>
-        </button>
-      </div>
-    </div>
 
-    <!-- Main Container -->
-    <main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 bg-[#FCF8F1] pb-24 md:pb-8">
+          <div class="card kpi">
+            <div class="kpi-label"><span class="kpi-icon"><i data-lucide="shopping-bag"></i></span>Orders</div>
+            <div class="kpi-value" id="dash-kpi-orders"><span class="skeleton w-16 h-7"></span></div>
+            <div class="kpi-meta" id="dash-kpi-orders-sub"><span class="skeleton w-36 h-3.5"></span></div>
+          </div>
 
-      <!-- KPI Metric Cards Grid -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8">
-        
-        <!-- Metric 1: Total Revenue -->
-        <div class="white-card rounded-2xl p-3.5 sm:p-5 relative overflow-hidden bg-white">
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Gross Sales</span>
-            <div class="p-2 rounded-lg bg-amber-50 text-amber-700">
-              <i data-lucide="credit-card" class="w-4 h-4"></i>
+          <div class="card kpi">
+            <div class="kpi-label"><span class="kpi-icon"><i data-lucide="gem"></i></span>Products</div>
+            <div class="kpi-value" id="kpi-product-count"><span class="skeleton w-16 h-7"></span></div>
+            <div class="kpi-meta">
+              <span><span class="dot" style="color:var(--success-solid)"></span><span id="txt-kpi-instock">— In Stock</span></span>
+              <span><span class="dot" style="color:var(--danger-solid)"></span><span id="txt-kpi-outstock">— Out of Stock</span></span>
+              <span id="txt-kpi-units">— Units Total</span>
             </div>
           </div>
-          <div class="text-lg sm:text-2xl font-bold font-serif text-gray-900">₦4,850,000</div>
-          <div class="flex items-center space-x-1.5 mt-2 text-xs text-emerald-600 font-semibold">
-            <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
-            <span>+22.4% vs last week</span>
+
+          <div class="card kpi">
+            <div class="kpi-label"><span class="kpi-icon"><i data-lucide="users"></i></span>Customers</div>
+            <div class="kpi-value" id="dash-kpi-customers"><span class="skeleton w-16 h-7"></span></div>
+            <div class="kpi-meta">
+              <span><span class="dot dot-live"></span><span id="kpi-online-count">0 Online</span></span>
+              <span id="kpi-active-buyers-count">0 Active Buyers</span>
+              <span id="kpi-inactive-count">0 Inactive</span>
+            </div>
           </div>
         </div>
 
-        <!-- Metric 2: Live Database Products -->
-        <div class="white-card rounded-2xl p-3.5 sm:p-5 relative overflow-hidden bg-white">
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Catalog Inventory</span>
-            <div class="p-2 rounded-lg bg-emerald-50 text-emerald-700">
-              <i data-lucide="package" class="w-4 h-4"></i>
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-4 xl:items-start">
+          <div class="card xl:col-span-2">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Fulfillment pipeline</div>
+                <div class="card-sub">Where every order sits right now. Click a stage to open it.</div>
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="switchTab('orders')">All orders<i data-lucide="arrow-right"></i></button>
+            </div>
+            <div class="p-[18px]" id="dashPipeline">
+              <span class="skeleton w-full h-2.5"></span>
+              <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mt-4">
+                <span class="skeleton h-[62px]"></span><span class="skeleton h-[62px]"></span><span class="skeleton h-[62px]"></span>
+                <span class="skeleton h-[62px] hidden sm:block"></span><span class="skeleton h-[62px] hidden lg:block"></span><span class="skeleton h-[62px] hidden lg:block"></span>
+              </div>
             </div>
           </div>
-          <div class="text-lg sm:text-2xl font-bold font-serif text-gray-900" id="kpi-product-count">11 Products</div>
-          <div class="flex items-center space-x-2 mt-2 text-xs font-medium">
-            <span class="text-emerald-700 font-semibold flex items-center space-x-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span id="txt-kpi-instock">11 In Stock</span>
-            </span>
-            <span class="text-gray-300">•</span>
-            <span class="text-rose-600 font-semibold flex items-center space-x-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-              <span id="txt-kpi-outstock">0 Out of Stock</span>
-            </span>
-            <span class="text-gray-300">•</span>
-            <span class="text-brand-goldDark font-semibold flex items-center space-x-1">
-              <i data-lucide="layers" class="w-3 h-3 text-brand-goldDark"></i>
-              <span id="txt-kpi-units">385 Units Total</span>
-            </span>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Needs attention</div>
+                <div class="card-sub">Things waiting on you</div>
+              </div>
+            </div>
+            <div class="p-1.5" id="dashAttention">
+              <div class="p-2.5 space-y-3"><span class="skeleton w-full h-8"></span><span class="skeleton w-full h-8"></span><span class="skeleton w-full h-8"></span></div>
+            </div>
           </div>
         </div>
 
-        <!-- Metric 3: Active Orders -->
-        <div class="white-card rounded-2xl p-3.5 sm:p-5 relative overflow-hidden bg-white">
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Orders</span>
-            <div class="p-2 rounded-lg bg-[#FAF3E8] text-[#8F581B] border border-[#E5A83B]/30">
-              <i data-lucide="truck" class="w-4 h-4"></i>
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 xl:items-start">
+          <div class="card xl:col-span-2 overflow-hidden">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Recent orders</div>
+                <div class="card-sub">Latest transactions from the mobile app</div>
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="switchTab('orders')">View all<i data-lucide="arrow-right"></i></button>
             </div>
+            <div id="dashRecentOrders" class="overflow-x-auto"></div>
           </div>
-          <div class="text-lg sm:text-2xl font-bold font-serif text-gray-900">186</div>
-          <div class="flex items-center space-x-1.5 mt-2 text-xs text-amber-700 font-semibold">
-            <i data-lucide="clock" class="w-3.5 h-3.5"></i>
-            <span>6 dispatch pending</span>
+
+          <div class="card overflow-hidden">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Inventory alerts</div>
+                <div class="card-sub">Out of stock or 5 units and below</div>
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="switchTab('products')">Manage<i data-lucide="arrow-right"></i></button>
+            </div>
+            <div id="dashLowStock" class="p-1.5"></div>
           </div>
         </div>
-
-        <!-- Metric 4: Real-time Online & User Activeness KPI -->
-        <div class="white-card rounded-2xl p-3.5 sm:p-5 relative overflow-hidden bg-white">
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Live Shopper Presence</span>
-            <div class="p-2 rounded-lg bg-emerald-50 text-emerald-700">
-              <i data-lucide="activity" class="w-4 h-4"></i>
-            </div>
-          </div>
-          <div class="flex items-baseline space-x-2">
-            <div class="text-2xl font-bold font-serif text-gray-900 flex items-center space-x-2">
-              <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span id="kpi-online-count">4 Online</span>
-            </div>
-          </div>
-          <div class="flex items-center space-x-2 mt-2 text-xs text-gray-500">
-            <span id="kpi-active-buyers-count" class="font-semibold text-emerald-700">6 Active Buyers</span>
-            <span>•</span>
-            <span id="kpi-inactive-count" class="text-amber-700 font-semibold">4 Inactive</span>
-          </div>
-        </div>
-
-      </div>
+      </section>
 
       <!-- TAB 1: PRODUCTS MANAGEMENT -->
-      <section id="section-products" class="tab-section">
+      <section id="section-products" class="tab-section hidden">
         <div class="white-card rounded-2xl p-6 mb-8 bg-white">
           
           <!-- Action Header -->
@@ -709,102 +1121,83 @@
         </div>
       </section>
 
-      <!-- TAB 4: USERS & CUSTOMER ACCOUNTS (ADVANCED REAL-TIME PRESENCE & ACTIVENESS) -->
+      <!-- ========================================== -->
+      <!-- PAGE: CUSTOMERS (USERS & STAFF ACCOUNTS)    -->
+      <!-- ========================================== -->
       <section id="section-users" class="tab-section hidden">
-        <div class="white-card rounded-2xl p-6 mb-8 bg-white">
-          
-          <!-- Action Header -->
-          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-            <div>
-              <div class="flex items-center space-x-2">
-                <h2 class="text-xl font-bold font-serif text-gray-900">Customer Directory & Real-time Presence</h2>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center space-x-1">
-                  <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <span>Live App Stream</span>
-                </span>
-              </div>
-              <p class="text-xs text-gray-500 mt-1">
-                Monitor live shoppers on the mobile app, distinguish active buyers from inactive shoppers (0 orders or 6+ months dormant), and launch re-engagement concierge.
-              </p>
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Customers</h1>
+            <p class="page-sub">Shopper and staff accounts, live app presence, and win-back opportunities.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="loadLiveCustomers()" id="btnSyncCustomers" class="btn btn-secondary" title="Sync registered users from the PostgreSQL database">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i><span>Sync Customers</span>
+            </button>
+            <button onclick="openAddUserModal()" class="btn btn-primary">
+              <i data-lucide="user-plus"></i><span>Add user</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="card overflow-hidden">
+          <!-- Segment filters (counts written by updateUserCounters) -->
+          <div class="tabs" id="userRoleFilterChips" role="tablist" aria-label="Filter customers">
+            <button onclick="setUserRoleFilter('all')" data-role="all" class="user-chip tab is-active" role="tab">All <span class="tab-count" id="chip-count-all">0</span></button>
+            <button onclick="setUserRoleFilter('online')" data-role="online" class="user-chip tab" role="tab"><span class="dot dot-live"></span>Online <span class="tab-count" id="chip-count-online">0</span></button>
+            <button onclick="setUserRoleFilter('active_buyers')" data-role="active_buyers" class="user-chip tab" role="tab">Active buyers <span class="tab-count" id="chip-count-active">0</span></button>
+            <button onclick="setUserRoleFilter('never_ordered')" data-role="never_ordered" class="user-chip tab" role="tab" title="Inactive: registered but never ordered">Never ordered <span class="tab-count" id="chip-count-never">0</span></button>
+            <button onclick="setUserRoleFilter('dormant_six_months')" data-role="dormant_six_months" class="user-chip tab" role="tab" title="Dormant: no order in 6+ months">Dormant 6+ mo <span class="tab-count" id="chip-count-dormant">0</span></button>
+            <button onclick="setUserRoleFilter('vip')" data-role="vip" class="user-chip tab" role="tab">VIP <span class="tab-count" id="chip-count-vip">0</span></button>
+            <button onclick="setUserRoleFilter('admin')" data-role="admin" class="user-chip tab" role="tab">Staff <span class="tab-count" id="chip-count-admin">0</span></button>
+            <button onclick="setUserRoleFilter('suspended')" data-role="suspended" class="user-chip tab" role="tab">Suspended <span class="tab-count" id="chip-count-suspended">0</span></button>
+          </div>
+
+          <!-- Toolbar -->
+          <div class="flex flex-col sm:flex-row sm:items-center gap-2 px-3.5 py-3 border-b bd">
+            <div class="search-field w-full sm:max-w-xs">
+              <i data-lucide="search"></i>
+              <input type="text" id="userSearch" oninput="filterUsers()" class="input" placeholder="Search name, email, phone, city…" aria-label="Search customers">
             </div>
-            
-            <div class="flex items-center space-x-3">
-              <!-- Live Sync Customers Button -->
-              <button onclick="loadLiveCustomers()" id="btnSyncCustomers" class="px-3.5 py-2 rounded-xl border border-[#E5A83B]/40 text-xs text-[#8F581B] bg-[#FAF3E8] font-semibold flex items-center space-x-2 hover:bg-[#F5E8D3] transition shadow-2xs" title="Sync real registered users from PostgreSQL database">
-                <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-[#C87A1E]"></i>
-                <span>Sync Customers</span>
-              </button>
+            <div class="sm:ml-auto text-[12px] t-3" id="usersResultSummary"></div>
+          </div>
 
-              <div class="relative">
-                <input type="text" id="userSearch" oninput="filterUsers()" placeholder="Search users by name, email, city..." class="bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2 pl-9 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-primary focus:bg-white w-64 transition">
-                <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-2.5"></i>
-              </div>
-
-              <button onclick="openAddUserModal()" class="emerald-btn px-4 py-2 rounded-xl text-xs flex items-center space-x-2">
-                <i data-lucide="user-plus" class="w-4 h-4"></i>
-                <span>Add User / Staff</span>
-              </button>
+          <!-- Bulk action bar (shown when rows are selected) -->
+          <div id="usersBulkBar" class="bulk-bar hidden" role="region" aria-label="Bulk actions">
+            <span class="font-medium"><span id="usersSelectedCount">0</span> selected</span>
+            <button id="usersSelectAllMatching" class="link-btn text-[12.5px] hidden" onclick="selectAllFilteredUsers()"></button>
+            <div class="flex items-center gap-1.5 flex-wrap sm:ml-auto">
+              <button class="btn btn-secondary btn-sm" onclick="bulkSetUsersVip(true)"><i data-lucide="crown"></i>Make VIP</button>
+              <button class="btn btn-secondary btn-sm" onclick="bulkSetUsersVip(false)">Remove VIP</button>
+              <button class="btn btn-danger-soft btn-sm" onclick="bulkDeleteUsers()"><i data-lucide="trash-2"></i>Move to trash</button>
+              <button class="icon-btn icon-btn-sm" onclick="clearUserSelection()" title="Clear selection" aria-label="Clear selection"><i data-lucide="x"></i></button>
             </div>
           </div>
 
-          <!-- Comprehensive User Filters: Online Presence & Order Lifecycle -->
-          <div class="flex items-center space-x-2 overflow-x-auto pb-3 mb-5 border-b border-gray-100" id="userRoleFilterChips">
-            <button onclick="setUserRoleFilter('all')" class="user-chip active px-4 py-1.5 rounded-full text-xs font-semibold bg-brand-primaryDark text-white shadow-sm">
-              All Accounts (<span id="chip-count-all">10</span>)
-            </button>
-            <button onclick="setUserRoleFilter('online')" class="user-chip px-4 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 hover:text-emerald-700 hover:bg-emerald-50 border border-gray-200 flex items-center space-x-1.5">
-              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>Online Now (<span id="chip-count-online">4</span>)</span>
-            </button>
-            <button onclick="setUserRoleFilter('active_buyers')" class="user-chip px-4 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 hover:text-gray-900 hover:bg-gray-200 border border-gray-200 flex items-center space-x-1.5">
-              <i data-lucide="shopping-bag" class="w-3.5 h-3.5 text-emerald-600"></i>
-              <span>Active Buyers (<span id="chip-count-active">6</span>)</span>
-            </button>
-            <button onclick="setUserRoleFilter('never_ordered')" class="user-chip px-4 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 hover:text-amber-800 hover:bg-amber-50 border border-gray-200 flex items-center space-x-1.5">
-              <i data-lucide="help-circle" class="w-3.5 h-3.5 text-amber-500"></i>
-              <span>Inactive: Never Ordered (<span id="chip-count-never">2</span>)</span>
-            </button>
-            <button onclick="setUserRoleFilter('dormant_six_months')" class="user-chip px-4 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 hover:text-orange-800 hover:bg-orange-50 border border-gray-200 flex items-center space-x-1.5">
-              <i data-lucide="clock" class="w-3.5 h-3.5 text-orange-500"></i>
-              <span>Dormant: 6+ Mo Break (<span id="chip-count-dormant">2</span>)</span>
-            </button>
-            <button onclick="setUserRoleFilter('vip')" class="user-chip px-4 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 hover:text-gray-900 hover:bg-gray-200 border border-gray-200 flex items-center space-x-1.5">
-              <i data-lucide="crown" class="w-3.5 h-3.5 text-brand-goldDark"></i>
-              <span>VIP Modesty Club (<span id="chip-count-vip">4</span>)</span>
-            </button>
-            <button onclick="setUserRoleFilter('admin')" class="user-chip px-4 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 hover:text-gray-900 hover:bg-gray-200 border border-gray-200">
-              Administrators
-            </button>
-            <button onclick="setUserRoleFilter('suspended')" class="user-chip px-4 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 hover:text-gray-900 hover:bg-gray-200 border border-gray-200">
-              Suspended
-            </button>
-          </div>
-
-          <!-- Users Table (Desktop) -->
+          <!-- Desktop table -->
           <div class="hidden md:block overflow-x-auto">
-            <table class="w-full text-left text-xs">
+            <table class="table">
               <thead>
-                <tr class="bg-gray-50/80 text-gray-600 border-b border-gray-200 uppercase tracking-wider text-[11px] font-bold">
-                  <th class="py-3.5 px-4 rounded-l-lg">User & App Presence</th>
-                  <th class="py-3.5 px-4">Role & Tier</th>
-                  <th class="py-3.5 px-4">Modesty Profile</th>
-                  <th class="py-3.5 px-4">Location</th>
-                  <th class="py-3.5 px-4">Orders & Lifetime Spend</th>
-                  <th class="py-3.5 px-4">Activeness Status</th>
-                  <th class="py-3.5 px-4 text-right rounded-r-lg">Actions</th>
+                <tr>
+                  <th class="w-10 !pr-0"><input type="checkbox" id="usersSelectAll" class="checkbox" onchange="toggleSelectAllUsersOnPage(this.checked)" aria-label="Select all on this page"></th>
+                  <th>Customer</th>
+                  <th>Role</th>
+                  <th class="hidden xl:table-cell">Profile</th>
+                  <th class="hidden lg:table-cell">Location</th>
+                  <th class="text-right">Lifetime spend</th>
+                  <th>Status</th>
+                  <th class="text-right"><span class="sr-only">Actions</span></th>
                 </tr>
               </thead>
-              <tbody id="usersTableBody" class="divide-y divide-gray-100">
-                <!-- Dynamically populated -->
-              </tbody>
+              <tbody id="usersTableBody"></tbody>
             </table>
           </div>
 
-          <!-- Users Cards (Mobile & Tablet) -->
-          <div id="usersMobileCards" class="block md:hidden space-y-3">
-            <!-- Dynamically populated on mobile -->
-          </div>
+          <!-- Mobile & tablet cards -->
+          <div id="usersMobileCards" class="md:hidden"></div>
 
+          <!-- Pagination -->
+          <div id="usersPagination" class="pager hidden"></div>
         </div>
       </section>
 
@@ -1021,38 +1414,26 @@
       </div>
     </section>
 
-  </main>
+        </main>
+      </div><!-- /.app-main -->
+    </div><!-- /.app-shell -->
 
-    <!-- Mobile Bottom Navigation Bar (Visible on mobile/tablet screens < 768px) -->
-    <nav class="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-lg px-2 py-1.5 flex items-center justify-around">
-      <button onclick="switchTab('products')" id="mob-tab-products" class="mob-nav-btn flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-[10px] font-bold text-brand-primary transition">
-        <i data-lucide="package" class="w-5 h-5"></i>
-        <span class="mt-0.5">Catalog</span>
+    <!-- Mobile bottom navigation (< 768px). Everything else lives in the drawer behind "More". -->
+    <nav class="bottom-nav" aria-label="Mobile navigation">
+      <button onclick="switchTab('overview')" id="mob-tab-overview" class="mob-nav-btn is-active">
+        <i data-lucide="layout-dashboard"></i><span>Home</span>
       </button>
-      <button onclick="switchTab('categories')" id="mob-tab-categories" class="mob-nav-btn flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-[10px] font-semibold text-gray-400 hover:text-gray-900 transition">
-        <i data-lucide="layout-grid" class="w-5 h-5"></i>
-        <span class="mt-0.5">Collections</span>
+      <button onclick="switchTab('orders')" id="mob-tab-orders" class="mob-nav-btn">
+        <i data-lucide="shopping-bag"></i><span>Orders</span>
       </button>
-      <button onclick="switchTab('orders')" id="mob-tab-orders" class="mob-nav-btn flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-[10px] font-semibold text-gray-400 hover:text-gray-900 transition">
-        <i data-lucide="shopping-bag" class="w-5 h-5"></i>
-        <span class="mt-0.5">Orders</span>
+      <button onclick="switchTab('products')" id="mob-tab-products" class="mob-nav-btn">
+        <i data-lucide="gem"></i><span>Products</span>
       </button>
-      <button onclick="switchTab('users')" id="mob-tab-users" class="mob-nav-btn flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-[10px] font-semibold text-gray-400 hover:text-gray-900 relative transition">
-        <i data-lucide="users" class="w-5 h-5"></i>
-        <span class="mt-0.5">Shoppers</span>
-        <span class="absolute top-1 right-2 w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+      <button onclick="switchTab('users')" id="mob-tab-users" class="mob-nav-btn">
+        <i data-lucide="users"></i><span>Customers</span>
       </button>
-      <button onclick="switchTab('ai')" id="mob-tab-ai" class="mob-nav-btn flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-[10px] font-semibold text-gray-400 hover:text-gray-900 transition">
-        <i data-lucide="bot" class="w-5 h-5 text-brand-goldDark"></i>
-        <span class="mt-0.5">AI Stylist</span>
-      </button>
-      <button onclick="switchTab('health')" id="mob-tab-health" class="mob-nav-btn flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-[10px] font-semibold text-gray-400 hover:text-gray-900 transition">
-        <i data-lucide="activity" class="w-5 h-5"></i>
-        <span class="mt-0.5">Health</span>
-      </button>
-      <button onclick="switchTab('trash')" id="mob-tab-trash" class="mob-nav-btn flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-[10px] font-semibold text-gray-400 hover:text-gray-900 transition">
-        <i data-lucide="trash-2" class="w-5 h-5 text-rose-500"></i>
-        <span class="mt-0.5">Trash</span>
+      <button onclick="openMobileSidebar()" id="mob-tab-more" class="mob-nav-btn">
+        <i data-lucide="menu"></i><span>More</span>
       </button>
     </nav>
 
@@ -1661,7 +2042,7 @@
   </div>
 
   <!-- TOAST NOTIFICATION CONTAINER -->
-  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 bg-gray-900 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center space-x-3 text-xs border border-gray-700">
+  <div id="toast" role="status" aria-live="polite" class="fixed bottom-20 md:bottom-6 right-4 sm:right-6 left-4 sm:left-auto z-[70] transform translate-y-24 opacity-0 transition-all duration-300 bg-[#1C1917] text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 text-[13px] border border-white/10 sm:max-w-md">
     <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
     <span id="toastMsg">Operation successful!</span>
   </div>
@@ -1696,6 +2077,58 @@
     let activeTrashFilter = 'all'; // 'all', 'product', 'category', 'user'
     let trashSearchQuery = '';
     let lastTrashedItem = null;
+
+    // UI state (presentation only)
+    let currentTab = 'overview';
+    let dataLoadState = { products: 'loading', categories: 'loading', orders: 'loading' };
+    let usersLoadState = 'loading';     // 'loading' | 'ready' | 'error'
+    let usersPage = 1;
+    let usersPageSize = 10;
+    let selectedUserIds = new Set();    // String(user.id)
+    let lastFilteredUsers = [];
+
+    // ------------------------------------
+    // REUSABLE UI HELPERS
+    // ------------------------------------
+
+    // Escape anything user-generated before it goes into innerHTML.
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    // Safely embed a value as a JS argument inside an inline onclick="" attribute.
+    function jsArg(value) {
+      return escapeHtml(JSON.stringify(value ?? null));
+    }
+
+    function getInitials(name) {
+      return String(name || '?').trim().split(/\s+/).map(n => n[0] || '').join('').substring(0, 2).toUpperCase() || '?';
+    }
+
+    function uiBadge(label, tone = 'neutral', icon = '') {
+      return `<span class="badge ${tone !== 'neutral' ? 'badge-' + tone : ''}">${icon ? `<i data-lucide="${icon}"></i>` : ''}${escapeHtml(label)}</span>`;
+    }
+
+    function uiEmptyState({ icon = 'inbox', title = 'Nothing here yet', text = '', actionLabel = '', action = '', danger = false }) {
+      return `
+        <div class="empty">
+          <div class="empty-icon ${danger ? 'is-danger' : ''}"><i data-lucide="${icon}"></i></div>
+          <div class="empty-title">${escapeHtml(title)}</div>
+          ${text ? `<p class="empty-text">${escapeHtml(text)}</p>` : ''}
+          ${actionLabel ? `<button class="btn btn-secondary" onclick="${action}">${danger ? '<i data-lucide="rotate-cw"></i>' : ''}${escapeHtml(actionLabel)}</button>` : ''}
+        </div>`;
+    }
+
+    function uiErrorState({ title = 'Something went wrong', text = '', actionLabel = 'Try again', action = '' }) {
+      return uiEmptyState({ icon: 'cloud-off', title, text, actionLabel, action, danger: true });
+    }
+
+    function uiSkeletonRows(rows, cols) {
+      const widths = ['w-40', 'w-20', 'w-24', 'w-16', 'w-28', 'w-20', 'w-24', 'w-12'];
+      return Array.from({ length: rows }, () =>
+        `<tr>${Array.from({ length: cols }, (_, i) => `<td><span class="skeleton h-3.5 ${widths[i % widths.length]}"></span></td>`).join('')}</tr>`
+      ).join('');
+    }
 
     // -------------------------------------------------------------
     // CUSTOM LUXURY DIALOG CONTROLLERS (PROMPT / CONFIRM / ALERT)
@@ -1937,6 +2370,7 @@
       lucide.createIcons();
       fetchInitialData();
       renderUsersTable();
+      switchTab('overview');
     }
 
     function fillDemoAdminCredentials() {
@@ -2071,6 +2505,8 @@
 
     async function loadLiveCustomers() {
       const btnSync = document.getElementById('btnSyncCustomers');
+      usersLoadState = 'loading';
+      if (allUsers.length === 0) renderUsersTable();
       if (btnSync) {
         btnSync.classList.add('opacity-70');
         btnSync.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 text-[#C87A1E] animate-spin"></i><span>Syncing...</span>';
@@ -2088,6 +2524,7 @@
           const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
           if (Array.isArray(parsed)) {
             allUsers = parsed;
+            usersLoadState = 'ready';
             updateUserCounters();
             renderUsersTable();
             if (btnSync) {
@@ -2107,6 +2544,7 @@
       }
 
       allUsers = [];
+      usersLoadState = 'error';
       updateUserCounters();
       renderUsersTable();
       if (btnSync) {
@@ -2176,7 +2614,9 @@
       const activeBuyers = allUsers.filter(u => u.ordersCount > 0 && !u.isDormantSixMonths && u.status !== 'Suspended').length;
       const neverOrdered = allUsers.filter(u => u.ordersCount === 0 && u.status !== 'Suspended').length;
       const dormantSixMonths = allUsers.filter(u => u.isDormantSixMonths && u.status !== 'Suspended').length;
-      const vipCount = allUsers.filter(u => u.role.includes('VIP')).length;
+      const vipCount = allUsers.filter(u => (u.role || '').includes('VIP')).length;
+      const staffCount = allUsers.filter(u => (u.role || '').includes('Administrator') || (u.role || '').includes('Manager')).length;
+      const suspendedCount = allUsers.filter(u => u.status === 'Suspended').length;
 
       // Update Subheader badge
       const badge = document.getElementById('badge-users-count');
@@ -2210,29 +2650,47 @@
 
       const cVip = document.getElementById('chip-count-vip');
       if (cVip) cVip.innerText = vipCount;
+
+      const cStaff = document.getElementById('chip-count-admin');
+      if (cStaff) cStaff.innerText = staffCount;
+
+      const cSuspended = document.getElementById('chip-count-suspended');
+      if (cSuspended) cSuspended.innerText = suspendedCount;
+
+      scheduleUiRefresh();
     }
+
+    // ---- Customers page: filters, table, pagination, selection & bulk actions ----
 
     function setUserRoleFilter(role) {
       activeUserRole = role;
+      usersPage = 1;
       document.querySelectorAll('.user-chip').forEach(c => {
-        c.classList.remove('bg-brand-primaryDark', 'text-white', 'shadow-sm');
-        c.classList.add('bg-gray-100', 'text-gray-700', 'border', 'border-gray-200');
+        const on = c.dataset.role === role;
+        c.classList.toggle('is-active', on);
+        c.setAttribute('aria-selected', on ? 'true' : 'false');
       });
-      event.target.closest('.user-chip').classList.add('bg-brand-primaryDark', 'text-white', 'shadow-sm');
-      event.target.closest('.user-chip').classList.remove('bg-gray-100', 'text-gray-700', 'border', 'border-gray-200');
       renderUsersTable();
     }
 
     function filterUsers() {
+      usersPage = 1;
       renderUsersTable();
     }
 
-    function renderUsersTable() {
-      const search = (document.getElementById('userSearch')?.value || '').toLowerCase();
-      
-      const filtered = allUsers.filter(u => {
-        let matchesRole = true;
+    function clearUserFilters() {
+      const input = document.getElementById('userSearch');
+      if (input) input.value = '';
+      setUserRoleFilter('all');
+    }
+
+    // Same filter rules as before, with guards for accounts missing optional fields.
+    function getFilteredUsers() {
+      const search = (document.getElementById('userSearch')?.value || '').toLowerCase().trim();
+      return allUsers.filter(u => {
+        const role = u.role || '';
         const activeness = getUserActiveness(u);
+        let matchesRole = true;
 
         if (activeUserRole === 'online') {
           matchesRole = u.isOnline === true;
@@ -2243,214 +2701,370 @@
         } else if (activeUserRole === 'dormant_six_months') {
           matchesRole = activeness.type === 'dormant_six_months';
         } else if (activeUserRole === 'vip') {
-          matchesRole = u.role.includes('VIP');
+          matchesRole = role.includes('VIP');
         } else if (activeUserRole === 'admin') {
-          matchesRole = u.role.includes('Administrator') || u.role.includes('Manager');
+          matchesRole = role.includes('Administrator') || role.includes('Manager');
         } else if (activeUserRole === 'suspended') {
           matchesRole = u.status === 'Suspended';
         }
 
-        const matchesSearch = !search || 
-          u.name.toLowerCase().includes(search) || 
-          u.email.toLowerCase().includes(search) || 
-          u.phone.toLowerCase().includes(search) || 
-          u.location.toLowerCase().includes(search) || 
-          u.role.toLowerCase().includes(search);
+        const matchesSearch = !search ||
+          [u.name, u.email, u.phone, u.location, role].some(v => String(v || '').toLowerCase().includes(search));
 
         return matchesRole && matchesSearch;
       });
+    }
 
+    function userRoleBadge(role) {
+      role = role || 'Customer';
+      if (role.includes('Super Administrator')) return uiBadge('Super admin', 'primary', 'shield');
+      if (role.includes('Administrator')) return uiBadge('Admin', 'primary', 'shield');
+      if (role.includes('Manager')) return uiBadge('Staff manager', 'info', 'briefcase');
+      if (role.includes('VIP')) return uiBadge('VIP', 'warning', 'crown');
+      return uiBadge('Shopper', 'neutral');
+    }
+
+    function userActivenessBadge(activeness) {
+      const tone = {
+        active_buyer: 'success',
+        never_ordered: 'warning',
+        dormant_six_months: 'warning',
+        suspended: 'danger'
+      }[activeness.type] || 'neutral';
+      const label = {
+        active_buyer: 'Active buyer',
+        never_ordered: 'Never ordered',
+        dormant_six_months: 'Dormant 6+ mo',
+        suspended: 'Suspended'
+      }[activeness.type] || activeness.label;
+      return uiBadge(label, tone, activeness.icon);
+    }
+
+    function userPresenceLine(u) {
+      if (u.isOnline) {
+        const activity = u.currentActivity && u.currentActivity !== 'Offline'
+          ? `<span class="t-3 truncate">· ${escapeHtml(u.currentActivity)}</span>` : '';
+        return `<span class="flex items-center gap-1.5 text-[12px] min-w-0" style="color:var(--success)"><span class="dot"></span><span class="shrink-0">Online</span>${activity}</span>`;
+      }
+      return `<span class="text-[12px] t-3">Seen ${escapeHtml(u.lastSeen || 'recently')}</span>`;
+    }
+
+    function userActionButtons(u, activeness) {
+      const id = jsArg(u.id);
+      const isVip = (u.role || '').includes('VIP');
+      const canWinBack = activeness.type === 'never_ordered' || activeness.type === 'dormant_six_months';
+      return `
+        ${canWinBack ? `<button onclick="openWinBackModal(${id})" class="icon-btn icon-btn-sm is-warning" title="Send win-back voucher via WhatsApp" aria-label="Send win-back voucher"><i data-lucide="gift"></i></button>` : ''}
+        <button onclick="viewUserDetail(${id})" class="icon-btn icon-btn-sm" title="View full profile" aria-label="View profile"><i data-lucide="eye"></i></button>
+        <button onclick="toggleUserVip(${id})" class="icon-btn icon-btn-sm ${isVip ? 'is-on' : ''}" title="${isVip ? 'Remove from' : 'Add to'} VIP Modesty Club" aria-label="Toggle VIP"><i data-lucide="crown"></i></button>
+        <button onclick="editUser(${id})" class="icon-btn icon-btn-sm" title="Edit account" aria-label="Edit account"><i data-lucide="pencil"></i></button>
+        <button onclick="deleteUser(${id})" class="icon-btn icon-btn-sm is-danger" title="Move to trash" aria-label="Move to trash"><i data-lucide="trash-2"></i></button>
+      `;
+    }
+
+    function userAvatar(u) {
+      const role = u.role || '';
+      const tone = /Admin|Manager/.test(role) ? 'avatar-staff' : role.includes('VIP') ? 'avatar-vip' : '';
+      return `
+        <div class="avatar ${tone}">
+          ${escapeHtml(getInitials(u.name))}
+          <button onclick="toggleUserOnline(${jsArg(u.id)})" class="presence ${u.isOnline ? 'on' : ''}"
+            title="${u.isOnline ? 'Online now (click to set offline)' : 'Offline (click to set online)'}" aria-label="Toggle presence"></button>
+        </div>`;
+    }
+
+    function renderUserRow(u) {
+      const key = String(u.id);
+      const activeness = getUserActiveness(u);
+      const selected = selectedUserIds.has(key);
+      const orders = Number(u.ordersCount) || 0;
+      return `
+        <tr class="${selected ? 'is-selected' : ''}">
+          <td class="!pr-0"><input type="checkbox" class="checkbox" data-id="${escapeHtml(key)}" ${selected ? 'checked' : ''}
+            onchange="toggleUserSelection(this.dataset.id, this.checked)" aria-label="Select ${escapeHtml(u.name)}"></td>
+          <td>
+            <div class="flex items-center gap-3 min-w-0 max-w-[320px]">
+              ${userAvatar(u)}
+              <div class="min-w-0">
+                <div class="font-medium t-1 truncate">${escapeHtml(u.name)}</div>
+                <div class="text-[12px] t-3 truncate">${escapeHtml(u.email)}</div>
+                <div class="mt-0.5 min-w-0">${userPresenceLine(u)}</div>
+              </div>
+            </div>
+          </td>
+          <td>${userRoleBadge(u.role)}</td>
+          <td class="hidden xl:table-cell">
+            <div class="t-1 text-[12.5px] whitespace-nowrap">${escapeHtml(u.sizeProfile || '—')}</div>
+            <div class="text-[12px] t-3 font-mono">${escapeHtml(u.phone || '')}</div>
+          </td>
+          <td class="hidden lg:table-cell">
+            <span class="inline-flex items-center gap-1.5"><i data-lucide="map-pin" class="w-3.5 h-3.5 t-3"></i>${escapeHtml(u.location || '—')}</span>
+          </td>
+          <td class="text-right">
+            <div class="t-1 font-medium tabular-nums">${formatNaira(u.lifetimeSpend)}</div>
+            <div class="text-[12px] t-3">${orders} ${orders === 1 ? 'order' : 'orders'}</div>
+          </td>
+          <td>
+            ${userActivenessBadge(activeness)}
+            <div class="text-[12px] t-3 mt-1 whitespace-nowrap">${escapeHtml(activeness.subtitle)}</div>
+          </td>
+          <td><div class="row-actions">${userActionButtons(u, activeness)}</div></td>
+        </tr>`;
+    }
+
+    function renderUserCard(u) {
+      const key = String(u.id);
+      const activeness = getUserActiveness(u);
+      const selected = selectedUserIds.has(key);
+      const orders = Number(u.ordersCount) || 0;
+      return `
+        <div class="px-3.5 py-3.5 border-b bd last:border-b-0 ${selected ? 'bg-[color:var(--primary-soft)]' : ''}">
+          <div class="flex items-start gap-3">
+            <input type="checkbox" class="checkbox mt-2.5" data-id="${escapeHtml(key)}" ${selected ? 'checked' : ''}
+              onchange="toggleUserSelection(this.dataset.id, this.checked)" aria-label="Select ${escapeHtml(u.name)}">
+            ${userAvatar(u)}
+            <div class="min-w-0 flex-1">
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <div class="font-medium t-1 text-[13.5px] truncate">${escapeHtml(u.name)}</div>
+                  <div class="text-[12px] t-3 truncate">${escapeHtml(u.email)}</div>
+                </div>
+                <div class="text-right shrink-0">
+                  <div class="t-1 font-medium text-[13px] tabular-nums">${formatNaira(u.lifetimeSpend)}</div>
+                  <div class="text-[11.5px] t-3">${orders} ${orders === 1 ? 'order' : 'orders'}</div>
+                </div>
+              </div>
+              <div class="mt-1.5">${userPresenceLine(u)}</div>
+              <div class="flex flex-wrap items-center gap-1.5 mt-2">
+                ${userRoleBadge(u.role)}
+                ${userActivenessBadge(activeness)}
+                ${u.location ? `<span class="text-[12px] t-3 inline-flex items-center gap-1"><i data-lucide="map-pin" class="w-3 h-3"></i>${escapeHtml(u.location)}</span>` : ''}
+              </div>
+              <div class="flex items-center gap-0.5 mt-2 -ml-1.5">${userActionButtons(u, activeness)}</div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function renderUsersTable() {
       const tbody = document.getElementById('usersTableBody');
+      const mobile = document.getElementById('usersMobileCards');
+      const summary = document.getElementById('usersResultSummary');
       if (!tbody) return;
 
-      if (filtered.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="7" class="text-center py-12 text-gray-400">
-              <i data-lucide="user-x" class="w-8 h-8 mx-auto mb-2 text-gray-300"></i>
-              No user accounts found matching this filter.
-            </td>
-          </tr>
-        `;
+      // Drop selections for accounts that no longer exist (deleted, re-synced, ...)
+      const existing = new Set(allUsers.map(u => String(u.id)));
+      selectedUserIds.forEach(id => { if (!existing.has(id)) selectedUserIds.delete(id); });
+
+      const filtered = getFilteredUsers();
+      lastFilteredUsers = filtered;
+
+      // Loading, error and empty states
+      let stateHtml = '';
+      if (allUsers.length === 0 && usersLoadState === 'loading') {
+        tbody.innerHTML = uiSkeletonRows(6, 8);
+        if (mobile) mobile.innerHTML = `<div class="p-4 space-y-4">${'<div class="flex gap-3"><span class="skeleton w-9 h-9 !rounded-full"></span><div class="flex-1 space-y-2"><span class="skeleton w-2/3 h-3.5 block"></span><span class="skeleton w-1/2 h-3 block"></span></div></div>'.repeat(4)}</div>`;
+        if (summary) summary.innerText = 'Loading customers…';
+        renderUsersPagination(0);
+        updateUsersBulkUi();
+        lucide.createIcons();
+        return;
+      } else if (allUsers.length === 0 && usersLoadState === 'error') {
+        stateHtml = uiErrorState({
+          title: "Couldn't load customers",
+          text: 'The customer service did not respond. Check that the Serverpod backend is running, then try again.',
+          actionLabel: 'Try again',
+          action: 'loadLiveCustomers()'
+        });
+      } else if (allUsers.length === 0) {
+        stateHtml = uiEmptyState({
+          icon: 'users',
+          title: 'No customers yet',
+          text: 'Accounts appear here as soon as shoppers register in the mobile app. You can also add staff manually.',
+          actionLabel: 'Add user',
+          action: 'openAddUserModal()'
+        });
+      } else if (filtered.length === 0) {
+        stateHtml = uiEmptyState({
+          icon: 'search-x',
+          title: 'No matching customers',
+          text: 'Try a different search term or filter.',
+          actionLabel: 'Clear filters',
+          action: 'clearUserFilters()'
+        });
+      }
+
+      if (stateHtml) {
+        tbody.innerHTML = `<tr><td colspan="8" class="!p-0 !bg-transparent">${stateHtml}</td></tr>`;
+        if (mobile) mobile.innerHTML = stateHtml;
+        if (summary) summary.innerText = '';
+        renderUsersPagination(0);
+        updateUsersBulkUi();
         lucide.createIcons();
         return;
       }
 
-      tbody.innerHTML = filtered.map(u => {
-        const initials = u.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-        const activeness = getUserActiveness(u);
+      // Pagination
+      const totalPages = Math.max(1, Math.ceil(filtered.length / usersPageSize));
+      usersPage = Math.min(Math.max(1, usersPage), totalPages);
+      const start = (usersPage - 1) * usersPageSize;
+      const pageRows = filtered.slice(start, start + usersPageSize);
 
-        // Role Badge Style
-        let roleBadge = '';
-        if (u.role.includes('Super Administrator')) {
-          roleBadge = `<span class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300"><i data-lucide="shield" class="w-3 h-3 text-amber-600"></i><span>Super Admin</span></span>`;
-        } else if (u.role.includes('VIP')) {
-          roleBadge = `<span class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-brand-primaryContainer text-brand-primary border border-brand-primary/30"><i data-lucide="crown" class="w-3 h-3 text-brand-gold"></i><span>VIP Gold Member</span></span>`;
-        } else if (u.role.includes('Manager')) {
-          roleBadge = `<span class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-50 text-purple-800 border border-purple-200"><span>Staff Manager</span></span>`;
-        } else {
-          roleBadge = `<span class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-[#FAF3E8] text-[#8F581B] border border-[#E5A83B]/40"><span>Shopper</span></span>`;
-        }
-
-        // Live App Online Presence Badge & Avatar Indicator
-        const onlineDot = u.isOnline 
-          ? `<button onclick="toggleUserOnline(${u.id})" class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full ring-2 ring-emerald-400/40 animate-pulse cursor-pointer hover:scale-125 transition" title="Online now (Click to switch Offline)"></button>`
-          : `<button onclick="toggleUserOnline(${u.id})" class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-gray-300 border-2 border-white rounded-full cursor-pointer hover:bg-emerald-400 hover:scale-125 transition" title="Offline (Click to switch Online)"></button>`;
-
-        const presenceText = u.isOnline
-          ? `<div class="flex items-center space-x-1.5 mt-0.5">
-               <button onclick="toggleUserOnline(${u.id})" class="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition cursor-pointer" title="Click to switch Offline">
-                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                 <span>Online Now</span>
-               </button>
-               <span class="text-[10px] text-emerald-700 font-semibold truncate max-w-[170px]" title="${u.currentActivity}">${u.currentActivity}</span>
-             </div>`
-          : `<div class="flex items-center space-x-1.5 mt-0.5 text-[10px] text-gray-400">
-               <button onclick="toggleUserOnline(${u.id})" class="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[9px] font-medium bg-gray-100 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 text-gray-500 border border-gray-200 transition cursor-pointer" title="Click to bring Online">
-                 <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
-                 <span>Offline</span>
-               </button>
-               <span class="text-[10px] text-gray-400">Seen ${u.lastSeen || 'recently'}</span>
-             </div>`;
-
-        // Activeness Status Badge (Orders Lifecycle)
-        const activenessBadge = `
-          <div>
-            <span class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-[10px] font-bold border ${activeness.badgeClass}">
-              <i data-lucide="${activeness.icon}" class="w-3 h-3"></i>
-              <span>${activeness.label}</span>
-            </span>
-            <p class="text-[10px] text-gray-500 mt-0.5 font-medium">${activeness.subtitle}</p>
-          </div>
-        `;
-
-        // Action Buttons: If Inactive / Dormant, show special Win-Back Perk button
-        const winBackBtn = (activeness.type === 'never_ordered' || activeness.type === 'dormant_six_months')
-          ? `<button onclick="openWinBackModal(${u.id})" class="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-300 transition" title="Send Win-Back Voucher via WhatsApp">
-               <i data-lucide="gift" class="w-3.5 h-3.5"></i>
-             </button>`
-          : '';
-
-        return `
-          <tr class="hover:bg-gray-50/70 transition group">
-            <td class="py-3.5 px-4">
-              <div class="flex items-center space-x-3">
-                <div class="relative">
-                  <div class="w-10 h-10 rounded-full ${u.role.includes('Admin') ? 'bg-brand-primaryDark text-brand-gold' : u.role.includes('VIP') ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-700'} flex items-center justify-center font-bold text-xs shadow-2xs border border-gray-200">
-                    ${initials}
-                  </div>
-                  ${onlineDot}
-                </div>
-                <div>
-                  <div class="font-bold text-gray-900 text-xs flex items-center space-x-1.5">
-                    <span>${u.name}</span>
-                    ${u.role.includes('VIP') ? '<i data-lucide="sparkles" class="w-3 h-3 text-brand-gold"></i>' : ''}
-                  </div>
-                  <div class="text-[11px] text-gray-500">${u.email}</div>
-                  ${presenceText}
-                </div>
-              </div>
-            </td>
-            <td class="py-3.5 px-4">
-              ${roleBadge}
-            </td>
-            <td class="py-3.5 px-4">
-              <div class="text-gray-900 font-medium text-[11px]">${u.sizeProfile}</div>
-              <div class="text-[10px] text-gray-400 font-mono">${u.phone}</div>
-            </td>
-            <td class="py-3.5 px-4 text-gray-700 font-medium">
-              <div class="flex items-center space-x-1 text-gray-600">
-                <i data-lucide="map-pin" class="w-3 h-3 text-gray-400"></i>
-                <span>${u.location}</span>
-              </div>
-            </td>
-            <td class="py-3.5 px-4">
-              <div class="font-bold text-gray-900 font-mono">₦${Number(u.lifetimeSpend).toLocaleString()}</div>
-              <div class="text-[10px] ${u.ordersCount > 0 ? 'text-emerald-700 font-semibold' : 'text-gray-400'}">
-                ${u.ordersCount > 0 ? u.ordersCount + ' completed orders' : '0 orders placed'}
-              </div>
-            </td>
-            <td class="py-3.5 px-4">
-              ${activenessBadge}
-            </td>
-            <td class="py-3.5 px-4 text-right">
-              <div class="flex items-center justify-end space-x-1.5">
-                ${winBackBtn}
-                <button onclick="viewUserDetail(${u.id})" class="p-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-brand-primary border border-gray-200 transition" title="View Full Dossier">
-                  <i data-lucide="eye" class="w-3.5 h-3.5"></i>
-                </button>
-                <button onclick="toggleUserVip(${u.id})" class="p-1.5 rounded-lg ${u.role.includes('VIP') ? 'bg-amber-100 text-amber-700 border-amber-300' : 'bg-gray-50 text-gray-400 hover:text-amber-600'} border border-gray-200 transition" title="Toggle VIP Modesty Club">
-                  <i data-lucide="crown" class="w-3.5 h-3.5"></i>
-                </button>
-                <button onclick="editUser(${u.id})" class="p-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-brand-primary border border-gray-200 transition" title="Edit Account">
-                  <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
-                </button>
-                <button onclick="deleteUser(${u.id})" class="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition" title="Suspend / Remove">
-                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join('');
-
-      // Also render mobile cards for customer directory
-      const mobUsersContainer = document.getElementById('usersMobileCards');
-      if (mobUsersContainer) {
-        mobUsersContainer.innerHTML = filtered.map(u => {
-          const initials = u.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-          const activeness = getUserActiveness(u);
-
-          return `
-            <div class="white-card rounded-2xl p-4 bg-white border border-gray-200 shadow-2xs space-y-3">
-              <div class="flex items-start justify-between">
-                <div class="flex items-center space-x-3">
-                  <div class="relative shrink-0">
-                    <div class="w-10 h-10 rounded-full bg-brand-primaryDark text-brand-gold flex items-center justify-center font-bold text-xs shadow-2xs border border-brand-gold/20">
-                      ${initials}
-                    </div>
-                    <button onclick="toggleUserOnline(${u.id})" class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 ${u.isOnline ? 'bg-emerald-500 ring-2 ring-emerald-400/40 animate-pulse' : 'bg-gray-300'} border-2 border-white rounded-full cursor-pointer hover:scale-125 transition" title="Toggle Presence"></button>
-                  </div>
-                  <div>
-                    <h4 class="font-bold text-gray-900 text-xs">${u.name}</h4>
-                    <p class="text-[11px] text-gray-500">${u.email}</p>
-                    <div class="flex items-center space-x-1.5 mt-0.5 text-[10px]">
-                      <span class="text-gray-400 font-mono">${u.phone}</span>
-                      <span>•</span>
-                      <span class="text-gray-500">${u.location}</span>
-                    </div>
-                  </div>
-                </div>
-                <div class="text-right">
-                  <div class="font-bold font-mono text-gray-900 text-xs">₦${Number(u.lifetimeSpend).toLocaleString()}</div>
-                  <div class="text-[10px] text-gray-400">${u.ordersCount} orders</div>
-                </div>
-              </div>
-
-              <!-- Live Presence Pill & Activeness -->
-              <div class="flex items-center justify-between pt-2 border-t border-gray-100 text-[10px]">
-                <button onclick="toggleUserOnline(${u.id})" class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full font-bold transition shadow-2xs cursor-pointer ${u.isOnline ? 'bg-brand-primaryContainer text-brand-primary border border-brand-primary/30' : 'bg-gray-100 text-gray-600 border border-gray-200'}">
-                  <span class="w-2 h-2 rounded-full ${u.isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'}"></span>
-                  <span>${u.isOnline ? 'Online Now' : 'Offline'}</span>
-                </button>
-                <span class="px-2 py-0.5 rounded-full text-[9px] font-bold ${u.role.includes('VIP') ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-[#FAF3E8] text-[#8F581B] border border-[#E5A83B]/40'}">
-                  ${u.role}
-                </span>
-                <div class="flex items-center space-x-1">
-                  <button onclick="editUser(${u.id})" class="p-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200" title="Edit">
-                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
-                  </button>
-                  <button onclick="deleteUser(${u.id})" class="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200" title="Suspend">
-                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-          `;
-        }).join('');
+      tbody.innerHTML = pageRows.map(renderUserRow).join('');
+      if (mobile) mobile.innerHTML = pageRows.map(renderUserCard).join('');
+      if (summary) {
+        summary.innerText = filtered.length === allUsers.length
+          ? `${allUsers.length} ${allUsers.length === 1 ? 'account' : 'accounts'}`
+          : `${filtered.length} of ${allUsers.length} accounts`;
       }
 
+      renderUsersPagination(filtered.length);
+      updateUsersBulkUi();
       lucide.createIcons();
+    }
+
+    function renderUsersPagination(total) {
+      const el = document.getElementById('usersPagination');
+      if (!el) return;
+      if (!total) { el.classList.add('hidden'); el.innerHTML = ''; return; }
+
+      const totalPages = Math.max(1, Math.ceil(total / usersPageSize));
+      const from = (usersPage - 1) * usersPageSize + 1;
+      const to = Math.min(total, usersPage * usersPageSize);
+      el.classList.remove('hidden');
+      el.innerHTML = `
+        <div>Showing <b>${from}–${to}</b> of <b>${total}</b></div>
+        <div class="flex items-center gap-3">
+          <label class="hidden sm:flex items-center gap-2">Rows
+            <select class="input input-sm !w-auto" onchange="setUsersPageSize(this.value)" aria-label="Rows per page">
+              ${[10, 25, 50, 100].map(n => `<option value="${n}" ${n === usersPageSize ? 'selected' : ''}>${n}</option>`).join('')}
+            </select>
+          </label>
+          <span class="tabular-nums">Page ${usersPage} of ${totalPages}</span>
+          <div class="flex items-center gap-1">
+            <button class="icon-btn icon-btn-sm" onclick="goToUsersPage(${usersPage - 1})" ${usersPage <= 1 ? 'disabled' : ''} aria-label="Previous page"><i data-lucide="chevron-left"></i></button>
+            <button class="icon-btn icon-btn-sm" onclick="goToUsersPage(${usersPage + 1})" ${usersPage >= totalPages ? 'disabled' : ''} aria-label="Next page"><i data-lucide="chevron-right"></i></button>
+          </div>
+        </div>`;
+    }
+
+    function goToUsersPage(page) {
+      usersPage = page;
+      renderUsersTable();
+      document.getElementById('section-users')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function setUsersPageSize(size) {
+      usersPageSize = Number(size) || 10;
+      usersPage = 1;
+      renderUsersTable();
+    }
+
+    // Selection
+    function getUsersOnCurrentPage() {
+      const start = (usersPage - 1) * usersPageSize;
+      return lastFilteredUsers.slice(start, start + usersPageSize);
+    }
+
+    function toggleUserSelection(id, checked) {
+      if (checked) selectedUserIds.add(String(id));
+      else selectedUserIds.delete(String(id));
+      renderUsersTable();
+    }
+
+    function toggleSelectAllUsersOnPage(checked) {
+      getUsersOnCurrentPage().forEach(u => {
+        if (checked) selectedUserIds.add(String(u.id));
+        else selectedUserIds.delete(String(u.id));
+      });
+      renderUsersTable();
+    }
+
+    function selectAllFilteredUsers() {
+      lastFilteredUsers.forEach(u => selectedUserIds.add(String(u.id)));
+      renderUsersTable();
+    }
+
+    function clearUserSelection() {
+      selectedUserIds.clear();
+      renderUsersTable();
+    }
+
+    function updateUsersBulkUi() {
+      const bar = document.getElementById('usersBulkBar');
+      const countEl = document.getElementById('usersSelectedCount');
+      const selectAll = document.getElementById('usersSelectAll');
+      const matchBtn = document.getElementById('usersSelectAllMatching');
+      const count = selectedUserIds.size;
+
+      if (bar) bar.classList.toggle('hidden', count === 0);
+      if (countEl) countEl.innerText = count;
+
+      const pageUsers = getUsersOnCurrentPage();
+      const selectedOnPage = pageUsers.filter(u => selectedUserIds.has(String(u.id))).length;
+      if (selectAll) {
+        selectAll.checked = pageUsers.length > 0 && selectedOnPage === pageUsers.length;
+        selectAll.indeterminate = selectedOnPage > 0 && selectedOnPage < pageUsers.length;
+      }
+      if (matchBtn) {
+        const allFilteredSelected = lastFilteredUsers.every(u => selectedUserIds.has(String(u.id)));
+        const show = count > 0 && !allFilteredSelected && lastFilteredUsers.length > pageUsers.length;
+        matchBtn.classList.toggle('hidden', !show);
+        matchBtn.innerText = `Select all ${lastFilteredUsers.length} matching`;
+      }
+    }
+
+    // Bulk actions (same local behaviour as the single-row VIP toggle and delete-to-trash)
+    function getSelectedUsers() {
+      return allUsers.filter(u => selectedUserIds.has(String(u.id)));
+    }
+
+    function bulkSetUsersVip(promote) {
+      let changed = 0;
+      let skipped = 0;
+      getSelectedUsers().forEach(u => {
+        const role = u.role || '';
+        if (/Administrator|Manager/.test(role)) { skipped++; return; } // never overwrite a staff role
+        if (promote && !role.includes('VIP')) { u.role = 'VIP Gold Member'; changed++; }
+        if (!promote && role.includes('VIP')) { u.role = 'Customer'; changed++; }
+      });
+      saveUsersData();
+      const verb = promote ? 'promoted to VIP' : 'changed to standard shopper';
+      showToast(`${changed} ${changed === 1 ? 'account' : 'accounts'} ${verb}${skipped ? ` · ${skipped} staff skipped` : ''}.`);
+    }
+
+    async function bulkDeleteUsers() {
+      const selected = getSelectedUsers();
+      const protectedUsers = selected.filter(u => (u.role || '').includes('Super Administrator'));
+      const deletable = selected.filter(u => !(u.role || '').includes('Super Administrator'));
+
+      if (deletable.length === 0) {
+        await showCustomAlert({
+          title: 'Protected Account',
+          message: 'Super Administrator accounts cannot be deleted directly.',
+          type: 'warning',
+          icon: 'shield-alert'
+        });
+        return;
+      }
+
+      const n = deletable.length;
+      const confirmed = await showCustomConfirm({
+        title: `Move ${n} ${n === 1 ? 'account' : 'accounts'} to Trash Bin`,
+        message: `These accounts will move to the Trash Bin and can be restored from the recovery vault.${protectedUsers.length ? ` ${protectedUsers.length} Super Administrator ${protectedUsers.length === 1 ? 'account' : 'accounts'} will be skipped.` : ''}`,
+        confirmText: 'Move to Trash',
+        cancelText: 'Cancel',
+        type: 'danger',
+        icon: 'trash-2'
+      });
+      if (!confirmed) return;
+
+      const ids = new Set(deletable.map(u => String(u.id)));
+      allUsers = allUsers.filter(u => !ids.has(String(u.id)));
+      deletable.forEach(u => addTrashItem({ type: 'user', name: u.name, data: u }));
+      selectedUserIds.clear();
+      saveUsersData();
+      showToast(`${n} ${n === 1 ? 'account' : 'accounts'} moved to Trash Bin.`);
     }
 
     // Toggle Online status for testing or real-time simulation
@@ -2834,23 +3448,44 @@
       }, isHtml ? 5000 : 3500);
     }
 
+    const PAGE_TITLES = {
+      overview: 'Dashboard', orders: 'Orders', products: 'Products', categories: 'Collections',
+      users: 'Customers', ai: 'AI Stylist', health: 'Health', trash: 'Trash'
+    };
+    const PAGE_ICONS = {
+      overview: 'layout-dashboard', orders: 'shopping-bag', products: 'gem', categories: 'layout-grid',
+      users: 'users', ai: 'bot', health: 'activity', trash: 'trash-2'
+    };
+
     function switchTab(tabId) {
       document.querySelectorAll('.tab-section').forEach(sec => sec.classList.add('hidden'));
-      document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
-      document.querySelectorAll('.mob-nav-btn').forEach(btn => {
-        btn.classList.remove('text-brand-primary', 'font-bold');
-        btn.classList.add('text-gray-400', 'font-semibold');
+      document.querySelectorAll('.nav-tab').forEach(tab => {
+        tab.classList.remove('active');
+        tab.removeAttribute('aria-current');
       });
+      document.querySelectorAll('.mob-nav-btn').forEach(btn => btn.classList.remove('is-active'));
 
       const targetSec = document.getElementById('section-' + tabId);
       const targetTab = document.getElementById('tab-' + tabId);
-      const targetMob = document.getElementById('mob-tab-' + tabId);
+      const targetMob = document.getElementById('mob-tab-' + tabId) || document.getElementById('mob-tab-more');
 
       if (targetSec) targetSec.classList.remove('hidden');
-      if (targetTab) targetTab.classList.add('active');
-      if (targetMob) {
-        targetMob.classList.add('text-brand-primary', 'font-bold');
-        targetMob.classList.remove('text-gray-400', 'font-semibold');
+      if (targetTab) {
+        targetTab.classList.add('active');
+        targetTab.setAttribute('aria-current', 'page');
+      }
+      if (targetMob) targetMob.classList.add('is-active');
+
+      currentTab = tabId;
+      const pageTitle = PAGE_TITLES[tabId] || 'Admin';
+      const topbarTitle = document.getElementById('topbarPageTitle');
+      if (topbarTitle) topbarTitle.innerText = pageTitle;
+      document.title = `${pageTitle} · Al-Nur Admin`;
+      closeMobileSidebar();
+      closeAllPopovers();
+
+      if (tabId === 'overview') {
+        renderDashboard();
       }
       if (tabId === 'users') {
         loadLiveCustomers();
@@ -2867,6 +3502,536 @@
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
       lucide.createIcons();
+    }
+
+    // ------------------------------------
+    // APP SHELL: SIDEBAR, THEME, POPOVERS
+    // ------------------------------------
+
+    function toggleSidebarCollapsed() {
+      const collapsed = document.documentElement.classList.toggle('sidebar-collapsed');
+      try { localStorage.setItem('alnur_admin_sidebar', collapsed ? 'collapsed' : 'expanded'); } catch (e) {}
+    }
+
+    function openMobileSidebar() { document.body.classList.add('drawer-open'); }
+    function closeMobileSidebar() { document.body.classList.remove('drawer-open'); }
+
+    function getThemePref() {
+      try { return localStorage.getItem('alnur_admin_theme') || 'light'; } catch (e) { return 'light'; }
+    }
+
+    function applyTheme(pref) {
+      const dark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.classList.toggle('dark', dark);
+      document.querySelectorAll('[data-theme-option]').forEach(b => b.classList.toggle('is-active', b.dataset.themeOption === pref));
+    }
+
+    function setTheme(pref) {
+      try { localStorage.setItem('alnur_admin_theme', pref); } catch (e) {}
+      applyTheme(pref);
+    }
+
+    function toggleTheme() {
+      setTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark');
+    }
+
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+      if (getThemePref() === 'system') applyTheme('system');
+    });
+
+    function closeAllPopovers() {
+      ['notifPanel', 'profileMenu', 'globalSearchResults'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
+    }
+
+    function openPopover(id) {
+      const el = document.getElementById(id);
+      if (!el) return false;
+      const willOpen = el.classList.contains('hidden');
+      closeAllPopovers();
+      if (willOpen) el.classList.remove('hidden');
+      return willOpen;
+    }
+
+    function toggleProfileMenu() {
+      if (!openPopover('profileMenu')) return;
+      document.getElementById('profileMenuName').innerText = document.getElementById('adminDisplayName')?.innerText || 'Administrator';
+      document.getElementById('profileMenuRole').innerText = document.getElementById('adminRoleName')?.innerText || '';
+      applyTheme(getThemePref());
+      lucide.createIcons();
+    }
+
+    function toggleNotifications() {
+      if (!openPopover('notifPanel')) return;
+      renderNotifications();
+      try { localStorage.setItem('alnur_admin_notif_seen', getNotificationSignature()); } catch (e) {}
+      document.getElementById('notifDot')?.classList.add('hidden');
+    }
+
+    document.addEventListener('click', e => {
+      if (!e.target.closest('#notifWrap, #profileWrap, #globalSearchWrap')) closeAllPopovers();
+    });
+
+    document.addEventListener('keydown', e => {
+      const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || '') || document.activeElement?.isContentEditable;
+      const dashboardVisible = !document.getElementById('adminDashboardScreen')?.classList.contains('hidden');
+      if (!dashboardVisible) return;
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        document.getElementById('globalSearchInput')?.focus();
+      } else if (e.key === '/' && !typing) {
+        e.preventDefault();
+        document.getElementById('globalSearchInput')?.focus();
+      } else if (e.key === 'Escape') {
+        closeAllPopovers();
+        closeMobileSidebar();
+      }
+    });
+
+    async function refreshAllData() {
+      const icon = document.getElementById('iconRefreshAll');
+      icon?.classList.add('animate-spin');
+      try {
+        await Promise.all([fetchInitialData(), loadLiveCustomers()]);
+        showToast('Live data refreshed.');
+      } finally {
+        icon?.classList.remove('animate-spin');
+      }
+    }
+
+    // Batch dashboard + notification re-renders triggered by several data updates in a row.
+    let uiRefreshQueued = false;
+    function scheduleUiRefresh() {
+      if (uiRefreshQueued) return;
+      uiRefreshQueued = true;
+      requestAnimationFrame(() => {
+        uiRefreshQueued = false;
+        renderDashboard();
+        renderNotifications();
+      });
+    }
+
+    // ------------------------------------
+    // SHARED DATA SELECTORS (read-only views over existing state)
+    // ------------------------------------
+
+    function normalizeFulfillment(status) {
+      const s = (status || 'placed').toLowerCase().replaceAll(' ', '_');
+      if (s === 'confirmed') return 'placed';
+      if (s === 'tailoring') return 'processing';
+      if (s === 'dispatched') return 'shipped';
+      if (s.includes('transit')) return 'out_for_delivery';
+      return s;
+    }
+
+    const FULFILLMENT_STAGES = [
+      { key: 'placed', label: 'Placed', tone: 'primary', color: 'var(--primary)' },
+      { key: 'processing', label: 'Tailoring', tone: 'warning', color: 'var(--warning-solid)' },
+      { key: 'shipped', label: 'Shipped', tone: 'info', color: 'var(--info-solid)' },
+      { key: 'out_for_delivery', label: 'Out for delivery', tone: 'info', color: 'var(--sky-solid)' },
+      { key: 'delivered', label: 'Delivered', tone: 'success', color: 'var(--success-solid)' },
+      { key: 'cancelled', label: 'Cancelled', tone: 'danger', color: 'var(--danger-solid)' }
+    ];
+
+    function fulfillmentBadge(status) {
+      const key = normalizeFulfillment(status);
+      const stage = FULFILLMENT_STAGES.find(s => s.key === key) || FULFILLMENT_STAGES[0];
+      return uiBadge(stage.label, stage.tone);
+    }
+
+    function paymentBadge(status) {
+      const s = (status || 'pending').toLowerCase();
+      if (s === 'paid' || s === 'success') return uiBadge('Paid', 'success', 'check');
+      if (s === 'refunded') return uiBadge('Refunded', 'info');
+      if (s === 'failed') return uiBadge('Failed', 'danger');
+      return uiBadge('Pending', 'warning');
+    }
+
+    function getProductUnits(p) {
+      return p.stockUnits !== undefined && p.stockUnits !== null ? Number(p.stockUnits) : null;
+    }
+
+    function getInventoryAlerts() {
+      const out = allProducts.filter(p => !p.isAvailable);
+      const low = allProducts.filter(p => {
+        const units = getProductUnits(p);
+        return p.isAvailable && units !== null && units <= 5;
+      }).sort((a, b) => getProductUnits(a) - getProductUnits(b));
+      return { out, low };
+    }
+
+    // Navigate to a page with a filter pre-applied, reusing the existing filter functions.
+    function goToOrders(filter = 'all') {
+      switchTab('orders');
+      const btn = document.getElementById('order-chip-' + filter.replaceAll('_', '-'));
+      setOrderFilter(filter, btn);
+    }
+
+    function goToProductsStock(filter = 'all') {
+      switchTab('products');
+      setStockFilter(filter);
+    }
+
+    function goToUsers(role = 'all') {
+      switchTab('users');
+      setUserRoleFilter(role);
+    }
+
+    function openProductFromSearch(name) {
+      switchTab('products');
+      const allChip = document.querySelector('#categoryFilterChips .cat-chip');
+      setCategoryFilter('all', allChip);
+      setStockFilter('all');
+      const input = document.getElementById('productSearch');
+      if (input) input.value = name;
+      filterProducts();
+    }
+
+    // ------------------------------------
+    // NOTIFICATIONS (derived from live data, nothing new is fetched)
+    // ------------------------------------
+
+    function buildAttentionItems() {
+      const items = [];
+      const pendingPayment = allOrders.filter(o => (o.paymentStatus || '').toLowerCase() === 'pending').length;
+      const awaiting = allOrders.filter(o => normalizeFulfillment(o.fulfillmentStatus) === 'placed').length;
+      const tailoring = allOrders.filter(o => normalizeFulfillment(o.fulfillmentStatus) === 'processing').length;
+      const { out, low } = getInventoryAlerts();
+      const winBack = allUsers.filter(u => {
+        const t = getUserActiveness(u).type;
+        return t === 'never_ordered' || t === 'dormant_six_months';
+      }).length;
+      const trash = trashBinVault.length;
+      const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+      if (awaiting) items.push({ key: 'awaiting', count: awaiting, tone: 'primary', icon: 'package', title: plural(awaiting, 'new order to confirm', 'new orders to confirm'), text: 'Placed and waiting to move into tailoring', run: () => goToOrders('placed') });
+      if (pendingPayment) items.push({ key: 'payment', count: pendingPayment, tone: 'warning', icon: 'credit-card', title: plural(pendingPayment, 'payment pending', 'payments pending'), text: 'Verify before dispatch', run: () => goToOrders('pending') });
+      if (tailoring) items.push({ key: 'tailoring', count: tailoring, tone: 'info', icon: 'scissors', title: plural(tailoring, 'order in tailoring', 'orders in tailoring'), text: 'Ready to ship when complete', run: () => goToOrders('processing') });
+      if (out.length) items.push({ key: 'out', count: out.length, tone: 'danger', icon: 'package-x', title: plural(out.length, 'product out of stock', 'products out of stock'), text: 'Hidden from shoppers until restocked', run: () => goToProductsStock('out_of_stock') });
+      if (low.length) items.push({ key: 'low', count: low.length, tone: 'warning', icon: 'triangle-alert', title: plural(low.length, 'product running low', 'products running low'), text: '5 units or fewer left', run: () => { switchTab('overview'); setTimeout(() => document.getElementById('dashLowStock')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 350); } });
+      if (winBack) items.push({ key: 'winback', count: winBack, tone: 'neutral', icon: 'gift', title: plural(winBack, 'customer to win back', 'customers to win back'), text: 'Never ordered, or dormant 6+ months', run: () => goToUsers('never_ordered') });
+      if (trash) items.push({ key: 'trash', count: trash, tone: 'neutral', icon: 'trash-2', title: plural(trash, 'item in trash', 'items in trash'), text: 'Restore or purge permanently', run: () => switchTab('trash') });
+      return items;
+    }
+
+    let attentionItemsCache = [];
+    function runAttentionItem(index) {
+      closeAllPopovers();
+      attentionItemsCache[index]?.run();
+    }
+
+    function renderAttentionList(items) {
+      return items.map((item, i) => `
+        <button class="list-row" onclick="runAttentionItem(${i})">
+          <span class="list-icon tone-${item.tone}"><i data-lucide="${item.icon}"></i></span>
+          <span class="min-w-0 flex-1">
+            <span class="block text-[13px] font-medium t-1">${escapeHtml(item.title)}</span>
+            <span class="block text-[12px] t-3 truncate">${escapeHtml(item.text)}</span>
+          </span>
+          <i data-lucide="chevron-right" class="w-4 h-4 t-3 shrink-0"></i>
+        </button>`).join('');
+    }
+
+    function getNotificationSignature() {
+      return buildAttentionItems().filter(i => i.key !== 'trash').map(i => `${i.key}:${i.count}`).join('|');
+    }
+
+    function renderNotifications() {
+      const list = document.getElementById('notifList');
+      if (!list) return;
+      attentionItemsCache = buildAttentionItems();
+      const items = attentionItemsCache;
+      const countEl = document.getElementById('notifCount');
+      if (countEl) countEl.innerText = items.length ? `${items.length} open` : '';
+
+      list.innerHTML = items.length
+        ? renderAttentionList(items)
+        : uiEmptyState({ icon: 'bell-off', title: "You're all caught up", text: 'New orders, payments and stock alerts will show up here.' });
+
+      const signature = getNotificationSignature();
+      let seen = '';
+      try { seen = localStorage.getItem('alnur_admin_notif_seen') || ''; } catch (e) {}
+      const panelOpen = !document.getElementById('notifPanel')?.classList.contains('hidden');
+      document.getElementById('notifDot')?.classList.toggle('hidden', !signature || signature === seen || panelOpen);
+      lucide.createIcons();
+    }
+
+    // ------------------------------------
+    // GLOBAL SEARCH (⌘K) over pages, orders, products, customers already in memory
+    // ------------------------------------
+
+    let globalSearchItems = [];
+    let globalSearchIndex = -1;
+
+    function handleGlobalSearch(rawQuery) {
+      const box = document.getElementById('globalSearchResults');
+      if (!box) return;
+      const q = (rawQuery || '').trim().toLowerCase();
+      const includes = v => String(v || '').toLowerCase().includes(q);
+      const groups = [];
+
+      const pages = Object.keys(PAGE_TITLES)
+        .filter(k => !q || includes(PAGE_TITLES[k]))
+        .map(k => ({ icon: PAGE_ICONS[k], title: PAGE_TITLES[k], sub: 'Go to page', run: () => switchTab(k) }));
+
+      if (q) {
+        const orders = allOrders.filter(o => [o.orderRef, o.customerName, o.customerEmail, o.customerPhone].some(includes)).slice(0, 5)
+          .map(o => ({ icon: 'receipt', title: `#${o.orderRef} · ${o.customerName || 'Customer'}`, sub: `${formatNaira(o.totalAmount)} · ${(FULFILLMENT_STAGES.find(s => s.key === normalizeFulfillment(o.fulfillmentStatus)) || FULFILLMENT_STAGES[0]).label}`, run: () => openOrderDetailModal(o.orderRef) }));
+        const products = allProducts.filter(p => [p.name, p.categoryId].some(includes)).slice(0, 5)
+          .map(p => ({ icon: 'gem', title: p.name, sub: `${formatNaira(p.price)} · ${p.isAvailable ? 'In stock' : 'Out of stock'}`, run: () => openProductFromSearch(p.name) }));
+        const customers = allUsers.filter(u => [u.name, u.email, u.phone].some(includes)).slice(0, 5)
+          .map(u => ({ icon: 'user', title: u.name, sub: u.email || '', run: () => viewUserDetail(u.id) }));
+        if (orders.length) groups.push({ label: 'Orders', items: orders });
+        if (products.length) groups.push({ label: 'Products', items: products });
+        if (customers.length) groups.push({ label: 'Customers', items: customers });
+        if (pages.length) groups.push({ label: 'Pages', items: pages });
+      } else {
+        groups.push({ label: 'Jump to', items: pages });
+      }
+
+      globalSearchItems = groups.flatMap(g => g.items);
+      globalSearchIndex = q && globalSearchItems.length ? 0 : -1;
+
+      let i = 0;
+      box.innerHTML = groups.length
+        ? groups.map(g => `
+            <div class="menu-label">${escapeHtml(g.label)}</div>
+            ${g.items.map(item => {
+              const idx = i++;
+              return `<button class="menu-item ${idx === globalSearchIndex ? 'is-highlighted' : ''}" data-search-idx="${idx}" onmousedown="event.preventDefault()" onclick="runGlobalSearchResult(${idx})" role="option">
+                <i data-lucide="${item.icon}"></i>
+                <span class="min-w-0 flex-1"><span class="block truncate t-1">${escapeHtml(item.title)}</span><span class="block truncate text-[12px] t-3">${escapeHtml(item.sub)}</span></span>
+              </button>`;
+            }).join('')}`).join('')
+        : `<div class="px-3 py-6 text-center text-[13px] t-3">No results for “${escapeHtml(rawQuery.trim())}”</div>`;
+
+      closeAllPopovers();
+      box.classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function runGlobalSearchResult(idx) {
+      const item = globalSearchItems[idx];
+      const input = document.getElementById('globalSearchInput');
+      closeAllPopovers();
+      if (input) { input.value = ''; input.blur(); }
+      item?.run();
+    }
+
+    function handleGlobalSearchKey(e) {
+      const box = document.getElementById('globalSearchResults');
+      if (e.key === 'Escape') { closeAllPopovers(); e.target.blur(); return; }
+      if (!globalSearchItems.length) return;
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        const dir = e.key === 'ArrowDown' ? 1 : -1;
+        globalSearchIndex = (globalSearchIndex + dir + globalSearchItems.length) % globalSearchItems.length;
+        box.querySelectorAll('[data-search-idx]').forEach(el => {
+          const on = Number(el.dataset.searchIdx) === globalSearchIndex;
+          el.classList.toggle('is-highlighted', on);
+          if (on) el.scrollIntoView({ block: 'nearest' });
+        });
+      } else if (e.key === 'Enter' && globalSearchIndex >= 0) {
+        e.preventDefault();
+        runGlobalSearchResult(globalSearchIndex);
+      }
+    }
+
+    // ------------------------------------
+    // DASHBOARD
+    // ------------------------------------
+
+    function renderDashboard() {
+      if (!document.getElementById('section-overview')) return;
+      try {
+        renderDashboardHeader();
+        renderDashboardKpis();
+        renderDashboardPipeline();
+        renderDashboardAttention();
+        renderDashboardRecentOrders();
+        renderDashboardInventory();
+        lucide.createIcons();
+      } catch (err) {
+        console.error('Dashboard render failed:', err);
+      }
+    }
+
+    function renderDashboardHeader() {
+      const hour = new Date().getHours();
+      const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+      const firstName = (document.getElementById('adminDisplayName')?.innerText || '').split(' ')[0];
+      document.getElementById('dashGreeting').innerText = firstName ? `${greeting}, ${firstName}` : greeting;
+      document.getElementById('dashUpdatedAt').innerText = `Updated ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`;
+
+      const failed = [];
+      if (dataLoadState.orders === 'error') failed.push('orders');
+      if (dataLoadState.products === 'error') failed.push('products');
+      if (dataLoadState.categories === 'error') failed.push('collections');
+      if (usersLoadState === 'error') failed.push('customers');
+      const apiDot = document.getElementById('apiStatusDot');
+      if (apiDot) {
+        apiDot.classList.toggle('dot-live', failed.length === 0);
+        apiDot.style.color = failed.length ? 'var(--danger-solid)' : '';
+        document.getElementById('apiStatusPill').title = failed.length ? `API unreachable for: ${failed.join(', ')}` : 'Serverpod API connected';
+      }
+
+      const banner = document.getElementById('dashErrorBanner');
+      if (failed.length) {
+        banner.className = 'alert alert-danger mb-5';
+        banner.innerHTML = `
+          <i data-lucide="cloud-off"></i>
+          <div class="flex-1">
+            <div class="font-medium">Some data couldn't be loaded</div>
+            <div class="text-[12.5px] opacity-90 mt-0.5">Couldn't reach ${failed.join(', ')}. Figures below may be incomplete.</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="refreshAllData()">Retry</button>`;
+      } else {
+        banner.className = 'hidden mb-5';
+        banner.innerHTML = '';
+      }
+    }
+
+    function renderDashboardKpis() {
+      const ordersLoading = dataLoadState.orders === 'loading' && allOrders.length === 0;
+      if (!ordersLoading) {
+        const paid = allOrders.filter(o => (o.paymentStatus || '').toLowerCase() === 'paid');
+        const pending = allOrders.filter(o => (o.paymentStatus || '').toLowerCase() === 'pending');
+        const revenue = paid.reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0);
+        const pendingValue = pending.reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0);
+        const toFulfil = allOrders.filter(o => ['placed', 'processing'].includes(normalizeFulfillment(o.fulfillmentStatus))).length;
+        const inTransit = allOrders.filter(o => ['shipped', 'out_for_delivery'].includes(normalizeFulfillment(o.fulfillmentStatus))).length;
+        const unavailable = dataLoadState.orders === 'error' && allOrders.length === 0;
+
+        document.getElementById('dash-kpi-revenue').innerText = unavailable ? '—' : formatNaira(revenue);
+        document.getElementById('dash-kpi-revenue-sub').innerHTML = unavailable
+          ? '<span>Unavailable</span>'
+          : `<span>${paid.length} paid</span><span style="color:var(--warning)">${formatNaira(pendingValue)} awaiting payment</span>`;
+        document.getElementById('dash-kpi-orders').innerText = unavailable ? '—' : allOrders.length.toLocaleString();
+        document.getElementById('dash-kpi-orders-sub').innerHTML = unavailable
+          ? '<span>Unavailable</span>'
+          : `<span>${toFulfil} to fulfil</span><span>${inTransit} in transit</span>`;
+      }
+
+      if (dataLoadState.products === 'error' && allProducts.length === 0) {
+        document.getElementById('kpi-product-count').innerText = '—';
+      }
+
+      const usersLoading = usersLoadState === 'loading' && allUsers.length === 0;
+      if (!usersLoading) {
+        document.getElementById('dash-kpi-customers').innerText =
+          usersLoadState === 'error' && allUsers.length === 0 ? '—' : allUsers.length.toLocaleString();
+      }
+    }
+
+    function renderDashboardPipeline() {
+      const el = document.getElementById('dashPipeline');
+      if (dataLoadState.orders === 'loading' && allOrders.length === 0) return; // keep skeleton
+      if (allOrders.length === 0) {
+        el.innerHTML = dataLoadState.orders === 'error'
+          ? uiErrorState({ title: "Couldn't load orders", text: 'The pipeline will appear once orders can be fetched.', action: 'fetchOrders(true)' })
+          : uiEmptyState({ icon: 'package-open', title: 'No orders yet', text: 'New orders from the mobile app will flow through these stages.' });
+        return;
+      }
+      const total = allOrders.length;
+      const counts = FULFILLMENT_STAGES.map(s => ({
+        ...s,
+        count: allOrders.filter(o => normalizeFulfillment(o.fulfillmentStatus) === s.key).length
+      }));
+      el.innerHTML = `
+        <div class="pipeline-bar" role="img" aria-label="Order pipeline distribution">
+          ${counts.filter(s => s.count).map(s => `<span style="width:${(s.count / total) * 100}%;background:${s.color}" title="${s.label}: ${s.count}"></span>`).join('')}
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mt-4">
+          ${counts.map(s => `
+            <button class="stage-btn" onclick="goToOrders('${s.key}')">
+              <span class="flex items-center gap-1.5 text-[12px] t-2"><span class="dot" style="color:${s.color}"></span>${s.label}</span>
+              <span class="text-[20px] font-semibold t-1 tabular-nums leading-none">${s.count}</span>
+            </button>`).join('')}
+        </div>`;
+    }
+
+    function renderDashboardAttention() {
+      const el = document.getElementById('dashAttention');
+      const stillLoading = dataLoadState.orders === 'loading' && dataLoadState.products === 'loading';
+      if (stillLoading && allOrders.length === 0 && allProducts.length === 0) return; // keep skeleton
+      attentionItemsCache = buildAttentionItems();
+      el.innerHTML = attentionItemsCache.length
+        ? renderAttentionList(attentionItemsCache)
+        : uiEmptyState({ icon: 'circle-check', title: "You're all caught up", text: 'No orders, payments or stock issues need action.' });
+    }
+
+    function renderDashboardRecentOrders() {
+      const el = document.getElementById('dashRecentOrders');
+      if (dataLoadState.orders === 'loading' && allOrders.length === 0) {
+        el.innerHTML = `<table class="table"><tbody>${uiSkeletonRows(5, 5)}</tbody></table>`;
+        return;
+      }
+      if (allOrders.length === 0) {
+        el.innerHTML = dataLoadState.orders === 'error'
+          ? uiErrorState({ title: "Couldn't load orders", text: 'Check that the Serverpod backend is running.', action: 'fetchOrders(true)' })
+          : uiEmptyState({ icon: 'receipt', title: 'No orders yet', text: 'Orders placed in the mobile app will appear here instantly.' });
+        return;
+      }
+      const recent = [...allOrders]
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+        .slice(0, 6);
+      el.innerHTML = `
+        <table class="table">
+          <thead><tr>
+            <th>Order</th><th class="hidden sm:table-cell">Customer</th><th class="text-right">Total</th>
+            <th class="hidden md:table-cell">Payment</th><th>Status</th>
+          </tr></thead>
+          <tbody>
+            ${recent.map(o => `
+              <tr class="is-clickable" data-ref="${escapeHtml(o.orderRef)}" onclick="openOrderDetailModal(this.dataset.ref)">
+                <td>
+                  <div class="font-medium t-1 font-mono text-[12.5px]">#${escapeHtml(o.orderRef)}</div>
+                  <div class="text-[12px] t-3 whitespace-nowrap">${escapeHtml(formatOrderDate(o.createdAt))}</div>
+                </td>
+                <td class="hidden sm:table-cell">
+                  <div class="t-1 truncate max-w-[200px]">${escapeHtml(o.customerName || 'Valued Customer')}</div>
+                  <div class="text-[12px] t-3 truncate max-w-[200px]">${escapeHtml(o.customerEmail || '')}</div>
+                </td>
+                <td class="text-right t-1 font-medium tabular-nums whitespace-nowrap">${formatNaira(o.totalAmount)}</td>
+                <td class="hidden md:table-cell">${paymentBadge(o.paymentStatus)}</td>
+                <td>${fulfillmentBadge(o.fulfillmentStatus)}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>`;
+    }
+
+    function renderDashboardInventory() {
+      const el = document.getElementById('dashLowStock');
+      if (dataLoadState.products === 'loading' && allProducts.length === 0) {
+        el.innerHTML = `<div class="p-2.5 space-y-3">${'<div class="flex items-center gap-3"><span class="skeleton w-9 h-9"></span><div class="flex-1 space-y-2"><span class="skeleton w-3/4 h-3.5 block"></span><span class="skeleton w-1/3 h-3 block"></span></div></div>'.repeat(4)}</div>`;
+        return;
+      }
+      if (dataLoadState.products === 'error' && allProducts.length === 0) {
+        el.innerHTML = uiErrorState({ title: "Couldn't load products", text: 'Inventory alerts need the product catalog.', action: 'fetchInitialData()' });
+        return;
+      }
+      const { out, low } = getInventoryAlerts();
+      const rows = [...out, ...low].slice(0, 6);
+      if (rows.length === 0) {
+        el.innerHTML = uiEmptyState({ icon: 'package-check', title: 'Inventory looks healthy', text: 'Every product is in stock with more than 5 units.' });
+        return;
+      }
+      el.innerHTML = rows.map(p => {
+        const units = getProductUnits(p);
+        const badge = !p.isAvailable ? uiBadge('Out of stock', 'danger') : uiBadge(`${units} left`, 'warning');
+        const thumb = p.imageUrl
+          ? `<img src="${escapeHtml(p.imageUrl)}" alt="" class="w-9 h-9 rounded-lg object-cover border bd shrink-0" loading="lazy" onerror="this.style.visibility='hidden'">`
+          : `<span class="list-icon tone-neutral"><i data-lucide="gem"></i></span>`;
+        return `
+          <button class="list-row" data-name="${escapeHtml(p.name)}" onclick="openProductFromSearch(this.dataset.name)">
+            ${thumb}
+            <span class="min-w-0 flex-1">
+              <span class="block text-[13px] font-medium t-1 truncate">${escapeHtml(p.name)}</span>
+              <span class="block text-[12px] t-3 truncate">${escapeHtml(p.categoryId || '')} · ${formatNaira(p.price)}</span>
+            </span>
+            ${badge}
+          </button>`;
+      }).join('') + (out.length + low.length > rows.length
+        ? `<div class="px-3 py-2 text-[12px] t-3">+${out.length + low.length - rows.length} more</div>` : '');
     }
 
     // ------------------------------------
@@ -2951,6 +4116,8 @@
 
       const countUser = document.getElementById('trash-count-user');
       if (countUser) countUser.innerText = trashBinVault.filter(i => i.type === 'user').length;
+
+      if (typeof scheduleUiRefresh === 'function') scheduleUiRefresh();
     }
 
     function addTrashItem({ type, name, data }) {
@@ -3291,6 +4458,11 @@
           healthEndpoint.innerText = API_URL;
         }
 
+        dataLoadState.products = 'loading';
+        dataLoadState.categories = 'loading';
+        dataLoadState.orders = 'loading';
+        scheduleUiRefresh();
+
         // Fetch products
         const prodRes = await fetch(`${API_URL}/product/getProducts`, {
           method: 'POST',
@@ -3299,8 +4471,12 @@
         });
         if (prodRes.ok) {
           allProducts = await prodRes.json();
+          dataLoadState.products = 'ready';
           renderProductsTable();
           updateInventoryKpis();
+        } else {
+          dataLoadState.products = 'error';
+          renderProductsLoadError();
         }
 
         // Fetch categories
@@ -3314,6 +4490,9 @@
           renderCategoriesGrid();
           populateCategoryDropdowns();
           document.getElementById('badge-category-count').innerText = allCategories.length;
+          dataLoadState.categories = 'ready';
+        } else {
+          dataLoadState.categories = 'error';
         }
 
         // Fetch orders
@@ -3323,7 +4502,24 @@
       } catch (err) {
         console.error('Failed to connect to Serverpod:', err);
         showToast('Connecting to Serverpod backend...');
+        Object.keys(dataLoadState).forEach(k => { if (dataLoadState[k] === 'loading') dataLoadState[k] = 'error'; });
+        if (dataLoadState.products === 'error' && allProducts.length === 0) renderProductsLoadError();
       }
+      scheduleUiRefresh();
+    }
+
+    // Error state for the products table (it previously spun forever when the request failed)
+    function renderProductsLoadError() {
+      const tbody = document.getElementById('productsTableBody');
+      const html = uiErrorState({
+        title: "Couldn't load products",
+        text: 'The product catalog did not respond. Check that the Serverpod backend is running.',
+        action: 'fetchInitialData()'
+      });
+      if (tbody) tbody.innerHTML = `<tr><td colspan="7">${html}</td></tr>`;
+      const mob = document.getElementById('productsMobileCards');
+      if (mob) mob.innerHTML = html;
+      lucide.createIcons();
     }
 
     // ------------------------------------
@@ -3363,18 +4559,23 @@
         });
         if (res.ok) {
           allOrders = await res.json();
+          dataLoadState.orders = 'ready';
           renderOrdersTable();
           updateOrderBadges();
           if (showToastNotice) {
             showToast(`Loaded ${allOrders.length} orders from PostgreSQL database`);
           }
+        } else {
+          dataLoadState.orders = 'error';
         }
       } catch (err) {
+        dataLoadState.orders = 'error';
         console.error('Failed to fetch orders:', err);
         if (showToastNotice) {
           showToast('Failed to connect to orders endpoint');
         }
       }
+      scheduleUiRefresh();
     }
 
     function updateOrderBadges() {
@@ -3405,7 +4606,7 @@
       if (badgeTotal) badgeTotal.innerText = `${total} Orders`;
 
       const badgeNav = document.getElementById('badge-orders-nav');
-      if (badgeNav) badgeNav.innerText = `${total} Active`;
+      if (badgeNav) badgeNav.innerText = total - delivered - cancelled;
 
       const badgeRev = document.getElementById('badge-orders-revenue');
       if (badgeRev) badgeRev.innerText = `${formatNaira(paidRevenue)} Paid`;
@@ -3446,6 +4647,8 @@
 
       const countPending = document.getElementById('count-pending-orders');
       if (countPending) countPending.innerText = pendingOrders;
+
+      scheduleUiRefresh();
     }
 
     function setOrderFilter(filter, btn) {
@@ -3998,7 +5201,7 @@
       const totalUnits = allProducts.reduce((sum, p) => sum + (p.isAvailable ? (p.stockUnits !== undefined ? p.stockUnits : 24) : 0), 0);
 
       const kpiCount = document.getElementById('kpi-product-count');
-      if (kpiCount) kpiCount.innerText = `${total} Products`;
+      if (kpiCount) kpiCount.innerText = total.toLocaleString();
 
       const txtIn = document.getElementById('txt-kpi-instock');
       if (txtIn) txtIn.innerText = `${inStock} In Stock`;
@@ -4032,6 +5235,8 @@
           el.innerText = allProducts.filter(p => p.categoryId === c).length;
         }
       });
+
+      scheduleUiRefresh();
     }
 
     function setCategoryFilter(cat, btn) {
@@ -5072,14 +6277,7 @@
       lucide.createIcons();
     }
 
-    function escapeHtml(str) {
-      if (!str) return '';
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    }
+    // escapeHtml() is defined once in REUSABLE UI HELPERS (also escapes single quotes).
 
     async function sendAiQuery() {
       const input = document.getElementById('ai-query-input');
