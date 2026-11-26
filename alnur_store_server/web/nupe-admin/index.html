@@ -680,16 +680,47 @@
     let currentTrack = null;
     const audio = document.getElementById('audioElement');
 
-    // AUTHENTICATION FLOW
-    function checkAuth() {
+    // AUTHENTICATION FLOW (dedicated Nupe Studio admin account — separate from Al-Nur Store)
+    function getStoredSession() {
       const stored = localStorage.getItem(STORAGE_KEY) || sessionStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        try {
-          const user = JSON.parse(stored);
-          showDashboard(user);
-          return;
-        } catch (_) {}
+      if (!stored) return null;
+      try { return JSON.parse(stored); } catch (_) { return null; }
+    }
+
+    function clearStoredSession() {
+      localStorage.removeItem(STORAGE_KEY);
+      sessionStorage.removeItem(STORAGE_KEY);
+    }
+
+    // fetch wrapper that attaches the studio admin token and handles expiry
+    async function studioFetch(url, options = {}) {
+      const sessionObj = getStoredSession();
+      const headers = Object.assign({}, options.headers || {});
+      if (sessionObj && sessionObj.token) headers['Authorization'] = 'Bearer ' + sessionObj.token;
+      const res = await fetch(url, Object.assign({}, options, { headers }));
+      if (res.status === 401) {
+        clearStoredSession();
+        if (audio) audio.pause();
+        showLogin();
+        throw new Error('Your studio session has expired. Please sign in again.');
       }
+      return res;
+    }
+
+    async function checkAuth() {
+      const sessionObj = getStoredSession();
+      if (!sessionObj || !sessionObj.token) { showLogin(); return; }
+      try {
+        const res = await fetch('/api/studio/auth/me', {
+          headers: { 'Authorization': 'Bearer ' + sessionObj.token }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          showDashboard(Object.assign({}, sessionObj, data.user));
+          return;
+        }
+      } catch (_) {}
+      clearStoredSession();
       showLogin();
     }
 
@@ -727,37 +758,24 @@
       btnText.textContent = 'Verifying Studio Passkey...';
 
       try {
-        // Authenticate against /api/auth/login or verify studio passkey
-        let userObj = null;
+        // Authenticate against the dedicated Nupe Studio admin account
+        let res;
         try {
-          const res = await fetch('/api/auth/login', {
+          res = await fetch('/api/studio/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: email, password: password })
+            body: JSON.stringify({ email, password, remember })
           });
-          if (res.ok) {
-            const data = await res.json();
-            userObj = {
-              name: 'Nupe Master Producer',
-              email: email,
-              token: data.access || 'nupe_studio_token'
-            };
-          }
-        } catch (_) {}
-
-        // Fallback local verification for studio admin
-        if (!userObj) {
-          if (password.length >= 6) {
-            userObj = {
-              name: 'Nupe Master Producer',
-              email: email,
-              token: 'nupe_studio_token_' + Date.now()
-            };
-          } else {
-            throw new Error('Master key must be at least 6 characters.');
-          }
+        } catch (_) {
+          throw new Error('Unable to reach the studio server. Please try again.');
+        }
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.error || 'Invalid studio email or password.');
         }
 
+        const userObj = Object.assign({}, data.user, { token: data.token });
+        clearStoredSession();
         if (remember) {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(userObj));
         } else {
@@ -776,8 +794,14 @@
 
     function handleStudioLogout() {
       if (confirm('Sign out of Nupe Songs Studio?')) {
-        localStorage.removeItem(STORAGE_KEY);
-        sessionStorage.removeItem(STORAGE_KEY);
+        const sessionObj = getStoredSession();
+        if (sessionObj && sessionObj.token) {
+          fetch('/api/studio/auth/logout', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + sessionObj.token }
+          }).catch(() => {});
+        }
+        clearStoredSession();
         if (audio) audio.pause();
         showLogin();
       }
@@ -1120,7 +1144,7 @@
       };
 
       try {
-        const res = await fetch('/api/songs', {
+        const res = await studioFetch('/api/songs', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -1140,7 +1164,8 @@
     async function deleteTrack(id) {
       if (!confirm('Are you sure you want to remove this track from Nupe Songs catalog?')) return;
       try {
-        await fetch(`/api/songs/${id}`, { method: 'DELETE' });
+        const res = await studioFetch(`/api/songs/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Server rejected delete');
         await loadData();
       } catch (err) {
         alert('Error deleting track: ' + err);
@@ -1155,11 +1180,12 @@
         bio: document.getElementById('newArtistBio').value,
       };
       try {
-        await fetch('/api/artists', {
+        const res = await studioFetch('/api/artists', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
+        if (!res.ok) throw new Error('Failed to save artist');
         closeModal('addArtistModal');
         await loadData();
       } catch (err) {
@@ -1169,8 +1195,12 @@
 
     async function deleteArtist(id) {
       if (!confirm('Delete this artist?')) return;
-      await fetch(`/api/artists/${id}`, { method: 'DELETE' });
-      await loadData();
+      try {
+        await studioFetch(`/api/artists/${id}`, { method: 'DELETE' });
+        await loadData();
+      } catch (err) {
+        alert('Error deleting artist: ' + err.message);
+      }
     }
 
     async function submitNewAlbum(e) {
@@ -1182,11 +1212,12 @@
         artwork: document.getElementById('newAlbumArtwork').value,
       };
       try {
-        await fetch('/api/albums', {
+        const res = await studioFetch('/api/albums', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
+        if (!res.ok) throw new Error('Failed to save album');
         closeModal('addAlbumModal');
         await loadData();
       } catch (err) {
@@ -1196,8 +1227,12 @@
 
     async function deleteAlbum(id) {
       if (!confirm('Delete this album?')) return;
-      await fetch(`/api/albums/${id}`, { method: 'DELETE' });
-      await loadData();
+      try {
+        await studioFetch(`/api/albums/${id}`, { method: 'DELETE' });
+        await loadData();
+      } catch (err) {
+        alert('Error deleting album: ' + err.message);
+      }
     }
 
     // MODAL HELPERS

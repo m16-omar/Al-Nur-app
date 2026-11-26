@@ -1,6 +1,133 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
+
 import 'package:serverpod/serverpod.dart';
+
+/// Dedicated Nupe Songs Studio admin account.
+///
+/// Completely separate from Al-Nur Store admin accounts. Credentials are read
+/// from `config/passwords.yaml` (`nupeStudioAdminEmail`,
+/// `nupeStudioAdminPassword`, optional `nupeStudioAdminName`). Outside of
+/// production, a development default is used when they are not configured.
+class _StudioAdminAuth {
+  static const _devEmail = 'admin@nupesongs.com';
+  static const _devPassword = 'nupe2026admin';
+  static const _sessionTtl = Duration(hours: 12);
+  static const _rememberTtl = Duration(days: 30);
+
+  static final Random _random = Random.secure();
+
+  /// token -> session info
+  static final Map<String, _StudioSession> _sessions = {};
+
+  static ({String email, String password, String name})? credentials(
+    Session session,
+  ) {
+    final email = session.passwords['nupeStudioAdminEmail']?.trim();
+    final password = session.passwords['nupeStudioAdminPassword'];
+    final name =
+        session.passwords['nupeStudioAdminName']?.trim() ?? 'Nupe Studio Admin';
+
+    if (email != null &&
+        email.isNotEmpty &&
+        password != null &&
+        password.isNotEmpty) {
+      return (email: email.toLowerCase(), password: password, name: name);
+    }
+    if (session.serverpod.runMode == ServerpodRunMode.production) {
+      return null; // Never fall back to default credentials in production.
+    }
+    return (email: _devEmail, password: _devPassword, name: name);
+  }
+
+  /// Constant-time string comparison to avoid timing leaks.
+  static bool _secureEquals(String a, String b) {
+    final aa = utf8.encode(a);
+    final bb = utf8.encode(b);
+    var diff = aa.length ^ bb.length;
+    for (var i = 0; i < aa.length; i++) {
+      diff |= aa[i] ^ (i < bb.length ? bb[i] : 0);
+    }
+    return diff == 0;
+  }
+
+  static _StudioSession? login(
+    Session session,
+    String email,
+    String password, {
+    bool remember = false,
+  }) {
+    final creds = credentials(session);
+    if (creds == null) return null;
+
+    final emailOk = _secureEquals(email.trim().toLowerCase(), creds.email);
+    final passwordOk = _secureEquals(password, creds.password);
+    if (!emailOk || !passwordOk) return null;
+
+    _purgeExpired();
+    final bytes = List<int>.generate(32, (_) => _random.nextInt(256));
+    final token = base64Url.encode(bytes).replaceAll('=', '');
+    final studioSession = _StudioSession(
+      token: token,
+      email: creds.email,
+      name: creds.name,
+      expiresAt: DateTime.now().add(remember ? _rememberTtl : _sessionTtl),
+    );
+    _sessions[token] = studioSession;
+    return studioSession;
+  }
+
+  static _StudioSession? validate(Request request) {
+    String? token;
+    try {
+      final header = request.headers.authorization;
+      if (header is BearerAuthorizationHeader) token = header.token;
+    } catch (_) {
+      return null;
+    }
+    if (token == null) return null;
+
+    final studioSession = _sessions[token];
+    if (studioSession == null) return null;
+    if (studioSession.expiresAt.isBefore(DateTime.now())) {
+      _sessions.remove(token);
+      return null;
+    }
+    return studioSession;
+  }
+
+  static void logout(Request request) {
+    final studioSession = validate(request);
+    if (studioSession != null) _sessions.remove(studioSession.token);
+  }
+
+  static void _purgeExpired() {
+    final now = DateTime.now();
+    _sessions.removeWhere((_, s) => s.expiresAt.isBefore(now));
+  }
+}
+
+class _StudioSession {
+  _StudioSession({
+    required this.token,
+    required this.email,
+    required this.name,
+    required this.expiresAt,
+  });
+
+  final String token;
+  final String email;
+  final String name;
+  final DateTime expiresAt;
+
+  Map<String, dynamic> toJson() => {
+        'email': email,
+        'name': name,
+        'role': 'nupe_studio_admin',
+        'expires_at': expiresAt.toUtc().toIso8601String(),
+      };
+}
 
 class NupeSongsApiRoute extends Route {
   NupeSongsApiRoute()
@@ -200,6 +327,80 @@ class NupeSongsApiRoute extends Route {
     final normalizedPath = path.endsWith('/') && path.length > 1
         ? path.substring(0, path.length - 1)
         : path;
+
+    // ---- Nupe Studio admin authentication (separate from Al-Nur Store) ----
+
+    // POST /api/studio/auth/login
+    if (normalizedPath == '/api/studio/auth/login' &&
+        request.method == Method.post) {
+      String email = '';
+      String password = '';
+      bool remember = false;
+      try {
+        final data =
+            jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+        email = (data['email'] as String?) ?? '';
+        password = (data['password'] as String?) ?? '';
+        remember = data['remember'] == true;
+      } catch (_) {
+        return _jsonResponse({'error': 'Invalid request body.'},
+            statusCode: 400);
+      }
+
+      if (_StudioAdminAuth.credentials(session) == null) {
+        return _jsonResponse(
+          {'error': 'Nupe Studio admin account is not configured on this server.'},
+          statusCode: 503,
+        );
+      }
+
+      final studioSession =
+          _StudioAdminAuth.login(session, email, password, remember: remember);
+      if (studioSession == null) {
+        session.log('Failed Nupe Studio login attempt for "$email"',
+            level: LogLevel.warning);
+        return _jsonResponse(
+          {'error': 'Invalid studio email or password.'},
+          statusCode: 401,
+        );
+      }
+      return _jsonResponse({
+        'token': studioSession.token,
+        'user': studioSession.toJson(),
+      });
+    }
+
+    // GET /api/studio/auth/me
+    if (normalizedPath == '/api/studio/auth/me' &&
+        request.method == Method.get) {
+      final studioSession = _StudioAdminAuth.validate(request);
+      if (studioSession == null) {
+        return _jsonResponse({'error': 'Unauthorized'}, statusCode: 401);
+      }
+      return _jsonResponse({'user': studioSession.toJson()});
+    }
+
+    // POST /api/studio/auth/logout
+    if (normalizedPath == '/api/studio/auth/logout' &&
+        request.method == Method.post) {
+      _StudioAdminAuth.logout(request);
+      return _jsonResponse({'status': 'ok'});
+    }
+
+    // Catalog writes (create/update/delete songs, albums, artists, genres)
+    // require a Nupe Studio admin session. Public listener actions
+    // (play/download counters) remain open.
+    final isCatalogPath = RegExp(r'^/api/(songs|albums|artists|genres)(/\d+)?$')
+        .hasMatch(normalizedPath);
+    final isWrite = request.method == Method.post ||
+        request.method == Method.put ||
+        request.method == Method.delete;
+    if (isCatalogPath && isWrite && _StudioAdminAuth.validate(request) == null) {
+      return _jsonResponse(
+        {'error': 'Nupe Studio admin sign-in required.'},
+        statusCode: 401,
+      );
+    }
 
     // 1. GET /api/songs
     if (normalizedPath == '/api/songs' && request.method == Method.get) {
