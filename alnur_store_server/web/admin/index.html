@@ -479,6 +479,21 @@
 
     <div class="w-full max-w-md relative z-10">
       
+      <!-- Top Portal Switcher Pill -->
+      <div class="mb-5 flex justify-center">
+        <div class="inline-flex p-1 bg-white/95 backdrop-blur rounded-2xl border border-gray-200 shadow-sm gap-1 w-full">
+          <a href="/admin" class="flex-1 flex items-center justify-center space-x-1.5 py-2 px-3 rounded-xl text-xs font-bold transition bg-[#2E110A] text-[#D4AF37] shadow-sm">
+            <span>🕌</span>
+            <span>Al-Nur Store</span>
+          </a>
+          <a href="/nupe-admin" class="flex-1 flex items-center justify-center space-x-1.5 py-2 px-3 rounded-xl text-xs font-semibold text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50 transition">
+            <span>🎵</span>
+            <span>Nupe Studio</span>
+            <span class="text-[9px] px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-bold border border-indigo-200">Switch &rarr;</span>
+          </a>
+        </div>
+      </div>
+
       <!-- Brand Logo Header -->
       <div class="text-center mb-8">
         <div class="inline-flex w-14 h-14 rounded-2xl bg-brand-primaryDark items-center justify-center shadow-lg shadow-brand-primary/15 mb-3 border border-brand-gold/30">
@@ -676,6 +691,11 @@
             <i data-lucide="trash-2"></i><span class="nav-label">Trash</span>
             <span id="badge-trash-count" class="nav-count">0</span>
           </button>
+
+          <div class="nav-section-title">Portals</div>
+          <a href="/nupe-admin" class="nav-tab text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50/70 dark:hover:bg-indigo-950/40" title="Open Nupe Songs Studio Portal">
+            <i data-lucide="music-2" class="text-indigo-600 dark:text-indigo-400"></i><span class="nav-label font-bold">Nupe Studio ↗</span>
+          </a>
         </nav>
 
         <div class="sidebar-footer hidden lg:block">
@@ -712,7 +732,11 @@
             <div id="globalSearchResults" class="popover search-popover hidden" role="listbox"></div>
           </div>
 
-          <div class="ml-auto flex items-center gap-0.5">
+          <div class="ml-auto flex items-center gap-1.5">
+            <a href="/nupe-admin" class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800 transition" title="Switch to Nupe Songs Executive Studio">
+              <i data-lucide="music-2" class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400"></i>
+              <span>Nupe Studio ↗</span>
+            </a>
             <div class="status-pill hidden xl:flex" id="apiStatusPill" title="Serverpod API">
               <span class="dot dot-live" id="apiStatusDot"></span>
               <span id="badge-api-host" class="font-mono text-[11.5px]">Port 8080 API • 8082 Web</span>
