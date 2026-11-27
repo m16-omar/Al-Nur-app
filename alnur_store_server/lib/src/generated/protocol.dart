@@ -21,23 +21,25 @@ import 'ai/ai_stylist.dart' as _i5;
 import 'categories/store_category.dart' as _i6;
 import 'greetings/greeting.dart' as _i7;
 import 'idempotency/idempotency_record.dart' as _i8;
-import 'orders/store_order.dart' as _i9;
-import 'products/store_product.dart' as _i10;
-import 'storage/upload_result.dart' as _i11;
-import 'users/user_account_info.dart' as _i12;
-import 'users/user_address.dart' as _i13;
+import 'nupe/nupe_listener.dart' as _i9;
+import 'orders/store_order.dart' as _i10;
+import 'products/store_product.dart' as _i11;
+import 'storage/upload_result.dart' as _i12;
+import 'users/user_account_info.dart' as _i13;
+import 'users/user_address.dart' as _i14;
 import 'package:alnur_store_server/src/generated/categories/store_category.dart'
-    as _i14;
-import 'package:alnur_store_server/src/generated/orders/store_order.dart'
     as _i15;
-import 'package:alnur_store_server/src/generated/products/store_product.dart'
+import 'package:alnur_store_server/src/generated/orders/store_order.dart'
     as _i16;
-import 'package:alnur_store_server/src/generated/users/user_address.dart'
+import 'package:alnur_store_server/src/generated/products/store_product.dart'
     as _i17;
+import 'package:alnur_store_server/src/generated/users/user_address.dart'
+    as _i18;
 export 'ai/ai_stylist.dart';
 export 'categories/store_category.dart';
 export 'greetings/greeting.dart';
 export 'idempotency/idempotency_record.dart';
+export 'nupe/nupe_listener.dart';
 export 'orders/store_order.dart';
 export 'products/store_product.dart';
 export 'storage/upload_result.dart';
@@ -152,6 +154,138 @@ class Protocol extends _i1.SerializationManagerServer {
           ],
           type: 'btree',
           isUnique: true,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _i2.TableDefinition(
+      name: 'nupe_listener',
+      dartName: 'NupeListener',
+      schema: 'public',
+      module: 'alnur_store',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'nupe_listener_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'username',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'email',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'firstName',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'lastName',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'passwordHash',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'createdAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+        _i2.ColumnDefinition(
+          name: 'lastSeenAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: true,
+          dartType: 'DateTime?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'lastActivity',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'platform',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'isDisabled',
+          columnType: _i2.ColumnType.boolean,
+          isNullable: false,
+          dartType: 'bool',
+          columnDefault: 'false',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'nupe_listener_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'nupe_listener_username_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'username',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'nupe_listener_email_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'email',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'nupe_listener_last_seen_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'lastSeenAt',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
           isPrimary: false,
         ),
       ],
@@ -694,20 +828,23 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i8.IdempotencyRecord) {
       return _i8.IdempotencyRecord.fromJson(data) as T;
     }
-    if (t == _i9.StoreOrder) {
-      return _i9.StoreOrder.fromJson(data) as T;
+    if (t == _i9.NupeListener) {
+      return _i9.NupeListener.fromJson(data) as T;
     }
-    if (t == _i10.StoreProduct) {
-      return _i10.StoreProduct.fromJson(data) as T;
+    if (t == _i10.StoreOrder) {
+      return _i10.StoreOrder.fromJson(data) as T;
     }
-    if (t == _i11.StorageUploadResult) {
-      return _i11.StorageUploadResult.fromJson(data) as T;
+    if (t == _i11.StoreProduct) {
+      return _i11.StoreProduct.fromJson(data) as T;
     }
-    if (t == _i12.UserAccountInfo) {
-      return _i12.UserAccountInfo.fromJson(data) as T;
+    if (t == _i12.StorageUploadResult) {
+      return _i12.StorageUploadResult.fromJson(data) as T;
     }
-    if (t == _i13.UserAddress) {
-      return _i13.UserAddress.fromJson(data) as T;
+    if (t == _i13.UserAccountInfo) {
+      return _i13.UserAccountInfo.fromJson(data) as T;
+    }
+    if (t == _i14.UserAddress) {
+      return _i14.UserAddress.fromJson(data) as T;
     }
     if (t == _i1.getType<_i5.AiStylistResponse?>()) {
       return (data != null ? _i5.AiStylistResponse.fromJson(data) : null) as T;
@@ -721,32 +858,35 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i1.getType<_i8.IdempotencyRecord?>()) {
       return (data != null ? _i8.IdempotencyRecord.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i9.StoreOrder?>()) {
-      return (data != null ? _i9.StoreOrder.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i9.NupeListener?>()) {
+      return (data != null ? _i9.NupeListener.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i10.StoreProduct?>()) {
-      return (data != null ? _i10.StoreProduct.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i10.StoreOrder?>()) {
+      return (data != null ? _i10.StoreOrder.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i11.StorageUploadResult?>()) {
-      return (data != null ? _i11.StorageUploadResult.fromJson(data) : null)
+    if (t == _i1.getType<_i11.StoreProduct?>()) {
+      return (data != null ? _i11.StoreProduct.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i12.StorageUploadResult?>()) {
+      return (data != null ? _i12.StorageUploadResult.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i12.UserAccountInfo?>()) {
-      return (data != null ? _i12.UserAccountInfo.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i13.UserAccountInfo?>()) {
+      return (data != null ? _i13.UserAccountInfo.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i13.UserAddress?>()) {
-      return (data != null ? _i13.UserAddress.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i14.UserAddress?>()) {
+      return (data != null ? _i14.UserAddress.fromJson(data) : null) as T;
     }
-    if (t == List<_i10.StoreProduct>) {
+    if (t == List<_i11.StoreProduct>) {
       return (data as List)
-              .map((e) => deserialize<_i10.StoreProduct>(e))
+              .map((e) => deserialize<_i11.StoreProduct>(e))
               .toList()
           as T;
     }
-    if (t == _i1.getType<List<_i10.StoreProduct>?>()) {
+    if (t == _i1.getType<List<_i11.StoreProduct>?>()) {
       return (data != null
               ? (data as List)
-                    .map((e) => deserialize<_i10.StoreProduct>(e))
+                    .map((e) => deserialize<_i11.StoreProduct>(e))
                     .toList()
               : null)
           as T;
@@ -760,25 +900,25 @@ class Protocol extends _i1.SerializationManagerServer {
               : null)
           as T;
     }
-    if (t == List<_i14.StoreCategory>) {
+    if (t == List<_i15.StoreCategory>) {
       return (data as List)
-              .map((e) => deserialize<_i14.StoreCategory>(e))
+              .map((e) => deserialize<_i15.StoreCategory>(e))
               .toList()
           as T;
     }
-    if (t == List<_i15.StoreOrder>) {
-      return (data as List).map((e) => deserialize<_i15.StoreOrder>(e)).toList()
+    if (t == List<_i16.StoreOrder>) {
+      return (data as List).map((e) => deserialize<_i16.StoreOrder>(e)).toList()
           as T;
     }
-    if (t == List<_i16.StoreProduct>) {
+    if (t == List<_i17.StoreProduct>) {
       return (data as List)
-              .map((e) => deserialize<_i16.StoreProduct>(e))
+              .map((e) => deserialize<_i17.StoreProduct>(e))
               .toList()
           as T;
     }
-    if (t == List<_i17.UserAddress>) {
+    if (t == List<_i18.UserAddress>) {
       return (data as List)
-              .map((e) => deserialize<_i17.UserAddress>(e))
+              .map((e) => deserialize<_i18.UserAddress>(e))
               .toList()
           as T;
     }
@@ -800,11 +940,12 @@ class Protocol extends _i1.SerializationManagerServer {
       _i6.StoreCategory => 'StoreCategory',
       _i7.Greeting => 'Greeting',
       _i8.IdempotencyRecord => 'IdempotencyRecord',
-      _i9.StoreOrder => 'StoreOrder',
-      _i10.StoreProduct => 'StoreProduct',
-      _i11.StorageUploadResult => 'StorageUploadResult',
-      _i12.UserAccountInfo => 'UserAccountInfo',
-      _i13.UserAddress => 'UserAddress',
+      _i9.NupeListener => 'NupeListener',
+      _i10.StoreOrder => 'StoreOrder',
+      _i11.StoreProduct => 'StoreProduct',
+      _i12.StorageUploadResult => 'StorageUploadResult',
+      _i13.UserAccountInfo => 'UserAccountInfo',
+      _i14.UserAddress => 'UserAddress',
       _ => null,
     };
   }
@@ -827,15 +968,17 @@ class Protocol extends _i1.SerializationManagerServer {
         return 'Greeting';
       case _i8.IdempotencyRecord():
         return 'IdempotencyRecord';
-      case _i9.StoreOrder():
+      case _i9.NupeListener():
+        return 'NupeListener';
+      case _i10.StoreOrder():
         return 'StoreOrder';
-      case _i10.StoreProduct():
+      case _i11.StoreProduct():
         return 'StoreProduct';
-      case _i11.StorageUploadResult():
+      case _i12.StorageUploadResult():
         return 'StorageUploadResult';
-      case _i12.UserAccountInfo():
+      case _i13.UserAccountInfo():
         return 'UserAccountInfo';
-      case _i13.UserAddress():
+      case _i14.UserAddress():
         return 'UserAddress';
     }
     className = _i2.Protocol().getClassNameForObject(data);
@@ -871,20 +1014,23 @@ class Protocol extends _i1.SerializationManagerServer {
     if (dataClassName == 'IdempotencyRecord') {
       return deserialize<_i8.IdempotencyRecord>(data['data']);
     }
+    if (dataClassName == 'NupeListener') {
+      return deserialize<_i9.NupeListener>(data['data']);
+    }
     if (dataClassName == 'StoreOrder') {
-      return deserialize<_i9.StoreOrder>(data['data']);
+      return deserialize<_i10.StoreOrder>(data['data']);
     }
     if (dataClassName == 'StoreProduct') {
-      return deserialize<_i10.StoreProduct>(data['data']);
+      return deserialize<_i11.StoreProduct>(data['data']);
     }
     if (dataClassName == 'StorageUploadResult') {
-      return deserialize<_i11.StorageUploadResult>(data['data']);
+      return deserialize<_i12.StorageUploadResult>(data['data']);
     }
     if (dataClassName == 'UserAccountInfo') {
-      return deserialize<_i12.UserAccountInfo>(data['data']);
+      return deserialize<_i13.UserAccountInfo>(data['data']);
     }
     if (dataClassName == 'UserAddress') {
-      return deserialize<_i13.UserAddress>(data['data']);
+      return deserialize<_i14.UserAddress>(data['data']);
     }
     if (dataClassName.startsWith('serverpod.')) {
       data['className'] = dataClassName.substring(10);
@@ -926,14 +1072,16 @@ class Protocol extends _i1.SerializationManagerServer {
         return _i6.StoreCategory.t;
       case _i8.IdempotencyRecord:
         return _i8.IdempotencyRecord.t;
-      case _i9.StoreOrder:
-        return _i9.StoreOrder.t;
-      case _i10.StoreProduct:
-        return _i10.StoreProduct.t;
-      case _i12.UserAccountInfo:
-        return _i12.UserAccountInfo.t;
-      case _i13.UserAddress:
-        return _i13.UserAddress.t;
+      case _i9.NupeListener:
+        return _i9.NupeListener.t;
+      case _i10.StoreOrder:
+        return _i10.StoreOrder.t;
+      case _i11.StoreProduct:
+        return _i11.StoreProduct.t;
+      case _i13.UserAccountInfo:
+        return _i13.UserAccountInfo.t;
+      case _i14.UserAddress:
+        return _i14.UserAddress.t;
     }
     return null;
   }

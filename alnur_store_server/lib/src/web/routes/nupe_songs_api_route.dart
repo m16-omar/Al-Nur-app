@@ -4,6 +4,9 @@ import 'dart:math';
 
 import 'package:serverpod/serverpod.dart';
 
+import '../../generated/protocol.dart';
+import '../../nupe/nupe_listener_service.dart';
+
 /// Dedicated Nupe Songs Studio admin account.
 ///
 /// Completely separate from Al-Nur Store admin accounts. Credentials are read
@@ -314,6 +317,9 @@ class NupeSongsApiRoute extends Route {
     );
   }
 
+  Response _authError(String message, int statusCode) =>
+      _jsonResponse({'detail': message, 'error': message}, statusCode: statusCode);
+
   @override
   FutureOr<Result> handleCall(Session session, Request request) async {
     // Handle CORS pre-flight
@@ -385,6 +391,95 @@ class NupeSongsApiRoute extends Route {
         request.method == Method.post) {
       _StudioAdminAuth.logout(request);
       return _jsonResponse({'status': 'ok'});
+    }
+
+    // ---- Nupe Studio: listener (user) management — admin only ----
+
+    // GET /api/studio/users
+    if (normalizedPath == '/api/studio/users' && request.method == Method.get) {
+      if (_StudioAdminAuth.validate(request) == null) {
+        return _jsonResponse({'error': 'Nupe Studio admin sign-in required.'},
+            statusCode: 401);
+      }
+      final now = DateTime.now().toUtc();
+      final listeners = await NupeListener.db.find(
+        session,
+        orderBy: (t) => t.createdAt,
+        orderDescending: true,
+      );
+      // Most recently active first; never-seen accounts last (newest first).
+      listeners.sort((a, b) {
+        final sa = a.lastSeenAt, sb = b.lastSeenAt;
+        if (sa == null && sb == null) return b.createdAt.compareTo(a.createdAt);
+        if (sa == null) return 1;
+        if (sb == null) return -1;
+        return sb.compareTo(sa);
+      });
+      final rows =
+          listeners.map((l) => NupeListenerService.toAdminJson(l, now)).toList();
+      final weekAgo = now.subtract(const Duration(days: 7));
+      return _jsonResponse({
+        'users': rows,
+        'total': rows.length,
+        'online': rows.where((r) => r['is_online'] == true).length,
+        'new_7d': listeners.where((l) => l.createdAt.isAfter(weekAgo)).length,
+        'online_window_minutes': NupeListenerService.onlineWindow.inMinutes,
+        'server_time': now.toIso8601String(),
+      });
+    }
+
+    // PUT / DELETE /api/studio/users/<id>
+    final studioUserMatch =
+        RegExp(r'^/api/studio/users/(\d+)$').firstMatch(normalizedPath);
+    if (studioUserMatch != null &&
+        (request.method == Method.put || request.method == Method.delete)) {
+      if (_StudioAdminAuth.validate(request) == null) {
+        return _jsonResponse({'error': 'Nupe Studio admin sign-in required.'},
+            statusCode: 401);
+      }
+      final id = int.parse(studioUserMatch.group(1)!);
+      final listener = await NupeListener.db.findById(session, id);
+      if (listener == null) {
+        return _jsonResponse({'error': 'User not found.'}, statusCode: 404);
+      }
+      if (request.method == Method.delete) {
+        await NupeListener.db.deleteRow(session, listener);
+        return _jsonResponse({'status': 'deleted', 'id': id});
+      }
+      try {
+        final data =
+            jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+        if (data['is_disabled'] is bool) {
+          listener.isDisabled = data['is_disabled'] as bool;
+        }
+      } catch (_) {
+        return _jsonResponse({'error': 'Invalid request body.'},
+            statusCode: 400);
+      }
+      await NupeListener.db.updateRow(session, listener,
+          columns: (t) => [t.isDisabled]);
+      return _jsonResponse(
+          NupeListenerService.toAdminJson(listener, DateTime.now().toUtc()));
+    }
+
+    // ---- Listener presence: any request carrying a valid listener token ----
+    final listenerId =
+        NupeListenerService.listenerIdFromRequest(session, request);
+    final playOrDownload = RegExp(r'^/api/songs/(\d+)/(play|download)$')
+        .firstMatch(normalizedPath);
+    if (listenerId != null) {
+      String? activity;
+      if (playOrDownload != null && request.method == Method.post) {
+        final song = _songs
+            .where((s) => s['id'].toString() == playOrDownload.group(1))
+            .firstOrNull;
+        if (song != null) {
+          activity = playOrDownload.group(2) == 'play'
+              ? 'Listening to ${song['title']}'
+              : 'Downloaded ${song['title']}';
+        }
+      }
+      await NupeListenerService.touch(session, listenerId, activity: activity);
     }
 
     // Catalog writes (create/update/delete songs, albums, artists, genres)
@@ -565,6 +660,54 @@ class NupeSongsApiRoute extends Route {
 
     // DELETE /api/albums/<id>
     final albumIdMatch = RegExp(r'^/api/albums/(\d+)$').firstMatch(normalizedPath);
+    // PUT /api/albums/<id>  {name?, artist_name?, release_year?, artwork?}
+    if (albumIdMatch != null && request.method == Method.put) {
+      final id = int.tryParse(albumIdMatch.group(1)!);
+      final index = _albums.indexWhere((a) => a['id'] == id);
+      if (index == -1) return _jsonResponse({'error': 'Album not found'}, statusCode: 404);
+      try {
+        final data = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+        final existing = _albums[index];
+        final oldName = existing['name'];
+        final newName = (data['name'] as String?)?.trim();
+        if (data.containsKey('name') && (newName == null || newName.isEmpty)) {
+          return _jsonResponse({'error': 'Album title is required.'}, statusCode: 400);
+        }
+        final artistName = (data['artist_name'] as String?)?.trim();
+        final matchedArtist = artistName == null
+            ? null
+            : _artists.where((a) => a['name'] == artistName).firstOrNull;
+        final updated = {
+          ...existing,
+          if (newName != null) 'name': newName,
+          if (artistName != null && artistName.isNotEmpty)
+            'artist': {
+              'id': matchedArtist?['id'] ?? existing['artist']?['id'] ?? 1,
+              'name': artistName,
+            },
+          if (data.containsKey('release_year'))
+            'release_year': data['release_year'] is int
+                ? data['release_year']
+                : int.tryParse('${data['release_year']}') ?? existing['release_year'],
+          if (data.containsKey('artwork') && '${data['artwork']}'.trim().isNotEmpty)
+            'artwork': data['artwork'],
+        };
+        _albums[index] = updated;
+        // Keep tracks that reference this album in sync with a rename.
+        if (newName != null && newName != oldName) {
+          for (var i = 0; i < _songs.length; i++) {
+            final album = _songs[i]['album'];
+            if (album is Map && (album['id'] == id || album['name'] == oldName)) {
+              _songs[i] = {..._songs[i], 'album': {'id': id, 'name': newName}};
+            }
+          }
+        }
+        return _jsonResponse(updated);
+      } catch (e) {
+        return _jsonResponse({'error': e.toString()}, statusCode: 400);
+      }
+    }
+
     if (albumIdMatch != null && request.method == Method.delete) {
       final id = int.tryParse(albumIdMatch.group(1)!);
       _albums.removeWhere((a) => a['id'] == id);
@@ -596,6 +739,48 @@ class NupeSongsApiRoute extends Route {
 
     // DELETE /api/artists/<id>
     final artistIdMatch = RegExp(r'^/api/artists/(\d+)$').firstMatch(normalizedPath);
+    // PUT /api/artists/<id>  {name?, image?, bio?}
+    if (artistIdMatch != null && request.method == Method.put) {
+      final id = int.tryParse(artistIdMatch.group(1)!);
+      final index = _artists.indexWhere((a) => a['id'] == id);
+      if (index == -1) return _jsonResponse({'error': 'Artist not found'}, statusCode: 404);
+      try {
+        final data = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+        final existing = _artists[index];
+        final oldName = existing['name'];
+        final newName = (data['name'] as String?)?.trim();
+        if (data.containsKey('name') && (newName == null || newName.isEmpty)) {
+          return _jsonResponse({'error': 'Artist name is required.'}, statusCode: 400);
+        }
+        final updated = {
+          ...existing,
+          if (newName != null) 'name': newName,
+          if (data.containsKey('image') && '${data['image']}'.trim().isNotEmpty)
+            'image': data['image'],
+          if (data.containsKey('bio')) 'bio': data['bio'],
+        };
+        _artists[index] = updated;
+        // Keep tracks and albums credited to this artist in sync with a rename.
+        if (newName != null && newName != oldName) {
+          bool matches(dynamic a) =>
+              a is Map && (a['id'] == id || a['name'] == oldName);
+          for (var i = 0; i < _songs.length; i++) {
+            if (matches(_songs[i]['artist'])) {
+              _songs[i] = {..._songs[i], 'artist': {'id': id, 'name': newName}};
+            }
+          }
+          for (var i = 0; i < _albums.length; i++) {
+            if (matches(_albums[i]['artist'])) {
+              _albums[i] = {..._albums[i], 'artist': {'id': id, 'name': newName}};
+            }
+          }
+        }
+        return _jsonResponse(updated);
+      } catch (e) {
+        return _jsonResponse({'error': e.toString()}, statusCode: 400);
+      }
+    }
+
     if (artistIdMatch != null && request.method == Method.delete) {
       final id = int.tryParse(artistIdMatch.group(1)!);
       _artists.removeWhere((a) => a['id'] == id);
@@ -636,72 +821,181 @@ class NupeSongsApiRoute extends Route {
         'total_genres': _genres.length,
         'total_streams': totalStreams,
         'total_downloads': totalDownloads,
-        'active_listeners': 86,
+        'active_listeners': await NupeListenerService.countOnline(session),
+        'total_listeners': await NupeListener.db.count(session),
       });
     }
 
-    // 8. POST /api/auth/login
+    // ---- Listener accounts (Nupe Songs app) ----
+
+    // 8. POST /api/auth/login  {username | email, password}
     if (normalizedPath == '/api/auth/login' && request.method == Method.post) {
-      String username = 'User';
+      Map<String, dynamic> data;
       try {
-        final bodyText = await request.readAsString();
-        if (bodyText.isNotEmpty) {
-          final data = jsonDecode(bodyText) as Map<String, dynamic>;
-          username = data['username'] as String? ?? 'User';
-        }
-      } catch (_) {}
-
+        data = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _authError('Invalid request body.', 400);
+      }
+      final identifier =
+          ((data['username'] ?? data['email']) as String? ?? '').trim().toLowerCase();
+      final password = data['password'] as String? ?? '';
+      if (identifier.isEmpty || password.isEmpty) {
+        return _authError('Username and password are required.', 400);
+      }
+      final listener = await NupeListener.db.findFirstRow(
+        session,
+        where: (t) => identifier.contains('@')
+            ? t.email.equals(identifier)
+            : t.username.equals(identifier),
+      );
+      if (listener == null ||
+          !NupeListenerService.verifyPassword(password, listener.passwordHash)) {
+        return _authError('No active account found with the given credentials.', 401);
+      }
+      if (listener.isDisabled) {
+        return _authError('This account has been disabled.', 403);
+      }
+      final tokens = NupeListenerService.issueTokens(session, listener.id!);
+      await NupeListenerService.touch(session, listener.id!,
+          activity: 'Signed in', platform: data['platform'] as String?);
       return _jsonResponse({
-        'access': 'nupe_jwt_access_${DateTime.now().millisecondsSinceEpoch}',
-        'refresh': 'nupe_jwt_refresh_${DateTime.now().millisecondsSinceEpoch}',
-        'username': username,
+        'access': tokens.access,
+        'refresh': tokens.refresh,
+        'username': listener.username,
+        'email': listener.email,
+        'user': NupeListenerService.toProfileJson(listener),
       });
     }
 
-    // 9. POST /api/auth/register
+    // 9. POST /api/auth/register  {username, email, password, first_name?, last_name?}
     if (normalizedPath == '/api/auth/register' && request.method == Method.post) {
-      String username = 'User';
-      String email = 'user@example.com';
+      Map<String, dynamic> data;
       try {
-        final bodyText = await request.readAsString();
-        if (bodyText.isNotEmpty) {
-          final data = jsonDecode(bodyText) as Map<String, dynamic>;
-          username = data['username'] as String? ?? 'User';
-          email = data['email'] as String? ?? 'user@example.com';
-        }
-      } catch (_) {}
+        data = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _authError('Invalid request body.', 400);
+      }
+      final username =
+          NupeListenerService.normalizeUsername(data['username'] as String? ?? '');
+      final email = NupeListenerService.normalizeEmail(data['email'] as String? ?? '');
+      final password = data['password'] as String? ?? '';
+      var firstName = (data['first_name'] as String?)?.trim();
+      var lastName = (data['last_name'] as String?)?.trim();
+      final fullName = (data['full_name'] as String?)?.trim();
+      if ((firstName == null || firstName.isEmpty) &&
+          fullName != null &&
+          fullName.isNotEmpty) {
+        final parts = fullName.split(RegExp(r'\s+'));
+        firstName = parts.first;
+        lastName = parts.length > 1 ? parts.sublist(1).join(' ') : lastName;
+      }
 
+      final errors = NupeListenerService.validateRegistration(
+          username: username, email: email, password: password);
+      if (errors.isEmpty) {
+        if (await NupeListener.db.count(session,
+                where: (t) => t.username.equals(username)) >
+            0) {
+          errors['username'] = ['A user with that username already exists.'];
+        }
+        if (await NupeListener.db.count(session,
+                where: (t) => t.email.equals(email)) >
+            0) {
+          errors['email'] = ['A user with that email already exists.'];
+        }
+      }
+      if (errors.isNotEmpty) {
+        return _jsonResponse(
+            {...errors, 'detail': errors.values.first.first, 'error': errors.values.first.first},
+            statusCode: 400);
+      }
+
+      final now = DateTime.now().toUtc();
+      final NupeListener listener;
+      try {
+        listener = await NupeListener.db.insertRow(
+          session,
+          NupeListener(
+            username: username,
+            email: email,
+            firstName: (firstName?.isEmpty ?? true) ? null : firstName,
+            lastName: (lastName?.isEmpty ?? true) ? null : lastName,
+            passwordHash: NupeListenerService.hashPassword(password),
+            createdAt: now,
+            lastSeenAt: now,
+            lastActivity: 'Created account',
+            platform: data['platform'] as String?,
+          ),
+        );
+      } catch (e) {
+        // Unique index race: someone took the username/email meanwhile.
+        return _authError('A user with that username or email already exists.', 400);
+      }
+      final tokens = NupeListenerService.issueTokens(session, listener.id!);
       return _jsonResponse({
-        'access': 'nupe_jwt_access_${DateTime.now().millisecondsSinceEpoch}',
-        'refresh': 'nupe_jwt_refresh_${DateTime.now().millisecondsSinceEpoch}',
-        'username': username,
-        'email': email,
-      });
+        'access': tokens.access,
+        'refresh': tokens.refresh,
+        'username': listener.username,
+        'email': listener.email,
+        'user': NupeListenerService.toProfileJson(listener),
+      }, statusCode: 201);
     }
 
     // 10. GET /api/auth/me
     if (normalizedPath == '/api/auth/me' && request.method == Method.get) {
-      return _jsonResponse({
-        'id': 1,
-        'username': 'nupe_fan',
-        'email': 'fan@nupesongs.com',
-        'full_name': 'Nupe Fan',
-        'first_name': 'Nupe',
-        'last_name': 'Fan',
-        'is_staff': false,
-      });
+      if (listenerId == null) {
+        return _authError('Authentication credentials were not provided or are invalid.', 401);
+      }
+      final listener = await NupeListener.db.findById(session, listenerId);
+      if (listener == null || listener.isDisabled) {
+        return _authError('User not found or disabled.', 401);
+      }
+      return _jsonResponse(NupeListenerService.toProfileJson(listener));
     }
 
-    // 11. POST /api/auth/token/refresh
+    // 11. POST /api/auth/token/refresh  {refresh}
     if (normalizedPath == '/api/auth/token/refresh' && request.method == Method.post) {
-      return _jsonResponse({
-        'access': 'nupe_jwt_access_${DateTime.now().millisecondsSinceEpoch}',
-        'refresh': 'nupe_jwt_refresh_${DateTime.now().millisecondsSinceEpoch}',
-      });
+      String refresh = '';
+      try {
+        final data = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+        refresh = data['refresh'] as String? ?? '';
+      } catch (_) {}
+      final id = NupeListenerService.verifyToken(session, refresh, type: 'refresh');
+      final listener = id == null ? null : await NupeListener.db.findById(session, id);
+      if (listener == null || listener.isDisabled) {
+        return _authError('Token is invalid or expired.', 401);
+      }
+      final tokens = NupeListenerService.issueTokens(session, listener.id!);
+      await NupeListenerService.touch(session, listener.id!);
+      return _jsonResponse({'access': tokens.access, 'refresh': tokens.refresh});
     }
 
-    // 12. POST /api/auth/logout
+    // 12. POST /api/auth/heartbeat  {activity?, platform?} — keeps "online" status fresh
+    if (normalizedPath == '/api/auth/heartbeat' && request.method == Method.post) {
+      if (listenerId == null) {
+        return _authError('Authentication credentials were not provided or are invalid.', 401);
+      }
+      String? activity;
+      String? platform;
+      try {
+        final body = await request.readAsString();
+        if (body.isNotEmpty) {
+          final data = jsonDecode(body) as Map<String, dynamic>;
+          activity = data['activity'] as String?;
+          platform = data['platform'] as String?;
+        }
+      } catch (_) {}
+      await NupeListenerService.touch(session, listenerId,
+          activity: activity, platform: platform);
+      return _jsonResponse({'status': 'ok'});
+    }
+
+    // 13. POST /api/auth/logout
     if (normalizedPath == '/api/auth/logout' && request.method == Method.post) {
+      if (listenerId != null) {
+        await NupeListenerService.touch(session, listenerId,
+            activity: NupeListenerService.signedOutActivity);
+      }
       return _jsonResponse({'status': 'ok'});
     }
 

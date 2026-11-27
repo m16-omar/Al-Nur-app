@@ -239,6 +239,10 @@
     .ds .field:hover { border-color: var(--border-strong); }
     .ds .field:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 
+    .ds .ufilter { color: var(--muted); }
+    .ds .ufilter:hover { color: var(--text); }
+    .ds .ufilter.active { background: var(--subtle-2); color: var(--text); }
+    .ds .dot-online { box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 22%, transparent); }
     .ds .chip {
       display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 999px;
       font-size: 11px; font-weight: 500; color: var(--muted);
@@ -248,6 +252,7 @@
     /* KPI strip: 1px dividers via gap on a border-coloured grid */
     .ds .kpi-grid { display: grid; gap: 1px; background: var(--border); overflow: hidden; }
     .ds .kpi-grid > * { background: var(--panel); }
+    .ds .kpi-grid.hidden { display: none; }
 
     /* Tables */
     .ds .tbl th { font-size: 11px; font-weight: 500; color: var(--faint); text-align: left; padding: 10px 12px; white-space: nowrap; }
@@ -461,6 +466,15 @@
           <i data-lucide="disc-3"></i><span>Albums &amp; EPs</span><span class="nav-count" id="navCountAlbums"></span>
         </button>
 
+        <p class="nav-label">Audience</p>
+        <button onclick="switchTab('users')" id="tabBtnUsers" data-tab="users" class="tab-btn nav-item">
+          <i data-lucide="users"></i><span>Listeners</span>
+          <span class="ml-auto flex items-center gap-1.5">
+            <span id="navOnlineDot" class="hidden w-1.5 h-1.5 rounded-full" style="background: var(--ok);" title="Listeners online now"></span>
+            <span class="nav-count !ml-0" id="navCountUsers"></span>
+          </span>
+        </button>
+
         <p class="nav-label">Insights</p>
         <button onclick="switchTab('analytics')" id="tabBtnAnalytics" data-tab="analytics" class="tab-btn nav-item">
           <i data-lucide="bar-chart-3"></i><span>Stream Analytics</span>
@@ -511,6 +525,7 @@
           <button onclick="switchTab('tracks')" data-tab="tracks" class="tab-btn mtab active">Tracks</button>
           <button onclick="switchTab('artists')" data-tab="artists" class="tab-btn mtab">Artists</button>
           <button onclick="switchTab('albums')" data-tab="albums" class="tab-btn mtab">Albums</button>
+          <button onclick="switchTab('users')" data-tab="users" class="tab-btn mtab">Listeners</button>
           <button onclick="switchTab('analytics')" data-tab="analytics" class="tab-btn mtab">Analytics</button>
         </div>
       </header>
@@ -566,7 +581,7 @@
         </div>
 
         <!-- KPI STRIP -->
-        <section class="kpi-grid card grid-cols-2 lg:grid-cols-5" aria-label="Catalog totals">
+        <section id="catalogKpis" class="kpi-grid card grid-cols-2 lg:grid-cols-5" aria-label="Catalog totals">
           <div class="p-4">
             <p class="text-[12px] muted flex items-center gap-1.5"><i data-lucide="music" class="w-3.5 h-3.5 faint"></i>Tracks</p>
             <p class="mt-2 text-2xl font-semibold tracking-tight num" id="statTotalSongs"><span class="skeleton w-8 h-6 align-middle"></span></p>
@@ -611,7 +626,7 @@
                     <th class="hidden sm:table-cell !text-right">Length</th>
                     <th class="!text-right">Streams</th>
                     <th class="hidden sm:table-cell !text-right">Downloads</th>
-                    <th class="w-[112px] !pr-4"><span class="sr-only">Actions</span></th>
+                    <th class="w-[140px] !pr-4"><span class="sr-only">Actions</span></th>
                   </tr>
                 </thead>
                 <tbody id="tracksTableBody">
@@ -634,6 +649,59 @@
           <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4" id="albumsGrid">
             <!-- Dynamically populated -->
           </div>
+        </section>
+
+        <!-- TAB 5: LISTENERS (Nupe Songs app users) -->
+        <section id="viewUsers" class="hidden space-y-4">
+          <div class="kpi-grid card grid-cols-3" aria-label="Listener totals">
+            <div class="p-4">
+              <p class="text-[12px] muted flex items-center gap-1.5"><i data-lucide="users" class="w-3.5 h-3.5 faint"></i>Listeners</p>
+              <p class="mt-2 text-2xl font-semibold tracking-tight num" id="usersStatTotal">—</p>
+            </div>
+            <div class="p-4">
+              <p class="text-[12px] muted flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full" style="background: var(--ok);"></span>Online now</p>
+              <p class="mt-2 text-2xl font-semibold tracking-tight num" id="usersStatOnline">—</p>
+              <p class="text-[11px] faint mt-0.5" id="usersOnlineHint">active in the last 5 min</p>
+            </div>
+            <div class="p-4">
+              <p class="text-[12px] muted flex items-center gap-1.5"><i data-lucide="user-plus" class="w-3.5 h-3.5 faint"></i>New this week</p>
+              <p class="mt-2 text-2xl font-semibold tracking-tight num" id="usersStatNew">—</p>
+            </div>
+          </div>
+
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-1 p-0.5 rounded-lg border bd w-max" style="background: var(--panel);" role="tablist" aria-label="Filter listeners">
+              <button onclick="setUserFilter('all')" data-ufilter="all" class="ufilter btn !h-7 !px-2.5 !text-[12px]">All <span class="faint num" id="ufCountAll"></span></button>
+              <button onclick="setUserFilter('online')" data-ufilter="online" class="ufilter btn !h-7 !px-2.5 !text-[12px]">Online <span class="faint num" id="ufCountOnline"></span></button>
+              <button onclick="setUserFilter('disabled')" data-ufilter="disabled" class="ufilter btn !h-7 !px-2.5 !text-[12px]">Disabled <span class="faint num" id="ufCountDisabled"></span></button>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-[12px] faint whitespace-nowrap" id="usersUpdatedLabel"></span>
+              <div class="relative w-full sm:w-72">
+                <i data-lucide="search" class="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 faint pointer-events-none"></i>
+                <input type="search" id="userSearchInput" oninput="renderUsers()" placeholder="Search name, username, email…" aria-label="Search listeners" class="field !pl-8">
+              </div>
+            </div>
+          </div>
+
+          <div class="card overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="tbl w-full text-[13px]">
+                <thead>
+                  <tr>
+                    <th class="!pl-4">Listener</th>
+                    <th class="hidden md:table-cell">Email</th>
+                    <th>Status</th>
+                    <th class="hidden lg:table-cell">Activity</th>
+                    <th class="hidden sm:table-cell">Joined</th>
+                    <th class="w-[84px] !pr-4"><span class="sr-only">Actions</span></th>
+                  </tr>
+                </thead>
+                <tbody id="usersTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <p class="text-[12px] faint">Listeners appear here when they create an account in the Nupe Songs app. “Online” means the app was active in the last few minutes.</p>
         </section>
 
         <!-- TAB 4: STREAM ANALYTICS -->
@@ -1214,6 +1282,7 @@
         document.getElementById('artistNameOptions').innerHTML = artists.map(a => `<option value="${escapeHtml(a.name)}"></option>`).join('');
         document.getElementById('albumNameOptions').innerHTML = albums.map(a => `<option value="${escapeHtml(a.name)}"></option>`).join('');
 
+        loadUsers();
         if (songsRes.ok) filterTracks(); else document.getElementById('tracksTableBody').innerHTML = `<tr><td colspan="8">${uiErrorState()}</td></tr>`;
         if (artistsRes.ok) renderArtists(artists); else document.getElementById('artistsGrid').innerHTML = `<div class="card col-span-full">${uiErrorState()}</div>`;
         if (albumsRes.ok) renderAlbums(albums); else document.getElementById('albumsGrid').innerHTML = `<div class="card col-span-full">${uiErrorState()}</div>`;
@@ -1302,6 +1371,7 @@
             <td class="hidden sm:table-cell text-right muted num">${formatNumber(downloads)}</td>
             <td class="!pr-4">
               <div class="row-actions flex items-center justify-end gap-0.5">
+                <button onclick="openEditTrackModal(${Number(song.id)})" title="Edit track" aria-label="Edit ${title}" class="icon-btn"><i data-lucide="pencil"></i></button>
                 <button onclick="viewLyrics(${Number(song.id)})" title="View lyrics" aria-label="View lyrics for ${title}" class="icon-btn"><i data-lucide="file-text"></i></button>
                 <button onclick="playTrack(${Number(song.id)})" title="Preview audio" aria-label="Preview ${title}" class="icon-btn"><i data-lucide="play"></i></button>
                 <button onclick="deleteTrack(${Number(song.id)})" title="Delete track" aria-label="Delete ${title}" class="icon-btn danger"><i data-lucide="trash-2"></i></button>
@@ -1336,7 +1406,10 @@
                   <h4 class="text-[13px] font-semibold truncate">${name}</h4>
                   <p class="text-[12px] faint num">${artistSongs.length} ${artistSongs.length === 1 ? 'track' : 'tracks'} · ${formatNumber(streams)} streams</p>
                 </div>
-                <button onclick="deleteArtist(${Number(artist.id)})" title="Delete artist" aria-label="Delete ${name}" class="row-actions icon-btn danger -mr-1 -mt-1"><i data-lucide="trash-2"></i></button>
+                <div class="row-actions flex items-center gap-0.5 -mr-1 -mt-1 shrink-0">
+                  <button onclick="openEditArtistModal(${Number(artist.id)})" title="Edit artist" aria-label="Edit ${name}" class="icon-btn"><i data-lucide="pencil"></i></button>
+                  <button onclick="deleteArtist(${Number(artist.id)})" title="Delete artist" aria-label="Delete ${name}" class="icon-btn danger"><i data-lucide="trash-2"></i></button>
+                </div>
               </div>
               <p class="text-[12px] muted mt-2 line-clamp-2 leading-relaxed">${escapeHtml(artist.bio || 'Nupe cultural musician and community voice.')}</p>
             </div>
@@ -1363,10 +1436,16 @@
           <div class="group min-w-0">
             <div class="relative aspect-square rounded-lg overflow-hidden border bd" style="background: var(--panel-2);">
               <img src="${escapeHtml(album.artwork || FALLBACK_COVER)}" alt="" loading="lazy" class="w-full h-full object-cover transition duration-300 group-hover:scale-[1.03]">
-              <button onclick="deleteAlbum(${Number(album.id)})" title="Delete album" aria-label="Delete ${name}"
-                class="row-actions absolute top-2 right-2 w-7 h-7 rounded-md flex items-center justify-center text-white/80 hover:text-white backdrop-blur" style="background: rgba(0,0,0,.55);">
-                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-              </button>
+              <div class="row-actions absolute top-2 right-2 flex gap-1">
+                <button onclick="openEditAlbumModal(${Number(album.id)})" title="Edit album" aria-label="Edit ${name}"
+                  class="w-7 h-7 rounded-md flex items-center justify-center text-white/80 hover:text-white backdrop-blur" style="background: rgba(0,0,0,.55);">
+                  <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                </button>
+                <button onclick="deleteAlbum(${Number(album.id)})" title="Delete album" aria-label="Delete ${name}"
+                  class="w-7 h-7 rounded-md flex items-center justify-center text-white/80 hover:text-white backdrop-blur" style="background: rgba(0,0,0,.55);">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
             </div>
             <div class="mt-2.5 min-w-0">
               <h3 class="text-[13px] font-semibold truncate">${name}</h3>
@@ -1426,11 +1505,12 @@
       artists: { title: 'Artists', subtitle: 'Recording artists, performers and their biographies.', action: 'actionAddArtist' },
       albums: { title: 'Albums & EPs', subtitle: 'Full-length albums and EPs in the discography.', action: 'actionAddAlbum' },
       analytics: { title: 'Stream Analytics', subtitle: 'How listeners are engaging with the catalog.', action: 'actionAddTrack' },
+      users: { title: 'Listeners', subtitle: 'People with a Nupe Songs app account, and who is online right now.', action: null },
     };
 
     function switchTab(tab) {
       currentTab = tab;
-      ['tracks', 'artists', 'albums', 'analytics'].forEach(t => {
+      ['tracks', 'artists', 'albums', 'analytics', 'users'].forEach(t => {
         const view = document.getElementById('view' + t.charAt(0).toUpperCase() + t.slice(1));
         view.classList.toggle('hidden', t !== tab);
       });
@@ -1448,11 +1528,13 @@
       ['actionAddTrack', 'actionAddArtist', 'actionAddAlbum'].forEach(id => {
         const btn = document.getElementById(id);
         const primary = id === meta.action;
-        const visible = primary || id === 'actionAddTrack';
+        const visible = primary || (id === 'actionAddTrack' && meta.action !== null);
         btn.classList.toggle('hidden', !visible);
         btn.classList.toggle('btn-primary', primary);
         btn.classList.toggle('btn-secondary', !primary);
       });
+      document.getElementById('catalogKpis').classList.toggle('hidden', tab === 'users');
+      if (tab === 'users') loadUsers();
       window.scrollTo({ top: 0 });
     }
 
@@ -1579,18 +1661,21 @@
         artwork: document.getElementById('newTrackArtworkUrl').value,
         lyrics: document.getElementById('newTrackLyrics').value,
       };
+      const editingId = editingTrackId;
+      if (editingId != null && !payload.artwork) delete payload.artwork; // keep existing artwork
 
       await withBusy(e.target, async () => {
         try {
-          const res = await studioFetch('/api/songs', {
-            method: 'POST',
+          const res = await studioFetch(editingId != null ? `/api/songs/${editingId}` : '/api/songs', {
+            method: editingId != null ? 'PUT' : 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
           });
           if (res.ok) {
             closeModal('addTrackModal');
             document.getElementById('addTrackForm').reset();
-            showToast(`“${payload.title}” published`);
+            editingTrackId = null;
+            showToast(editingId != null ? `“${payload.title}” updated` : `“${payload.title}” published`);
             await loadData();
           } else {
             showToast('Failed to save track', 'error');
@@ -1622,17 +1707,19 @@
         image: document.getElementById('newArtistImage').value,
         bio: document.getElementById('newArtistBio').value,
       };
+      const editingId = editingArtistId;
       await withBusy(e.target, async () => {
         try {
-          const res = await studioFetch('/api/artists', {
-            method: 'POST',
+          const res = await studioFetch(editingId != null ? `/api/artists/${editingId}` : '/api/artists', {
+            method: editingId != null ? 'PUT' : 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
           });
           if (!res.ok) throw new Error('Failed to save artist');
           closeModal('addArtistModal');
           e.target.reset();
-          showToast(`${payload.name} added`);
+          editingArtistId = null;
+          showToast(editingId != null ? `${payload.name} updated` : `${payload.name} added`);
           await loadData();
         } catch (err) {
           showToast(err.message || 'Failed to save artist', 'error');
@@ -1661,17 +1748,19 @@
         release_year: parseInt(document.getElementById('newAlbumYear').value) || 2026,
         artwork: document.getElementById('newAlbumArtwork').value,
       };
+      const editingId = editingAlbumId;
       await withBusy(e.target, async () => {
         try {
-          const res = await studioFetch('/api/albums', {
-            method: 'POST',
+          const res = await studioFetch(editingId != null ? `/api/albums/${editingId}` : '/api/albums', {
+            method: editingId != null ? 'PUT' : 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
           });
           if (!res.ok) throw new Error('Failed to save album');
           closeModal('addAlbumModal');
           e.target.reset();
-          showToast(`“${payload.name}” created`);
+          editingAlbumId = null;
+          showToast(editingId != null ? `“${payload.name}” updated` : `“${payload.name}” created`);
           await loadData();
         } catch (err) {
           showToast(err.message || 'Failed to save album', 'error');
@@ -1701,9 +1790,77 @@
       const first = el.querySelector('input:not([type=hidden]), textarea, select');
       if (first) setTimeout(() => first.focus(), 30);
     }
-    function openAddTrackModal() { openModal('addTrackModal'); }
-    function openAddArtistModal() { openModal('addArtistModal'); }
-    function openAddAlbumModal() { openModal('addAlbumModal'); }
+    // Add and Edit share the same forms; these track which record is being edited.
+    let editingTrackId = null;
+    let editingArtistId = null;
+    let editingAlbumId = null;
+
+    function setFormMode(modalId, titleId, editing, titles, labels) {
+      const modal = document.getElementById(modalId);
+      document.getElementById(titleId).textContent = editing ? titles[1] : titles[0];
+      const submit = modal.querySelector('button[type=submit]');
+      if (submit) submit.textContent = editing ? labels[1] : labels[0];
+    }
+
+    function openAddTrackModal() {
+      editingTrackId = null;
+      document.getElementById('addTrackForm').reset();
+      setFormMode('addTrackModal', 'addTrackTitle', false, ['Add track', 'Edit track'], ['Publish track', 'Save changes']);
+      openModal('addTrackModal');
+    }
+    function openAddArtistModal() {
+      editingArtistId = null;
+      document.querySelector('#addArtistModal form').reset();
+      setFormMode('addArtistModal', 'addArtistTitle', false, ['Add artist', 'Edit artist'], ['Save artist', 'Save changes']);
+      openModal('addArtistModal');
+    }
+    function openAddAlbumModal() {
+      editingAlbumId = null;
+      document.querySelector('#addAlbumModal form').reset();
+      setFormMode('addAlbumModal', 'addAlbumTitle', false, ['New album or EP', 'Edit album'], ['Save album', 'Save changes']);
+      openModal('addAlbumModal');
+    }
+
+    function openEditTrackModal(id) {
+      const t = songs.find(s => s.id === id);
+      if (!t) return;
+      editingTrackId = id;
+      document.getElementById('addTrackForm').reset();
+      document.getElementById('newTrackTitle').value = t.title || '';
+      document.getElementById('newTrackArtist').value = t.artist ? t.artist.name : '';
+      document.getElementById('newTrackAlbum').value = t.album ? t.album.name : '';
+      const genre = t.genre ? t.genre.name : '';
+      const select = document.getElementById('newTrackGenre');
+      if (genre && ![...select.options].some(o => o.value === genre)) select.add(new Option(genre, genre));
+      if (genre) select.value = genre;
+      document.getElementById('newTrackDuration').value = t.duration_ms ? Math.round(t.duration_ms / 1000) : 240;
+      document.getElementById('newTrackAudioUrl').value = t.audio_file || t.stream_url || '';
+      document.getElementById('newTrackArtworkUrl').value = t.artwork || t.artwork_url || '';
+      document.getElementById('newTrackLyrics').value = t.lyrics || '';
+      setFormMode('addTrackModal', 'addTrackTitle', true, ['Add track', 'Edit track'], ['Publish track', 'Save changes']);
+      openModal('addTrackModal');
+    }
+    function openEditArtistModal(id) {
+      const a = artists.find(x => x.id === id);
+      if (!a) return;
+      editingArtistId = id;
+      document.getElementById('newArtistName').value = a.name || '';
+      document.getElementById('newArtistImage').value = a.image || '';
+      document.getElementById('newArtistBio').value = a.bio || '';
+      setFormMode('addArtistModal', 'addArtistTitle', true, ['Add artist', 'Edit artist'], ['Save artist', 'Save changes']);
+      openModal('addArtistModal');
+    }
+    function openEditAlbumModal(id) {
+      const a = albums.find(x => x.id === id);
+      if (!a) return;
+      editingAlbumId = id;
+      document.getElementById('newAlbumName').value = a.name || '';
+      document.getElementById('newAlbumArtist').value = a.artist ? a.artist.name : '';
+      document.getElementById('newAlbumYear').value = a.release_year || '';
+      document.getElementById('newAlbumArtwork').value = a.artwork || '';
+      setFormMode('addAlbumModal', 'addAlbumTitle', true, ['New album or EP', 'Edit album'], ['Save album', 'Save changes']);
+      openModal('addAlbumModal');
+    }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
     document.addEventListener('keydown', (e) => {
@@ -1721,6 +1878,204 @@
         document.getElementById('trackSearchInput').focus();
       }
     });
+
+    // ------------------------------------------------------------
+    // LISTENERS (Nupe Songs app users) — admin only
+    // ------------------------------------------------------------
+    let listeners = [];
+    let usersLoadState = 'idle'; // idle | loading | ready | error
+    let usersFilter = 'all';
+    let usersLastUpdated = null;
+    let usersPollTimer = null;
+
+    function relativeTime(iso) {
+      if (!iso) return 'Never';
+      const diff = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+      if (diff < 45) return 'Just now';
+      if (diff < 3600) return Math.round(diff / 60) + 'm ago';
+      if (diff < 86400) return Math.round(diff / 3600) + 'h ago';
+      if (diff < 86400 * 7) return Math.round(diff / 86400) + 'd ago';
+      return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    function formatDate(iso) {
+      return iso ? new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+    }
+
+    async function loadUsers({ silent = false } = {}) {
+      if (usersLoadState === 'loading') return;
+      const firstLoad = usersLoadState !== 'ready';
+      usersLoadState = 'loading';
+      if (firstLoad && !silent && currentTab === 'users') renderUsersLoading();
+      try {
+        const res = await studioFetch('/api/studio/users');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        listeners = Array.isArray(data.users) ? data.users : [];
+        usersLastUpdated = new Date();
+        usersLoadState = 'ready';
+        document.getElementById('usersStatTotal').textContent = formatNumber(data.total ?? listeners.length);
+        document.getElementById('usersStatOnline').textContent = formatNumber(data.online ?? 0);
+        document.getElementById('usersStatNew').textContent = formatNumber(data.new_7d ?? 0);
+        if (data.online_window_minutes) {
+          document.getElementById('usersOnlineHint').textContent = `active in the last ${data.online_window_minutes} min`;
+        }
+        document.getElementById('navCountUsers').textContent = listeners.length;
+        document.getElementById('navOnlineDot').classList.toggle('hidden', !(data.online > 0));
+        // Keep the analytics "active listeners" number in sync with the live list
+        document.getElementById('statActiveListeners').textContent = formatNumber(data.online ?? 0);
+        renderUsers();
+      } catch (err) {
+        usersLoadState = 'error';
+        if (!silent || !listeners.length) {
+          document.getElementById('usersTableBody').innerHTML =
+            `<tr><td colspan="6" class="!p-0">${uiErrorState('Couldn’t load listeners. ' + (err.message || ''))}</td></tr>`;
+          lucide.createIcons();
+        }
+      }
+      scheduleUsersPoll();
+    }
+
+    // Refresh the list every 30s so "online now" stays current
+    function scheduleUsersPoll() {
+      clearTimeout(usersPollTimer);
+      usersPollTimer = setTimeout(() => {
+        const dashboardVisible = !document.getElementById('nupeDashboardScreen').classList.contains('hidden');
+        if (dashboardVisible && document.visibilityState === 'visible') loadUsers({ silent: true });
+        else scheduleUsersPoll();
+      }, 30000);
+    }
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && usersLoadState === 'ready'
+          && !document.getElementById('nupeDashboardScreen').classList.contains('hidden')) {
+        loadUsers({ silent: true });
+      }
+    });
+
+    function renderUsersLoading() {
+      document.getElementById('usersTableBody').innerHTML = Array.from({ length: 4 }).map(() => `
+        <tr>
+          <td class="!pl-4"><div class="flex items-center gap-3"><span class="skeleton w-8 h-8 !rounded-full"></span><div class="space-y-1.5"><span class="skeleton block w-28 h-3"></span><span class="skeleton block w-16 h-2.5"></span></div></div></td>
+          <td class="hidden md:table-cell"><span class="skeleton w-36 h-3"></span></td>
+          <td><span class="skeleton w-16 h-3"></span></td>
+          <td class="hidden lg:table-cell"><span class="skeleton w-32 h-3"></span></td>
+          <td class="hidden sm:table-cell"><span class="skeleton w-20 h-3"></span></td>
+          <td></td>
+        </tr>`).join('');
+    }
+
+    function setUserFilter(filter) {
+      usersFilter = filter;
+      renderUsers();
+    }
+
+    function renderUsers() {
+      document.querySelectorAll('.ufilter').forEach(b => {
+        const on = b.dataset.ufilter === usersFilter;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      const online = listeners.filter(u => u.is_online).length;
+      const disabled = listeners.filter(u => u.is_disabled).length;
+      document.getElementById('ufCountAll').textContent = listeners.length;
+      document.getElementById('ufCountOnline').textContent = online;
+      document.getElementById('ufCountDisabled').textContent = disabled;
+      document.getElementById('usersUpdatedLabel').textContent = usersLastUpdated
+        ? 'Updated ' + usersLastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+
+      const q = (document.getElementById('userSearchInput').value || '').trim().toLowerCase();
+      const list = listeners.filter(u => {
+        if (usersFilter === 'online' && !u.is_online) return false;
+        if (usersFilter === 'disabled' && !u.is_disabled) return false;
+        if (!q) return true;
+        return [u.full_name, u.username, u.email].some(v => String(v || '').toLowerCase().includes(q));
+      });
+
+      const tbody = document.getElementById('usersTableBody');
+      if (!list.length) {
+        let empty;
+        if (q) empty = uiEmptyState({ icon: 'search-x', title: 'No matching listeners', body: `Nothing matches “${escapeHtml(q)}”.` });
+        else if (usersFilter === 'online') empty = uiEmptyState({ icon: 'radio', title: 'Nobody is online right now', body: 'Listeners show up here while they’re using the Nupe Songs app.' });
+        else if (usersFilter === 'disabled') empty = uiEmptyState({ icon: 'user-check', title: 'No disabled accounts' });
+        else empty = uiEmptyState({ icon: 'users', title: 'No listeners yet', body: 'Accounts appear here as soon as people sign up in the Nupe Songs app.' });
+        tbody.innerHTML = `<tr><td colspan="6" class="!p-0">${empty}</td></tr>`;
+        lucide.createIcons();
+        return;
+      }
+
+      tbody.innerHTML = list.map(u => {
+        const name = escapeHtml(u.full_name || u.username);
+        const status = u.is_disabled
+          ? `<span class="inline-flex items-center gap-1.5 text-[12px]" style="color: var(--danger);"><i data-lucide="ban" class="w-3.5 h-3.5"></i>Disabled</span>`
+          : u.is_online
+            ? `<span class="inline-flex items-center gap-2 text-[12px] font-medium" style="color: var(--ok);"><span class="dot-online w-2 h-2 rounded-full" style="background: var(--ok);"></span>Online</span>`
+            : `<span class="inline-flex items-center gap-2 text-[12px] muted"><span class="w-2 h-2 rounded-full" style="background: var(--faint); opacity: .5;"></span><span title="${escapeHtml(u.last_seen_at || '')}">${escapeHtml(relativeTime(u.last_seen_at))}</span></span>`;
+        const activity = u.last_activity
+          ? `<span class="muted">${escapeHtml(u.last_activity)}</span>${u.platform ? ` <span class="chip ml-1.5">${escapeHtml(u.platform)}</span>` : ''}`
+          : '<span class="faint">—</span>';
+        return `
+          <tr class="${u.is_disabled ? 'opacity-60' : ''}">
+            <td class="!pl-4">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="relative shrink-0">
+                  <div class="w-8 h-8 rounded-full border bd flex items-center justify-center text-[11px] font-semibold muted" style="background: var(--panel-2);">${escapeHtml(getInitials(u.full_name || u.username))}</div>
+                  ${u.is_online ? '<span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2" style="background: var(--ok); border-color: var(--panel);"></span>' : ''}
+                </div>
+                <div class="min-w-0">
+                  <p class="font-medium truncate max-w-[200px]">${name}</p>
+                  <p class="text-[12px] faint truncate max-w-[200px]">@${escapeHtml(u.username)}</p>
+                </div>
+              </div>
+            </td>
+            <td class="hidden md:table-cell muted truncate max-w-[220px]">${escapeHtml(u.email)}</td>
+            <td class="whitespace-nowrap">${status}</td>
+            <td class="hidden lg:table-cell truncate max-w-[260px]">${activity}</td>
+            <td class="hidden sm:table-cell faint whitespace-nowrap num">${escapeHtml(formatDate(u.created_at))}</td>
+            <td class="!pr-4">
+              <div class="row-actions flex items-center justify-end gap-0.5">
+                <button onclick="toggleUserDisabled(${Number(u.id)})" class="icon-btn" title="${u.is_disabled ? 'Enable account' : 'Disable account'}" aria-label="${u.is_disabled ? 'Enable' : 'Disable'} ${name}">
+                  <i data-lucide="${u.is_disabled ? 'user-check' : 'user-x'}"></i>
+                </button>
+                <button onclick="deleteListener(${Number(u.id)})" class="icon-btn danger" title="Delete account" aria-label="Delete ${name}"><i data-lucide="trash-2"></i></button>
+              </div>
+            </td>
+          </tr>`;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    async function toggleUserDisabled(id) {
+      const u = listeners.find(x => x.id === id);
+      if (!u) return;
+      const disable = !u.is_disabled;
+      if (disable && !confirm(`Disable @${u.username}? They won’t be able to sign in to the Nupe Songs app until you enable the account again.`)) return;
+      try {
+        const res = await studioFetch(`/api/studio/users/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ is_disabled: disable }),
+        });
+        if (!res.ok) throw new Error('Server rejected the change');
+        showToast(disable ? `@${u.username} disabled` : `@${u.username} enabled`);
+        await loadUsers({ silent: true });
+      } catch (err) {
+        showToast(err.message || 'Couldn’t update account', 'error');
+      }
+    }
+
+    async function deleteListener(id) {
+      const u = listeners.find(x => x.id === id);
+      if (!u) return;
+      if (!confirm(`Permanently delete @${u.username}’s account? This can’t be undone.`)) return;
+      try {
+        const res = await studioFetch(`/api/studio/users/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Server rejected delete');
+        showToast(`@${u.username} deleted`);
+        await loadUsers({ silent: true });
+      } catch (err) {
+        showToast(err.message || 'Couldn’t delete account', 'error');
+      }
+    }
 
     // ------------------------------------------------------------
     // THEME (light / dark). Follows the system until the user picks one.

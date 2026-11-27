@@ -1,0 +1,30 @@
+### A listener account for the Nupe Songs app (separate from Al-Nur Store customers).
+class: NupeListener
+table: nupe_listener
+serverOnly: true
+fields:
+  ### Lower-cased, unique login name.
+  username: String
+  ### Lower-cased, unique email address.
+  email: String
+  firstName: String?
+  lastName: String?
+  ### PBKDF2-HMAC-SHA256 hash, encoded as "iterations$saltB64$hashB64".
+  passwordHash: String
+  createdAt: DateTime
+  ### Updated (throttled) on every authenticated request; drives "online now".
+  lastSeenAt: DateTime?
+  ### Short human-readable description, e.g. "Listening to Dabe Dabe".
+  lastActivity: String?
+  ### Client platform reported by the app, e.g. "android" / "ios".
+  platform: String?
+  isDisabled: bool, default=false
+indexes:
+  nupe_listener_username_idx:
+    fields: username
+    unique: true
+  nupe_listener_email_idx:
+    fields: email
+    unique: true
+  nupe_listener_last_seen_idx:
+    fields: lastSeenAt
