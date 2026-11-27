@@ -76,7 +76,7 @@ class AiAssistantBanner extends StatelessWidget {
                               ),
                               const SizedBox(height: 3),
                               Text(
-                                'Need help finding\nthe perfect outfit?',
+                                'Need help finding\nthe perfect piece?',
                                 style: AppTextStyles.aiCardTitle,
                               ),
                               const SizedBox(height: 2),

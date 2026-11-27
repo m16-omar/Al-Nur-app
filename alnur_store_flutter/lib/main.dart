@@ -15,7 +15,7 @@ void main() async {
   
   try {
     final configuredUrl = await getServerUrl();
-    serverUrl = (configuredUrl.isNotEmpty && configuredUrl != 'http://localhost:8080/')
+    serverUrl = configuredUrl.startsWith('https://')
         ? configuredUrl
         : ApiConstants.defaultServerUrl;
   } catch (_) {

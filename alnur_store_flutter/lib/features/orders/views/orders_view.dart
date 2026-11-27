@@ -8,6 +8,7 @@ import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../main.dart';
+import '../../../shared/models/product_model.dart';
 import '../../../shared/widgets/product_image.dart';
 import '../../authentication/controllers/auth_controller.dart';
 import '../../home/controllers/home_controller.dart';
@@ -77,6 +78,56 @@ class _OrdersViewState extends ConsumerState<OrdersView>
     }
   }
 
+  static String _resolveCanonicalItemImage({
+    required String itemId,
+    required String itemName,
+    required String category,
+    required String rawImageUrl,
+    required List<ProductModel> catalog,
+  }) {
+    // 1. Check live catalog match by ID or exact/fuzzy name
+    final match = catalog.where((p) =>
+      (itemId.isNotEmpty && p.id.trim() == itemId.trim()) ||
+      p.name.trim().toLowerCase() == itemName.trim().toLowerCase() ||
+      (itemName.isNotEmpty && p.name.toLowerCase().contains(itemName.toLowerCase())) ||
+      (p.name.isNotEmpty && itemName.toLowerCase().contains(p.name.toLowerCase()))
+    ).firstOrNull;
+
+    if (match != null && match.imageUrl.isNotEmpty) {
+      return match.imageUrl;
+    }
+
+    // 2. If rawImageUrl is valid and NOT an archived/legacy abaya photo, use it
+    final isLegacyAbaya = rawImageUrl.contains('photo-1583391733956') ||
+                          rawImageUrl.contains('photo-1596755094514') ||
+                          rawImageUrl.contains('photo-1629200468328');
+    if (rawImageUrl.isNotEmpty && !isLegacyAbaya) {
+      return rawImageUrl;
+    }
+
+    // 3. Category & name keyword fallback to guarantee 100% appropriate luxury visuals
+    final lower = '${itemName.toLowerCase()} ${category.toLowerCase()}';
+    if (lower.contains('oud') || lower.contains('perfume') || lower.contains('musk') || lower.contains('fragrance') || lower.contains('scent')) {
+      return 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=600&q=80';
+    }
+    if (lower.contains('wedding') || lower.contains('band') || lower.contains('couple ring')) {
+      return 'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?auto=format&fit=crop&w=600&q=80';
+    }
+    if (lower.contains('watch') || lower.contains('dial') || lower.contains('geneva') || lower.contains('timepiece')) {
+      return 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=600&q=80';
+    }
+    if (lower.contains('necklace') || lower.contains('choker') || lower.contains('pendant')) {
+      return 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80';
+    }
+    if (lower.contains('bangle') || lower.contains('bracelet')) {
+      return 'https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?auto=format&fit=crop&w=600&q=80';
+    }
+    if (lower.contains('ring')) {
+      return 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=600&q=80';
+    }
+    return 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=600&q=80';
+  }
+
   OrderModel _mapStoreOrderToModel(StoreOrder so) {
     List<OrderItem> items = [];
     final homeProducts = ref.read(homeControllerProvider).allProducts;
@@ -87,27 +138,21 @@ class _OrdersViewState extends ConsumerState<OrdersView>
         if (it is Map<String, dynamic>) {
           final itemId = it['id']?.toString() ?? '';
           final itemName = it['name']?.toString() ?? 'Al-Nur Modest Item';
-          String effectiveImage = it['imageUrl']?.toString() ?? '';
+          final rawImageUrl = it['imageUrl']?.toString() ?? '';
+          final category = it['category']?.toString() ?? 'Modesty Collection';
 
-          // If image is missing or is the misleading hardcoded abaya image, resolve from live catalog
-          if (effectiveImage.isEmpty || effectiveImage.contains('photo-1583391733956')) {
-            final match = homeProducts.where((p) =>
-              p.id == itemId ||
-              p.name.toLowerCase().trim() == itemName.toLowerCase().trim() ||
-              (itemName.isNotEmpty && p.name.toLowerCase().contains(itemName.toLowerCase())) ||
-              (p.name.isNotEmpty && itemName.toLowerCase().contains(p.name.toLowerCase()))
-            ).firstOrNull;
-            if (match != null) {
-              effectiveImage = match.imageUrl;
-            } else {
-              effectiveImage = '';
-            }
-          }
+          final effectiveImage = _resolveCanonicalItemImage(
+            itemId: itemId,
+            itemName: itemName,
+            category: category,
+            rawImageUrl: rawImageUrl,
+            catalog: homeProducts,
+          );
 
           items.add(
             OrderItem(
               name: itemName,
-              category: it['category']?.toString() ?? 'Modesty Collection',
+              category: category,
               quantity: (it['quantity'] as num?)?.toInt() ?? 1,
               size: it['selectedSize']?.toString() ?? '56',
               color: it['selectedColor']?.toString() ?? 'Default',

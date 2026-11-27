@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/name_formatter.dart';
@@ -35,6 +36,14 @@ class HomeHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final surfaceColor = isDark ? const Color(0xFF2D1107) : Colors.white;
+    final iconColor = isDark ? Colors.white : AppColors.textPrimary;
+    final borderSide = isDark
+        ? Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1)
+        : null;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Row(
@@ -64,17 +73,24 @@ class HomeHeader extends StatelessWidget {
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
                                 letterSpacing: 2.0,
+                                color: isDark ? AppColors.gold : AppColors.primary,
                               ),
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 2),
-                      Text(
-                        'Modest Fashion • Quality • You',
-                        style: AppTextStyles.brandSubtitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          AppConstants.appTagline,
+                          style: AppTextStyles.brandSubtitle.copyWith(
+                            color: isDark ? Colors.white70 : AppColors.textSecondary,
+                            letterSpacing: 0.2,
+                          ),
+                          maxLines: 1,
+                        ),
                       ),
                     ],
                   ),
@@ -94,19 +110,20 @@ class HomeHeader extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: surfaceColor,
                     shape: BoxShape.circle,
+                    border: borderSide,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
+                        color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
                     ],
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.notifications_none_rounded,
-                    color: AppColors.textPrimary,
+                    color: iconColor,
                     size: 22,
                   ),
                 ),
@@ -139,19 +156,20 @@ class HomeHeader extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: surfaceColor,
                     shape: BoxShape.circle,
+                    border: borderSide,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
+                        color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
                     ],
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.shopping_cart_outlined,
-                    color: AppColors.textPrimary,
+                    color: iconColor,
                     size: 21,
                   ),
                 ),
@@ -196,6 +214,7 @@ class HomeHeader extends StatelessWidget {
   }
 
   Widget _buildUserAvatarButton(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final displayName = (userName != null && userName!.trim().isNotEmpty)
         ? userName!.trim()
         : 'User';
@@ -207,15 +226,17 @@ class HomeHeader extends StatelessWidget {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? const Color(0xFF2D1107) : Colors.white,
           shape: BoxShape.circle,
           border: Border.all(
-            color: isGuest ? AppColors.border : AppColors.gold.withValues(alpha: 0.6),
+            color: isGuest
+                ? (isDark ? Colors.white24 : AppColors.border)
+                : AppColors.gold.withValues(alpha: 0.8),
             width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),

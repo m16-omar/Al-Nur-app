@@ -1025,10 +1025,11 @@ class _SelarCheckoutViewState extends ConsumerState<SelarCheckoutView> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).cardColor,
         elevation: 0.5,
+        titleSpacing: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close_rounded, color: AppColors.textPrimary),
+          icon: Icon(Icons.close_rounded, color: Theme.of(context).colorScheme.onSurface),
           tooltip: 'Cancel Payment',
           onPressed: _showExitConfirmation,
         ),
@@ -1037,12 +1038,15 @@ class _SelarCheckoutViewState extends ConsumerState<SelarCheckoutView> {
           children: [
             Row(
               children: [
-                const Icon(Icons.lock_rounded, color: AppColors.primary, size: 15),
+                const Icon(Icons.lock_rounded, color: AppColors.primary, size: 14),
                 const SizedBox(width: 5),
-                Flexible(
+                Expanded(
                   child: Text(
                     _activeGateway == 'monnify' ? 'Monnify Dynamic Checkout' : 'Selar Halal Checkout',
-                    style: AppTextStyles.productTitle.copyWith(fontSize: 15),
+                    style: AppTextStyles.productTitle.copyWith(
+                      fontSize: 14,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1051,8 +1055,8 @@ class _SelarCheckoutViewState extends ConsumerState<SelarCheckoutView> {
             ),
             Text(
               _activeGateway == 'monnify'
-                  ? 'Exact Amount • Virtual Bank Transfer & Cards'
-                  : '256-Bit Encrypted • Multi-Currency Gateway',
+                  ? 'Virtual Bank Transfer, Cards & USSD'
+                  : '256-Bit Encrypted • Multi-Currency',
               style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -1061,7 +1065,7 @@ class _SelarCheckoutViewState extends ConsumerState<SelarCheckoutView> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: AppColors.textPrimary, size: 20),
+            icon: Icon(Icons.refresh_rounded, color: Theme.of(context).colorScheme.onSurface, size: 20),
             tooltip: 'Reload Page',
             onPressed: () {
               if (_checkoutUrl.isNotEmpty && _webViewController != null) {

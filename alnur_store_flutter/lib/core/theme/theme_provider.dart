@@ -54,3 +54,4 @@ class ThemeModeNotifier extends Notifier<ThemeMode> {
     }
   }
 }
+

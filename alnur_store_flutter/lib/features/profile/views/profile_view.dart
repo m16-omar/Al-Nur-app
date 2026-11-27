@@ -12,6 +12,7 @@ import '../../cart/services/selar_payment_service.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/theme/theme_provider.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../shared/models/product_model.dart';
 import '../../../shared/widgets/product_image.dart';
@@ -2631,8 +2632,200 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
   }
 
   void _showPreferencesModal() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Preferences and app settings loaded.')),
+    final themeNotifier = ref.read(themeModeProvider.notifier);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (modalCtx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            final activeMode = ref.watch(themeModeProvider);
+            final theme = Theme.of(ctx);
+            final isDark = theme.brightness == Brightness.dark;
+
+            return Container(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF2D1107) : Colors.white,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                border: Border.all(
+                  color: isDark ? Colors.white.withValues(alpha: 0.1) : AppColors.border,
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'App Preferences & Settings',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          fontFamily: 'serif',
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 20),
+                        onPressed: () => Navigator.pop(modalCtx),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'APPEARANCE & THEME',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.1,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  _buildThemeOptionTile(
+                    title: 'System Default',
+                    subtitle: 'Match your device light/dark appearance',
+                    icon: Icons.brightness_auto_rounded,
+                    isSelected: activeMode == ThemeMode.system,
+                    onTap: () {
+                      themeNotifier.setThemeMode(ThemeMode.system);
+                      setModalState(() {});
+                    },
+                  ),
+                  _buildThemeOptionTile(
+                    title: 'Luxury Light',
+                    subtitle: 'Warm ivory & Arabian gold palette',
+                    icon: Icons.light_mode_rounded,
+                    isSelected: activeMode == ThemeMode.light,
+                    onTap: () {
+                      themeNotifier.setThemeMode(ThemeMode.light);
+                      setModalState(() {});
+                    },
+                  ),
+                  _buildThemeOptionTile(
+                    title: 'Haute Dark',
+                    subtitle: 'Deep espresso & burnished gold night couture',
+                    icon: Icons.dark_mode_rounded,
+                    isSelected: activeMode == ThemeMode.dark,
+                    onTap: () {
+                      themeNotifier.setThemeMode(ThemeMode.dark);
+                      setModalState(() {});
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'BACKEND & CLOUD STATUS',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.1,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF200B04) : AppColors.surfaceMuted,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.cloud_done_rounded, color: AppColors.accentGreen, size: 20),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              Text(
+                                'Serverpod Cloud 3.4',
+                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                              ),
+                              Text(
+                                'Connected: alnur-store.api.serverpod.space',
+                                style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildThemeOptionTile({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.primary.withValues(alpha: 0.15) : Colors.transparent,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      color: isSelected ? AppColors.primary : null,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+            ),
+            if (isSelected)
+              const Icon(Icons.check_circle_rounded, color: AppColors.primary, size: 20),
+          ],
+        ),
+      ),
     );
   }
 

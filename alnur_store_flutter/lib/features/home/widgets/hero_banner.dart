@@ -166,46 +166,40 @@ class _HeroBannerState extends State<HeroBanner> {
                         ),
                       ),
 
-                      // Right Image with Architectural Islamic Arch Framing
+                      // Right Image with Luxury Seamless Feather Blend
                       Expanded(
                         flex: 4,
-                        child: CustomPaint(
-                          foregroundPainter: const ArchImageBorderPainter(
-                            radius: 68,
-                            color: AppColors.gold,
-                            strokeWidth: 2.0,
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.only(
+                            topRight: Radius.circular(20),
+                            bottomRight: Radius.circular(20),
                           ),
-                          child: ClipRRect(
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(68),
-                              topRight: Radius.circular(20),
-                              bottomRight: Radius.circular(20),
-                            ),
-                            child: Stack(
-                              fit: StackFit.expand,
-                              alignment: Alignment.center,
-                              children: [
-                                Image.network(
-                                  banner['imageUrl']!,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      _buildFallbackModel(),
-                                ),
-                                // Gradient blend on the left curve edge
-                                DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        const Color(0xFF3F2D1E).withValues(alpha: 0.35),
-                                        Colors.transparent,
-                                      ],
-                                      begin: Alignment.centerLeft,
-                                      end: Alignment.centerRight,
-                                    ),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            alignment: Alignment.center,
+                            children: [
+                              Image.network(
+                                banner['imageUrl']!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    _buildFallbackModel(),
+                              ),
+                              // Seamless luxury gradient feather on the left edge
+                              DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      const Color(0xFF3F2D1E),
+                                      const Color(0xFF3F2D1E).withValues(alpha: 0.25),
+                                      Colors.transparent,
+                                    ],
+                                    stops: const [0.0, 0.2, 0.55],
+                                    begin: Alignment.centerLeft,
+                                    end: Alignment.centerRight,
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -222,57 +216,8 @@ class _HeroBannerState extends State<HeroBanner> {
     return Container(
       color: const Color(0xFF6B533E),
       child: const Center(
-        child: Icon(Icons.person_outline_rounded, color: Colors.white70, size: 50),
+        child: Icon(Icons.shopping_bag_outlined, color: Colors.white70, size: 50),
       ),
     );
   }
-}
-
-/// Paints a luxury gold Islamic arch stroke directly bordering and framing the product image.
-class ArchImageBorderPainter extends CustomPainter {
-  final double radius;
-  final Color color;
-  final double strokeWidth;
-
-  const ArchImageBorderPainter({
-    this.radius = 68,
-    this.color = AppColors.gold,
-    this.strokeWidth = 2.0,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final halfStroke = strokeWidth / 2;
-    final path = Path();
-    path.moveTo(halfStroke, size.height);
-    path.lineTo(halfStroke, radius);
-    path.arcToPoint(
-      Offset(radius, halfStroke),
-      radius: Radius.circular(radius - halfStroke),
-      clockwise: true,
-    );
-    path.lineTo(size.width, halfStroke);
-
-    // Subtle luminous soft glow behind the arch
-    final glowPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.22)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth + 2.5
-      ..strokeCap = StrokeCap.round;
-    canvas.drawPath(path, glowPaint);
-
-    // Primary luxury gold stroke
-    final strokePaint = Paint()
-      ..color = color.withValues(alpha: 0.8)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-    canvas.drawPath(path, strokePaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant ArchImageBorderPainter oldDelegate) =>
-      oldDelegate.radius != radius ||
-      oldDelegate.color != color ||
-      oldDelegate.strokeWidth != strokeWidth;
 }
