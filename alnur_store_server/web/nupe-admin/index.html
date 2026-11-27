@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#09090B">
   <title>Nupe Songs — Executive Studio Portal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -38,6 +39,17 @@
         }
       }
     }
+  </script>
+  <script>
+    // Apply the saved (or system) studio theme before first paint to avoid a flash
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem('nupe_studio_theme'); } catch (_) {}
+      if (t !== 'light' && t !== 'dark') {
+        t = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      }
+      document.documentElement.setAttribute('data-studio-theme', t);
+    })();
   </script>
   <style>
     body {
@@ -95,6 +107,18 @@
       --warn: #F0B04A;
       --danger: #F26D6D;
       --danger-soft: rgba(242, 109, 109, 0.1);
+      --accent-hover: #8A76F8;
+      --elev: #18181C;
+      --elev-hover: #1D1D22;
+      --subtle: rgba(255, 255, 255, 0.05);
+      --subtle-2: rgba(255, 255, 255, 0.08);
+      --placeholder: #52525B;
+      --header-bg: rgba(9, 9, 11, 0.86);
+      --player-bg: rgba(17, 17, 20, 0.92);
+      --modal-shadow: 0 24px 64px -12px rgba(0, 0, 0, 0.7);
+      --play-bg: #FFFFFF;
+      --play-fg: #09090B;
+      color-scheme: dark;
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
       font-feature-settings: 'cv11', 'ss01', 'ss03';
       background: var(--bg);
@@ -111,6 +135,46 @@
 
     .ds .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; }
 
+
+    /* Light theme — same tokens, light values */
+    html[data-studio-theme="light"] .ds {
+      --bg: #FAFAFA;
+      --panel: #FFFFFF;
+      --panel-2: #F4F4F5;
+      --hover: rgba(0, 0, 0, 0.025);
+      --border: rgba(0, 0, 0, 0.08);
+      --border-strong: rgba(0, 0, 0, 0.15);
+      --text: #18181B;
+      --muted: #52525B;
+      --faint: #71717A;
+      --accent: #5B45E0;
+      --accent-strong: #6650E8;
+      --accent-hover: #5440D6;
+      --accent-soft: rgba(102, 80, 232, 0.14);
+      --ok: #16A34A;
+      --warn: #B45309;
+      --danger: #DC2626;
+      --danger-soft: rgba(220, 38, 38, 0.08);
+      --elev: #FFFFFF;
+      --elev-hover: #F4F4F5;
+      --subtle: rgba(0, 0, 0, 0.04);
+      --subtle-2: rgba(0, 0, 0, 0.065);
+      --placeholder: #A1A1AA;
+      --header-bg: rgba(250, 250, 250, 0.86);
+      --player-bg: rgba(255, 255, 255, 0.92);
+      --modal-shadow: 0 24px 64px -16px rgba(0, 0, 0, 0.22);
+      --play-bg: #18181B;
+      --play-fg: #FFFFFF;
+      color-scheme: light;
+    }
+    html[data-studio-theme="light"] .ds .card,
+    html[data-studio-theme="light"] .ds .kpi-grid { box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); }
+    html[data-studio-theme="light"] .ds-modal { background: rgba(24, 24, 27, 0.4) !important; }
+    html[data-studio-theme="light"] body:has(#nupeDashboardScreen:not(.hidden)) { background: #FAFAFA; }
+    .ds .theme-icon-light { display: none; }
+    html[data-studio-theme="light"] .ds .theme-icon-light { display: block; }
+    html[data-studio-theme="light"] .ds .theme-icon-dark { display: none; }
+
     /* Navigation */
     .ds .nav-item {
       display: flex; align-items: center; gap: 10px; width: 100%;
@@ -120,7 +184,7 @@
     }
     .ds .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--faint); transition: color .12s; }
     .ds .nav-item:hover { background: var(--hover); color: var(--text); }
-    .ds .nav-item.active { background: rgba(255, 255, 255, 0.06); color: var(--text); }
+    .ds .nav-item.active { background: var(--subtle-2); color: var(--text); }
     .ds .nav-item.active svg { color: var(--accent); }
     .ds .nav-count { margin-left: auto; font-size: 11px; color: var(--faint); font-variant-numeric: tabular-nums; }
     .ds .nav-label { padding: 14px 10px 6px; font-size: 11px; font-weight: 500; color: var(--faint); }
@@ -145,9 +209,9 @@
     .ds .btn.hidden, .ds .icon-btn.hidden { display: none; }
     .ds .btn:disabled { opacity: .55; cursor: not-allowed; }
     .ds .btn-primary { background: var(--accent-strong); color: #fff; box-shadow: inset 0 1px 0 rgba(255,255,255,.12); }
-    .ds .btn-primary:hover:not(:disabled) { background: #8A76F8; }
+    .ds .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
     .ds .btn-secondary { background: var(--panel-2); border-color: var(--border); color: var(--text); }
-    .ds .btn-secondary:hover:not(:disabled) { border-color: var(--border-strong); background: #1D1D22; }
+    .ds .btn-secondary:hover:not(:disabled) { border-color: var(--border-strong); background: var(--elev-hover); }
     .ds .btn-ghost { color: var(--muted); }
     .ds .btn-ghost:hover { background: var(--hover); color: var(--text); }
 
@@ -157,7 +221,7 @@
       transition: background-color .12s, color .12s;
     }
     .ds .icon-btn svg { width: 15px; height: 15px; }
-    .ds .icon-btn:hover { background: rgba(255,255,255,.06); color: var(--text); }
+    .ds .icon-btn:hover { background: var(--subtle-2); color: var(--text); }
     .ds .icon-btn.danger:hover { background: var(--danger-soft); color: var(--danger); }
 
     /* Form fields */
@@ -171,14 +235,14 @@
     }
     .ds textarea.field { height: auto; padding: 8px 10px; line-height: 1.5; resize: vertical; }
     .ds select.field { padding-right: 28px; }
-    .ds .field::placeholder { color: #52525B; }
+    .ds .field::placeholder { color: var(--placeholder); }
     .ds .field:hover { border-color: var(--border-strong); }
     .ds .field:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 
     .ds .chip {
       display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 999px;
       font-size: 11px; font-weight: 500; color: var(--muted);
-      background: rgba(255,255,255,.05); border: 1px solid var(--border); white-space: nowrap;
+      background: var(--subtle); border: 1px solid var(--border); white-space: nowrap;
     }
 
     /* KPI strip: 1px dividers via gap on a border-coloured grid */
@@ -202,13 +266,13 @@
     }
     .ds .cover-btn:hover .overlay, .ds .cover-btn:focus-visible .overlay, .ds .is-playing .cover-btn .overlay { opacity: 1; }
 
-    .ds .bar-track { height: 4px; border-radius: 999px; background: rgba(255,255,255,.06); overflow: hidden; }
+    .ds .bar-track { height: 4px; border-radius: 999px; background: var(--subtle-2); overflow: hidden; }
     .ds .bar-fill { height: 100%; border-radius: 999px; background: var(--accent); }
 
     /* Loading skeleton */
     .ds .skeleton {
       display: inline-block; border-radius: 4px;
-      background: linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.085) 50%, rgba(255,255,255,.04) 75%);
+      background: linear-gradient(90deg, var(--subtle) 25%, var(--subtle-2) 50%, var(--subtle) 75%);
       background-size: 200% 100%; animation: ds-shimmer 1.4s ease-in-out infinite;
     }
     @keyframes ds-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
@@ -226,16 +290,16 @@
     /* Modals */
     .ds-modal { font-family: 'Inter', system-ui, sans-serif; }
     .ds-modal .modal-panel {
-      background: #111114; border: 1px solid rgba(255,255,255,.1); border-radius: 12px;
-      box-shadow: 0 24px 64px -12px rgba(0,0,0,.7);
+      background: var(--panel); border: 1px solid var(--border-strong); border-radius: 12px;
+      box-shadow: var(--modal-shadow); color: var(--text);
       animation: ds-pop .16s ease-out;
     }
     @keyframes ds-pop { from { opacity: 0; transform: translateY(6px) scale(.985); } to { opacity: 1; transform: none; } }
 
     /* Range input for the player */
-    .ds input[type=range].seek { -webkit-appearance: none; appearance: none; height: 4px; border-radius: 999px; background: rgba(255,255,255,.1); outline: none; }
-    .ds input[type=range].seek::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: #fff; cursor: pointer; }
-    .ds input[type=range].seek::-moz-range-thumb { width: 12px; height: 12px; border: 0; border-radius: 50%; background: #fff; cursor: pointer; }
+    .ds input[type=range].seek { -webkit-appearance: none; appearance: none; height: 4px; border-radius: 999px; background: var(--subtle-2); outline: none; }
+    .ds input[type=range].seek::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--play-bg); cursor: pointer; }
+    .ds input[type=range].seek::-moz-range-thumb { width: 12px; height: 12px; border: 0; border-radius: 50%; background: var(--play-bg); cursor: pointer; }
 
     /* Toast */
     #studioToast { transition: opacity .18s, transform .18s; }
@@ -428,7 +492,7 @@
     <div class="lg:pl-60 min-h-screen flex flex-col pb-28">
 
       <!-- MOBILE HEADER + TABS -->
-      <header class="lg:hidden sticky top-0 z-30 border-b bd backdrop-blur-md" style="background: rgba(9,9,11,.88);">
+      <header class="lg:hidden sticky top-0 z-30 border-b bd backdrop-blur-md" style="background: var(--header-bg);">
         <div class="h-14 px-4 flex items-center justify-between">
           <div class="flex items-center gap-2.5">
             <div class="w-7 h-7 rounded-md bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white">
@@ -437,6 +501,7 @@
             <p class="text-[13px] font-semibold tracking-tight">Nupe Songs <span class="faint font-normal">Studio</span></p>
           </div>
           <div class="flex items-center gap-0.5">
+            <button onclick="toggleStudioTheme()" class="icon-btn" title="Toggle light / dark mode" aria-label="Toggle light or dark mode"><i data-lucide="sun" class="theme-icon-dark"></i><i data-lucide="moon" class="theme-icon-light"></i></button>
             <a href="/admin" class="icon-btn" title="Al-Nur Store Admin" aria-label="Al-Nur Store Admin"><i data-lucide="shopping-bag"></i></a>
             <a href="/api/songs" target="_blank" rel="noopener" class="icon-btn" title="Live API" aria-label="Live API"><i data-lucide="code-2"></i></a>
             <button onclick="handleStudioLogout()" class="icon-btn danger" title="Sign out" aria-label="Sign out"><i data-lucide="log-out"></i></button>
@@ -451,7 +516,7 @@
       </header>
 
       <!-- DESKTOP TOP BAR -->
-      <header class="hidden lg:flex sticky top-0 z-30 h-14 px-8 items-center justify-between border-b bd backdrop-blur-md" style="background: rgba(9,9,11,.85);">
+      <header class="hidden lg:flex sticky top-0 z-30 h-14 px-8 items-center justify-between border-b bd backdrop-blur-md" style="background: var(--header-bg);">
         <div class="flex items-center gap-2 text-[13px]">
           <span class="faint">Studio</span>
           <i data-lucide="chevron-right" class="w-3.5 h-3.5 faint"></i>
@@ -462,6 +527,9 @@
             <span id="studioStatusDot" class="w-1.5 h-1.5 rounded-full bg-zinc-500"></span>
             <span id="studioStatusText">Connecting…</span>
           </span>
+          <button onclick="toggleStudioTheme()" class="icon-btn" title="Toggle light / dark mode" aria-label="Toggle light or dark mode">
+            <i data-lucide="sun" class="theme-icon-dark"></i><i data-lucide="moon" class="theme-icon-light"></i>
+          </button>
           <button onclick="loadData()" class="icon-btn" title="Refresh data" aria-label="Refresh data">
             <i data-lucide="refresh-cw" id="refreshIcon"></i>
           </button>
@@ -623,7 +691,7 @@
     </div>
 
     <!-- FIXED BOTTOM AUDIO PLAYER BAR -->
-    <div id="bottomPlayerBar" class="fixed bottom-0 inset-x-0 lg:left-60 z-40 border-t bd backdrop-blur-xl transition-transform duration-200 translate-y-full" style="background: rgba(17,17,20,.92);">
+    <div id="bottomPlayerBar" class="fixed bottom-0 inset-x-0 lg:left-60 z-40 border-t bd backdrop-blur-xl transition-transform duration-200 translate-y-full" style="background: var(--player-bg);">
       <div class="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-2.5 flex items-center gap-4">
 
         <!-- Currently Playing Info -->
@@ -637,7 +705,7 @@
 
         <!-- Controls & Progress -->
         <div class="flex items-center gap-3 sm:flex-1 sm:max-w-xl">
-          <button onclick="togglePlayPause()" class="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center shrink-0 hover:scale-105 transition" aria-label="Play or pause">
+          <button onclick="togglePlayPause()" class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 hover:scale-105 transition" aria-label="Play or pause" style="background: var(--play-bg); color: var(--play-fg);">
             <i data-lucide="play" id="playIcon" class="w-4 h-4"></i>
           </button>
           <div class="hidden sm:flex items-center gap-2.5 flex-1">
@@ -662,7 +730,7 @@
     </div>
 
     <!-- TOAST -->
-    <div id="studioToast" class="hide fixed bottom-24 right-4 sm:right-6 z-[60] max-w-sm flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg border text-[13px] shadow-2xl" style="background: #18181C; border-color: rgba(255,255,255,.12);" role="status" aria-live="polite">
+    <div id="studioToast" class="hide fixed bottom-24 right-4 sm:right-6 z-[60] max-w-sm flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg border text-[13px] shadow-2xl" style="background: var(--elev); border-color: var(--border-strong); color: var(--text);" role="status" aria-live="polite">
       <i data-lucide="check-circle-2" id="studioToastIcon" class="w-4 h-4 shrink-0"></i>
       <span id="studioToastText"></span>
     </div>
@@ -1653,6 +1721,30 @@
         document.getElementById('trackSearchInput').focus();
       }
     });
+
+    // ------------------------------------------------------------
+    // THEME (light / dark). Follows the system until the user picks one.
+    // ------------------------------------------------------------
+    const THEME_KEY = 'nupe_studio_theme';
+    function getSavedTheme() {
+      try { const t = localStorage.getItem(THEME_KEY); return t === 'light' || t === 'dark' ? t : null; } catch (_) { return null; }
+    }
+    function applyStudioTheme(theme) {
+      document.documentElement.setAttribute('data-studio-theme', theme);
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', theme === 'light' ? '#FAFAFA' : '#09090B');
+    }
+    function toggleStudioTheme() {
+      const next = document.documentElement.getAttribute('data-studio-theme') === 'light' ? 'dark' : 'light';
+      try { localStorage.setItem(THEME_KEY, next); } catch (_) {}
+      applyStudioTheme(next);
+    }
+    if (window.matchMedia) {
+      window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', (e) => {
+        if (!getSavedTheme()) applyStudioTheme(e.matches ? 'light' : 'dark');
+      });
+    }
+    applyStudioTheme(getSavedTheme() || document.documentElement.getAttribute('data-studio-theme') || 'dark');
 
     // INITIALIZATION
     checkAuth();
