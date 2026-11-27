@@ -22,24 +22,28 @@ import 'categories/store_category.dart' as _i6;
 import 'greetings/greeting.dart' as _i7;
 import 'idempotency/idempotency_record.dart' as _i8;
 import 'nupe/nupe_listener.dart' as _i9;
-import 'orders/store_order.dart' as _i10;
-import 'products/store_product.dart' as _i11;
-import 'storage/upload_result.dart' as _i12;
-import 'users/user_account_info.dart' as _i13;
-import 'users/user_address.dart' as _i14;
+import 'nupe/nupe_play_event.dart' as _i10;
+import 'nupe/nupe_report.dart' as _i11;
+import 'orders/store_order.dart' as _i12;
+import 'products/store_product.dart' as _i13;
+import 'storage/upload_result.dart' as _i14;
+import 'users/user_account_info.dart' as _i15;
+import 'users/user_address.dart' as _i16;
 import 'package:alnur_store_server/src/generated/categories/store_category.dart'
-    as _i15;
-import 'package:alnur_store_server/src/generated/orders/store_order.dart'
-    as _i16;
-import 'package:alnur_store_server/src/generated/products/store_product.dart'
     as _i17;
-import 'package:alnur_store_server/src/generated/users/user_address.dart'
+import 'package:alnur_store_server/src/generated/orders/store_order.dart'
     as _i18;
+import 'package:alnur_store_server/src/generated/products/store_product.dart'
+    as _i19;
+import 'package:alnur_store_server/src/generated/users/user_address.dart'
+    as _i20;
 export 'ai/ai_stylist.dart';
 export 'categories/store_category.dart';
 export 'greetings/greeting.dart';
 export 'idempotency/idempotency_record.dart';
 export 'nupe/nupe_listener.dart';
+export 'nupe/nupe_play_event.dart';
+export 'nupe/nupe_report.dart';
 export 'orders/store_order.dart';
 export 'products/store_product.dart';
 export 'storage/upload_result.dart';
@@ -282,6 +286,213 @@ class Protocol extends _i1.SerializationManagerServer {
             _i2.IndexElementDefinition(
               type: _i2.IndexElementDefinitionType.column,
               definition: 'lastSeenAt',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _i2.TableDefinition(
+      name: 'nupe_play_event',
+      dartName: 'NupePlayEvent',
+      schema: 'public',
+      module: 'alnur_store',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'nupe_play_event_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'songId',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _i2.ColumnDefinition(
+          name: 'listenerId',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: true,
+          dartType: 'int?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'kind',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'platform',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'createdAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'nupe_play_event_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'nupe_play_event_created_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'createdAt',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'nupe_play_event_listener_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'listenerId',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _i2.TableDefinition(
+      name: 'nupe_report',
+      dartName: 'NupeReport',
+      schema: 'public',
+      module: 'alnur_store',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'nupe_report_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'itemType',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'itemId',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'itemLabel',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'reason',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'details',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'reporterId',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: true,
+          dartType: 'int?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'targetListenerId',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: true,
+          dartType: 'int?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'status',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+          columnDefault: '\'pending\'::text',
+        ),
+        _i2.ColumnDefinition(
+          name: 'createdAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+        _i2.ColumnDefinition(
+          name: 'resolvedAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: true,
+          dartType: 'DateTime?',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'nupe_report_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'nupe_report_status_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'status',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'nupe_report_created_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'createdAt',
             ),
           ],
           type: 'btree',
@@ -831,20 +1042,26 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i9.NupeListener) {
       return _i9.NupeListener.fromJson(data) as T;
     }
-    if (t == _i10.StoreOrder) {
-      return _i10.StoreOrder.fromJson(data) as T;
+    if (t == _i10.NupePlayEvent) {
+      return _i10.NupePlayEvent.fromJson(data) as T;
     }
-    if (t == _i11.StoreProduct) {
-      return _i11.StoreProduct.fromJson(data) as T;
+    if (t == _i11.NupeReport) {
+      return _i11.NupeReport.fromJson(data) as T;
     }
-    if (t == _i12.StorageUploadResult) {
-      return _i12.StorageUploadResult.fromJson(data) as T;
+    if (t == _i12.StoreOrder) {
+      return _i12.StoreOrder.fromJson(data) as T;
     }
-    if (t == _i13.UserAccountInfo) {
-      return _i13.UserAccountInfo.fromJson(data) as T;
+    if (t == _i13.StoreProduct) {
+      return _i13.StoreProduct.fromJson(data) as T;
     }
-    if (t == _i14.UserAddress) {
-      return _i14.UserAddress.fromJson(data) as T;
+    if (t == _i14.StorageUploadResult) {
+      return _i14.StorageUploadResult.fromJson(data) as T;
+    }
+    if (t == _i15.UserAccountInfo) {
+      return _i15.UserAccountInfo.fromJson(data) as T;
+    }
+    if (t == _i16.UserAddress) {
+      return _i16.UserAddress.fromJson(data) as T;
     }
     if (t == _i1.getType<_i5.AiStylistResponse?>()) {
       return (data != null ? _i5.AiStylistResponse.fromJson(data) : null) as T;
@@ -861,32 +1078,38 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i1.getType<_i9.NupeListener?>()) {
       return (data != null ? _i9.NupeListener.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i10.StoreOrder?>()) {
-      return (data != null ? _i10.StoreOrder.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i10.NupePlayEvent?>()) {
+      return (data != null ? _i10.NupePlayEvent.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i11.StoreProduct?>()) {
-      return (data != null ? _i11.StoreProduct.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i11.NupeReport?>()) {
+      return (data != null ? _i11.NupeReport.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i12.StorageUploadResult?>()) {
-      return (data != null ? _i12.StorageUploadResult.fromJson(data) : null)
+    if (t == _i1.getType<_i12.StoreOrder?>()) {
+      return (data != null ? _i12.StoreOrder.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i13.StoreProduct?>()) {
+      return (data != null ? _i13.StoreProduct.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i14.StorageUploadResult?>()) {
+      return (data != null ? _i14.StorageUploadResult.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i13.UserAccountInfo?>()) {
-      return (data != null ? _i13.UserAccountInfo.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i15.UserAccountInfo?>()) {
+      return (data != null ? _i15.UserAccountInfo.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i14.UserAddress?>()) {
-      return (data != null ? _i14.UserAddress.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i16.UserAddress?>()) {
+      return (data != null ? _i16.UserAddress.fromJson(data) : null) as T;
     }
-    if (t == List<_i11.StoreProduct>) {
+    if (t == List<_i13.StoreProduct>) {
       return (data as List)
-              .map((e) => deserialize<_i11.StoreProduct>(e))
+              .map((e) => deserialize<_i13.StoreProduct>(e))
               .toList()
           as T;
     }
-    if (t == _i1.getType<List<_i11.StoreProduct>?>()) {
+    if (t == _i1.getType<List<_i13.StoreProduct>?>()) {
       return (data != null
               ? (data as List)
-                    .map((e) => deserialize<_i11.StoreProduct>(e))
+                    .map((e) => deserialize<_i13.StoreProduct>(e))
                     .toList()
               : null)
           as T;
@@ -900,25 +1123,25 @@ class Protocol extends _i1.SerializationManagerServer {
               : null)
           as T;
     }
-    if (t == List<_i15.StoreCategory>) {
+    if (t == List<_i17.StoreCategory>) {
       return (data as List)
-              .map((e) => deserialize<_i15.StoreCategory>(e))
+              .map((e) => deserialize<_i17.StoreCategory>(e))
               .toList()
           as T;
     }
-    if (t == List<_i16.StoreOrder>) {
-      return (data as List).map((e) => deserialize<_i16.StoreOrder>(e)).toList()
+    if (t == List<_i18.StoreOrder>) {
+      return (data as List).map((e) => deserialize<_i18.StoreOrder>(e)).toList()
           as T;
     }
-    if (t == List<_i17.StoreProduct>) {
+    if (t == List<_i19.StoreProduct>) {
       return (data as List)
-              .map((e) => deserialize<_i17.StoreProduct>(e))
+              .map((e) => deserialize<_i19.StoreProduct>(e))
               .toList()
           as T;
     }
-    if (t == List<_i18.UserAddress>) {
+    if (t == List<_i20.UserAddress>) {
       return (data as List)
-              .map((e) => deserialize<_i18.UserAddress>(e))
+              .map((e) => deserialize<_i20.UserAddress>(e))
               .toList()
           as T;
     }
@@ -941,11 +1164,13 @@ class Protocol extends _i1.SerializationManagerServer {
       _i7.Greeting => 'Greeting',
       _i8.IdempotencyRecord => 'IdempotencyRecord',
       _i9.NupeListener => 'NupeListener',
-      _i10.StoreOrder => 'StoreOrder',
-      _i11.StoreProduct => 'StoreProduct',
-      _i12.StorageUploadResult => 'StorageUploadResult',
-      _i13.UserAccountInfo => 'UserAccountInfo',
-      _i14.UserAddress => 'UserAddress',
+      _i10.NupePlayEvent => 'NupePlayEvent',
+      _i11.NupeReport => 'NupeReport',
+      _i12.StoreOrder => 'StoreOrder',
+      _i13.StoreProduct => 'StoreProduct',
+      _i14.StorageUploadResult => 'StorageUploadResult',
+      _i15.UserAccountInfo => 'UserAccountInfo',
+      _i16.UserAddress => 'UserAddress',
       _ => null,
     };
   }
@@ -970,15 +1195,19 @@ class Protocol extends _i1.SerializationManagerServer {
         return 'IdempotencyRecord';
       case _i9.NupeListener():
         return 'NupeListener';
-      case _i10.StoreOrder():
+      case _i10.NupePlayEvent():
+        return 'NupePlayEvent';
+      case _i11.NupeReport():
+        return 'NupeReport';
+      case _i12.StoreOrder():
         return 'StoreOrder';
-      case _i11.StoreProduct():
+      case _i13.StoreProduct():
         return 'StoreProduct';
-      case _i12.StorageUploadResult():
+      case _i14.StorageUploadResult():
         return 'StorageUploadResult';
-      case _i13.UserAccountInfo():
+      case _i15.UserAccountInfo():
         return 'UserAccountInfo';
-      case _i14.UserAddress():
+      case _i16.UserAddress():
         return 'UserAddress';
     }
     className = _i2.Protocol().getClassNameForObject(data);
@@ -1017,20 +1246,26 @@ class Protocol extends _i1.SerializationManagerServer {
     if (dataClassName == 'NupeListener') {
       return deserialize<_i9.NupeListener>(data['data']);
     }
+    if (dataClassName == 'NupePlayEvent') {
+      return deserialize<_i10.NupePlayEvent>(data['data']);
+    }
+    if (dataClassName == 'NupeReport') {
+      return deserialize<_i11.NupeReport>(data['data']);
+    }
     if (dataClassName == 'StoreOrder') {
-      return deserialize<_i10.StoreOrder>(data['data']);
+      return deserialize<_i12.StoreOrder>(data['data']);
     }
     if (dataClassName == 'StoreProduct') {
-      return deserialize<_i11.StoreProduct>(data['data']);
+      return deserialize<_i13.StoreProduct>(data['data']);
     }
     if (dataClassName == 'StorageUploadResult') {
-      return deserialize<_i12.StorageUploadResult>(data['data']);
+      return deserialize<_i14.StorageUploadResult>(data['data']);
     }
     if (dataClassName == 'UserAccountInfo') {
-      return deserialize<_i13.UserAccountInfo>(data['data']);
+      return deserialize<_i15.UserAccountInfo>(data['data']);
     }
     if (dataClassName == 'UserAddress') {
-      return deserialize<_i14.UserAddress>(data['data']);
+      return deserialize<_i16.UserAddress>(data['data']);
     }
     if (dataClassName.startsWith('serverpod.')) {
       data['className'] = dataClassName.substring(10);
@@ -1074,14 +1309,18 @@ class Protocol extends _i1.SerializationManagerServer {
         return _i8.IdempotencyRecord.t;
       case _i9.NupeListener:
         return _i9.NupeListener.t;
-      case _i10.StoreOrder:
-        return _i10.StoreOrder.t;
-      case _i11.StoreProduct:
-        return _i11.StoreProduct.t;
-      case _i13.UserAccountInfo:
-        return _i13.UserAccountInfo.t;
-      case _i14.UserAddress:
-        return _i14.UserAddress.t;
+      case _i10.NupePlayEvent:
+        return _i10.NupePlayEvent.t;
+      case _i11.NupeReport:
+        return _i11.NupeReport.t;
+      case _i12.StoreOrder:
+        return _i12.StoreOrder.t;
+      case _i13.StoreProduct:
+        return _i13.StoreProduct.t;
+      case _i15.UserAccountInfo:
+        return _i15.UserAccountInfo.t;
+      case _i16.UserAddress:
+        return _i16.UserAddress.t;
     }
     return null;
   }

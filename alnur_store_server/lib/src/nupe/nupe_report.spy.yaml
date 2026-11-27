@@ -1,0 +1,25 @@
+### A content report sent from the Nupe Songs app, reviewed in Nupe Studio.
+class: NupeReport
+table: nupe_report
+serverOnly: true
+fields:
+  ### "song", "comment", "playlist", "artist" or "album".
+  itemType: String
+  itemId: String
+  ### Human-readable name of the item at the time it was reported.
+  itemLabel: String?
+  reason: String
+  details: String?
+  ### Listener who sent the report (null if anonymous).
+  reporterId: int?
+  ### Listener responsible for the item, if any (used by "Ban user").
+  targetListenerId: int?
+  ### "pending", "approved", "removed", "banned" or "dismissed".
+  status: String, default='pending'
+  createdAt: DateTime
+  resolvedAt: DateTime?
+indexes:
+  nupe_report_status_idx:
+    fields: status
+  nupe_report_created_idx:
+    fields: createdAt

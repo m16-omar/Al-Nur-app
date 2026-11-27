@@ -1,0 +1,19 @@
+### One play or download of a Nupe Songs track. Drives per-day stats, charts,
+### listener history and devices.
+class: NupePlayEvent
+table: nupe_play_event
+serverOnly: true
+fields:
+  songId: int
+  ### Null when the request carried no valid listener token.
+  listenerId: int?
+  ### "play" or "download".
+  kind: String
+  ### Client platform, e.g. "ios" / "android" / "web".
+  platform: String?
+  createdAt: DateTime
+indexes:
+  nupe_play_event_created_idx:
+    fields: createdAt
+  nupe_play_event_listener_idx:
+    fields: listenerId

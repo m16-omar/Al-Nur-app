@@ -165,6 +165,63 @@ class NupeSongsApiRoute extends Route {
     {'id': 5, 'name': 'Remixes & DJ Mixes', 'description': 'Club & party tracks'},
   ];
 
+  /// Default colour / icon for genres that don't have one yet.
+  static const _genrePalette = [
+    '#8B7CF6', '#F59E0B', '#EC4899', '#10B981', '#06B6D4', '#F97316', '#6366F1', '#84CC16',
+  ];
+  static const _genreIcons = ['music', 'drum', 'heart', 'crown', 'disc-3', 'guitar', 'mic-2', 'radio'];
+
+  /// Studio-curated playlists (in memory, like the rest of the catalog).
+  static final List<Map<String, dynamic>> _playlists = [];
+
+  static String _slug(String? name) => (name ?? '')
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9]+'), '')
+      .padRight(1, 'x');
+
+  static Map<String, dynamic> _genreOut(Map<String, dynamic> g) {
+    final i = ((g['id'] as int? ?? 1) - 1).abs();
+    return {
+      ...g,
+      'color': g['color'] ?? _genrePalette[i % _genrePalette.length],
+      'icon': g['icon'] ?? _genreIcons[i % _genreIcons.length],
+    };
+  }
+
+  static Map<String, dynamic> _artistOut(Map<String, dynamic> a) => {
+        ...a,
+        'username': a['username'] ?? _slug(a['name'] as String?),
+        'created_at': a['created_at'],
+      };
+
+  static Map<String, dynamic> _songOut(Map<String, dynamic> s) {
+    final idStr = s['id'].toString();
+    return {
+      ...s,
+      'status': s['status'] ?? 'published',
+      'uploaded_at': s['uploaded_at'],
+      'stream_count': _streamCounts[idStr] ?? 0,
+      'download_count': _downloadCounts[idStr] ?? 0,
+    };
+  }
+
+  static Map<String, dynamic> _playlistOut(Map<String, dynamic> p) {
+    final ids = (p['song_ids'] as List).cast<int>();
+    final items = ids
+        .map((id) => _songs.where((s) => s['id'] == id).firstOrNull)
+        .whereType<Map<String, dynamic>>()
+        .map((s) => {
+              'id': s['id'],
+              'title': s['title'],
+              'artist': s['artist'],
+              'artwork': s['artwork'],
+              'stream_url': s['stream_url'],
+              'duration_ms': s['duration_ms'],
+            })
+        .toList();
+    return {...p, 'songs_count': items.length, 'songs': items};
+  }
+
   static final List<Map<String, dynamic>> _artists = [
     {
       'id': 1,
@@ -415,8 +472,13 @@ class NupeSongsApiRoute extends Route {
         if (sb == null) return -1;
         return sb.compareTo(sa);
       });
-      final rows =
-          listeners.map((l) => NupeListenerService.toAdminJson(l, now)).toList();
+      final streamsByListener = await _streamsPerListener(session);
+      final rows = listeners
+          .map((l) => {
+                ...NupeListenerService.toAdminJson(l, now),
+                'total_streams': streamsByListener[l.id] ?? 0,
+              })
+          .toList();
       final weekAgo = now.subtract(const Duration(days: 7));
       return _jsonResponse({
         'users': rows,
@@ -462,6 +524,134 @@ class NupeSongsApiRoute extends Route {
           NupeListenerService.toAdminJson(listener, DateTime.now().toUtc()));
     }
 
+    // GET /api/studio/users/<id>  — profile, listening history, devices
+    if (studioUserMatch != null && request.method == Method.get) {
+      if (_StudioAdminAuth.validate(request) == null) {
+        return _jsonResponse({'error': 'Nupe Studio admin sign-in required.'},
+            statusCode: 401);
+      }
+      final id = int.parse(studioUserMatch.group(1)!);
+      final listener = await NupeListener.db.findById(session, id);
+      if (listener == null) {
+        return _jsonResponse({'error': 'User not found.'}, statusCode: 404);
+      }
+      return _jsonResponse(await _listenerDetail(session, listener));
+    }
+
+    // POST /api/studio/users/<id>/reset-password — returns a one-time temporary password
+    final resetMatch =
+        RegExp(r'^/api/studio/users/(\d+)/reset-password$').firstMatch(normalizedPath);
+    if (resetMatch != null && request.method == Method.post) {
+      if (_StudioAdminAuth.validate(request) == null) {
+        return _jsonResponse({'error': 'Nupe Studio admin sign-in required.'},
+            statusCode: 401);
+      }
+      final listener =
+          await NupeListener.db.findById(session, int.parse(resetMatch.group(1)!));
+      if (listener == null) {
+        return _jsonResponse({'error': 'User not found.'}, statusCode: 404);
+      }
+      final temp = _temporaryPassword();
+      listener.passwordHash = NupeListenerService.hashPassword(temp);
+      await NupeListener.db.updateRow(session, listener,
+          columns: (t) => [t.passwordHash]);
+      return _jsonResponse({'id': listener.id, 'temporary_password': temp});
+    }
+
+    // GET /api/studio/overview?tz=<minutes>  — dashboard numbers, charts and activity
+    if (normalizedPath == '/api/studio/overview' && request.method == Method.get) {
+      if (_StudioAdminAuth.validate(request) == null) {
+        return _jsonResponse({'error': 'Nupe Studio admin sign-in required.'},
+            statusCode: 401);
+      }
+      return _jsonResponse(await _overview(session, request));
+    }
+
+    // GET /api/studio/charts?range=today|week|month&tz=<minutes>
+    if (normalizedPath == '/api/studio/charts' && request.method == Method.get) {
+      if (_StudioAdminAuth.validate(request) == null) {
+        return _jsonResponse({'error': 'Nupe Studio admin sign-in required.'},
+            statusCode: 401);
+      }
+      return _jsonResponse(await _charts(session, request));
+    }
+
+    // GET /api/studio/reports
+    if (normalizedPath == '/api/studio/reports' && request.method == Method.get) {
+      if (_StudioAdminAuth.validate(request) == null) {
+        return _jsonResponse({'error': 'Nupe Studio admin sign-in required.'},
+            statusCode: 401);
+      }
+      final reports = await NupeReport.db.find(session,
+          orderBy: (t) => t.createdAt, orderDescending: true, limit: 1000);
+      final ids = {
+        ...reports.map((r) => r.reporterId),
+        ...reports.map((r) => r.targetListenerId),
+      }.whereType<int>().toSet();
+      final people = ids.isEmpty
+          ? <NupeListener>[]
+          : await NupeListener.db.find(session, where: (t) => t.id.inSet(ids));
+      final byId = {for (final l in people) l.id!: l};
+      return _jsonResponse({
+        'reports': reports.map((r) => _reportJson(r, byId)).toList(),
+        'pending': reports.where((r) => r.status == 'pending').length,
+      });
+    }
+
+    // PUT /api/studio/reports/<id>  {action: approve|remove|ban|dismiss|reopen}
+    final reportMatch =
+        RegExp(r'^/api/studio/reports/(\d+)$').firstMatch(normalizedPath);
+    if (reportMatch != null && request.method == Method.put) {
+      if (_StudioAdminAuth.validate(request) == null) {
+        return _jsonResponse({'error': 'Nupe Studio admin sign-in required.'},
+            statusCode: 401);
+      }
+      final report =
+          await NupeReport.db.findById(session, int.parse(reportMatch.group(1)!));
+      if (report == null) {
+        return _jsonResponse({'error': 'Report not found.'}, statusCode: 404);
+      }
+      String action = '';
+      try {
+        final data = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+        action = data['action'] as String? ?? '';
+      } catch (_) {}
+      const statusFor = {
+        'approve': 'approved',
+        'remove': 'removed',
+        'ban': 'banned',
+        'dismiss': 'dismissed',
+        'reopen': 'pending',
+      };
+      final newStatus = statusFor[action];
+      if (newStatus == null) {
+        return _jsonResponse({'error': 'Unknown action "$action".'}, statusCode: 400);
+      }
+      if (action == 'ban') {
+        final target = report.targetListenerId == null
+            ? null
+            : await NupeListener.db.findById(session, report.targetListenerId!);
+        if (target == null) {
+          return _jsonResponse(
+              {'error': 'This report isn’t linked to a listener account, so there is no one to ban.'},
+              statusCode: 400);
+        }
+        target.isDisabled = true;
+        await NupeListener.db.updateRow(session, target, columns: (t) => [t.isDisabled]);
+      }
+      if (action == 'remove') _hideReportedItem(report);
+      report.status = newStatus;
+      report.resolvedAt = newStatus == 'pending' ? null : DateTime.now().toUtc();
+      await NupeReport.db.updateRow(session, report,
+          columns: (t) => [t.status, t.resolvedAt]);
+      final people = await NupeListener.db.find(session,
+          where: (t) => t.id.inSet({report.reporterId, report.targetListenerId}
+              .whereType<int>()
+              .toSet()
+              .union({-1})));
+      return _jsonResponse(_reportJson(report, {for (final l in people) l.id!: l}));
+    }
+
     // ---- Listener presence: any request carrying a valid listener token ----
     final listenerId =
         NupeListenerService.listenerIdFromRequest(session, request);
@@ -482,10 +672,52 @@ class NupeSongsApiRoute extends Route {
       await NupeListenerService.touch(session, listenerId, activity: activity);
     }
 
+    // POST /api/reports  {item_type, item_id, reason, details?, target_user_id?}
+    // Sent by the Nupe Songs app; requires a signed-in listener.
+    if (normalizedPath == '/api/reports' && request.method == Method.post) {
+      if (listenerId == null) {
+        return _authError('Sign in to report content.', 401);
+      }
+      Map<String, dynamic> data;
+      try {
+        data = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _authError('Invalid request body.', 400);
+      }
+      const types = {'song', 'comment', 'playlist', 'artist', 'album'};
+      final type = '${data['item_type'] ?? ''}'.trim().toLowerCase();
+      final itemId = '${data['item_id'] ?? ''}'.trim();
+      final reason = '${data['reason'] ?? ''}'.trim();
+      if (!types.contains(type) || itemId.isEmpty || reason.isEmpty) {
+        return _authError(
+            'item_type (song, comment, playlist, artist, album), item_id and reason are required.',
+            400);
+      }
+      final details = '${data['details'] ?? ''}'.trim();
+      final report = await NupeReport.db.insertRow(
+        session,
+        NupeReport(
+          itemType: type,
+          itemId: itemId.length > 64 ? itemId.substring(0, 64) : itemId,
+          itemLabel: _itemLabel(type, itemId) ??
+              ((data['item_label'] is String)
+                  ? _clip(data['item_label'] as String, 120)
+                  : null),
+          reason: _clip(reason, 120),
+          details: details.isEmpty ? null : _clip(details, 1000),
+          reporterId: listenerId,
+          targetListenerId: data['target_user_id'] is int ? data['target_user_id'] as int : null,
+          status: 'pending',
+          createdAt: DateTime.now().toUtc(),
+        ),
+      );
+      return _jsonResponse({'id': report.id, 'status': report.status}, statusCode: 201);
+    }
+
     // Catalog writes (create/update/delete songs, albums, artists, genres)
     // require a Nupe Studio admin session. Public listener actions
     // (play/download counters) remain open.
-    final isCatalogPath = RegExp(r'^/api/(songs|albums|artists|genres)(/\d+)?$')
+    final isCatalogPath = RegExp(r'^/api/(songs|albums|artists|genres|playlists)(/\d+)?$')
         .hasMatch(normalizedPath);
     final isWrite = request.method == Method.post ||
         request.method == Method.put ||
@@ -499,14 +731,12 @@ class NupeSongsApiRoute extends Route {
 
     // 1. GET /api/songs
     if (normalizedPath == '/api/songs' && request.method == Method.get) {
-      final enrichedSongs = _songs.map((s) {
-        final idStr = s['id'].toString();
-        return {
-          ...s,
-          'stream_count': _streamCounts[idStr] ?? 0,
-          'download_count': _downloadCounts[idStr] ?? 0,
-        };
-      }).toList();
+      // Drafts are only visible to the Nupe Studio admin.
+      final studio = _StudioAdminAuth.validate(request) != null;
+      final enrichedSongs = _songs
+          .map(_songOut)
+          .where((s) => studio || s['status'] == 'published')
+          .toList();
       return _jsonResponse(enrichedSongs);
     }
 
@@ -539,11 +769,13 @@ class NupeSongsApiRoute extends Route {
           'duration_ms': data['duration_ms'] ?? 210000,
           'lyrics': data['lyrics'] ?? '',
           'is_favorited': false,
+          'status': data['status'] == 'draft' ? 'draft' : 'published',
+          'uploaded_at': DateTime.now().toUtc().toIso8601String(),
         };
         _songs.add(newSong);
         _streamCounts[nextId.toString()] = 0;
         _downloadCounts[nextId.toString()] = 0;
-        return _jsonResponse(newSong, statusCode: 201);
+        return _jsonResponse(_songOut(newSong), statusCode: 201);
       } catch (e) {
         return _jsonResponse({'error': e.toString()}, statusCode: 400);
       }
@@ -589,9 +821,11 @@ class NupeSongsApiRoute extends Route {
           },
           if (data.containsKey('duration_ms')) 'duration_ms': data['duration_ms'],
           if (data.containsKey('lyrics')) 'lyrics': data['lyrics'],
+          if (data['status'] == 'published' || data['status'] == 'draft')
+            'status': data['status'],
         };
         _songs[index] = updated;
-        return _jsonResponse(updated);
+        return _jsonResponse(_songOut(updated));
       } catch (e) {
         return _jsonResponse({'error': e.toString()}, statusCode: 400);
       }
@@ -611,6 +845,7 @@ class NupeSongsApiRoute extends Route {
     if (playMatch != null && request.method == Method.post) {
       final songId = playMatch.group(1)!;
       _streamCounts[songId] = (_streamCounts[songId] ?? 0) + 1;
+      await _recordPlayEvent(session, request, int.parse(songId), 'play', listenerId);
       return _jsonResponse({
         'status': 'ok',
         'song_id': songId,
@@ -623,6 +858,7 @@ class NupeSongsApiRoute extends Route {
     if (downloadMatch != null && request.method == Method.post) {
       final songId = downloadMatch.group(1)!;
       _downloadCounts[songId] = (_downloadCounts[songId] ?? 0) + 1;
+      await _recordPlayEvent(session, request, int.parse(songId), 'download', listenerId);
       return _jsonResponse({
         'status': 'ok',
         'song_id': songId,
@@ -717,7 +953,7 @@ class NupeSongsApiRoute extends Route {
     // 5. GET & POST /api/artists
     if (normalizedPath == '/api/artists') {
       if (request.method == Method.get) {
-        return _jsonResponse(_artists);
+        return _jsonResponse(_artists.map(_artistOut).toList());
       } else if (request.method == Method.post) {
         try {
           final bodyText = await request.readAsString();
@@ -728,9 +964,12 @@ class NupeSongsApiRoute extends Route {
             'name': data['name'] ?? 'New Artist',
             'image': data['image'] ?? 'https://res.cloudinary.com/dnexiputv/image/upload/artists/Mahmud_Mokwa.png',
             'bio': data['bio'] ?? 'Nupe recording artist.',
+            if ('${data['username'] ?? ''}'.trim().isNotEmpty)
+              'username': _slug('${data['username']}'),
+            'created_at': DateTime.now().toUtc().toIso8601String(),
           };
           _artists.add(newArtist);
-          return _jsonResponse(newArtist, statusCode: 201);
+          return _jsonResponse(_artistOut(newArtist), statusCode: 201);
         } catch (e) {
           return _jsonResponse({'error': e.toString()}, statusCode: 400);
         }
@@ -758,6 +997,8 @@ class NupeSongsApiRoute extends Route {
           if (data.containsKey('image') && '${data['image']}'.trim().isNotEmpty)
             'image': data['image'],
           if (data.containsKey('bio')) 'bio': data['bio'],
+          if ('${data['username'] ?? ''}'.trim().isNotEmpty)
+            'username': _slug('${data['username']}'),
         };
         _artists[index] = updated;
         // Keep tracks and albums credited to this artist in sync with a rename.
@@ -775,7 +1016,7 @@ class NupeSongsApiRoute extends Route {
             }
           }
         }
-        return _jsonResponse(updated);
+        return _jsonResponse(_artistOut(updated));
       } catch (e) {
         return _jsonResponse({'error': e.toString()}, statusCode: 400);
       }
@@ -790,7 +1031,7 @@ class NupeSongsApiRoute extends Route {
     // 6. GET & POST /api/genres
     if (normalizedPath == '/api/genres') {
       if (request.method == Method.get) {
-        return _jsonResponse(_genres);
+        return _jsonResponse(_genres.map(_genreOut).toList());
       } else if (request.method == Method.post) {
         try {
           final bodyText = await request.readAsString();
@@ -800,13 +1041,130 @@ class NupeSongsApiRoute extends Route {
             'id': nextId,
             'name': data['name'] ?? 'New Genre',
             'description': data['description'] ?? '',
+            if (data['color'] is String) 'color': data['color'],
+            if (data['icon'] is String) 'icon': data['icon'],
           };
           _genres.add(newGenre);
-          return _jsonResponse(newGenre, statusCode: 201);
+          return _jsonResponse(_genreOut(newGenre), statusCode: 201);
         } catch (e) {
           return _jsonResponse({'error': e.toString()}, statusCode: 400);
         }
       }
+    }
+
+    // PUT / DELETE /api/genres/<id>  {name?, description?, color?, icon?}
+    final genreIdMatch = RegExp(r'^/api/genres/(\d+)$').firstMatch(normalizedPath);
+    if (genreIdMatch != null && request.method == Method.put) {
+      final id = int.parse(genreIdMatch.group(1)!);
+      final index = _genres.indexWhere((g) => g['id'] == id);
+      if (index == -1) return _jsonResponse({'error': 'Genre not found'}, statusCode: 404);
+      try {
+        final data = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+        final existing = _genres[index];
+        final oldName = existing['name'];
+        final newName = (data['name'] as String?)?.trim();
+        if (data.containsKey('name') && (newName == null || newName.isEmpty)) {
+          return _jsonResponse({'error': 'Genre name is required.'}, statusCode: 400);
+        }
+        final updated = {
+          ...existing,
+          if (newName != null) 'name': newName,
+          if (data.containsKey('description')) 'description': data['description'] ?? '',
+          if (data['color'] is String) 'color': data['color'],
+          if (data['icon'] is String) 'icon': data['icon'],
+        };
+        _genres[index] = updated;
+        if (newName != null && newName != oldName) {
+          for (var i = 0; i < _songs.length; i++) {
+            final g = _songs[i]['genre'];
+            if (g is Map && g['name'] == oldName) {
+              _songs[i] = {..._songs[i], 'genre': {'id': g['id'], 'name': newName}};
+            }
+          }
+        }
+        return _jsonResponse(_genreOut(updated));
+      } catch (e) {
+        return _jsonResponse({'error': e.toString()}, statusCode: 400);
+      }
+    }
+    if (genreIdMatch != null && request.method == Method.delete) {
+      final id = int.parse(genreIdMatch.group(1)!);
+      _genres.removeWhere((g) => g['id'] == id);
+      return _jsonResponse({'status': 'deleted', 'id': id});
+    }
+
+    // GET & POST /api/playlists  (public GET shows published playlists only)
+    if (normalizedPath == '/api/playlists') {
+      if (request.method == Method.get) {
+        final studio = _StudioAdminAuth.validate(request) != null;
+        final list = _playlists
+            .where((p) => studio || p['status'] == 'published')
+            .map(_playlistOut)
+            .toList()
+          ..sort((a, b) => (b['is_featured'] == true ? 1 : 0) - (a['is_featured'] == true ? 1 : 0));
+        return _jsonResponse(list);
+      }
+      if (request.method == Method.post) {
+        try {
+          final data = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+          final name = (data['name'] as String?)?.trim() ?? '';
+          if (name.isEmpty) {
+            return _jsonResponse({'error': 'Playlist name is required.'}, statusCode: 400);
+          }
+          final nextId = _playlists.map((p) => p['id'] as int).fold(0, (a, b) => a > b ? a : b) + 1;
+          final now = DateTime.now().toUtc().toIso8601String();
+          final playlist = <String, dynamic>{
+            'id': nextId,
+            'name': name,
+            'description': data['description'] ?? '',
+            'cover': data['cover'] ?? '',
+            'song_ids': _intList(data['song_ids']),
+            'is_featured': data['is_featured'] == true,
+            'status': data['status'] == 'draft' ? 'draft' : 'published',
+            'creator': 'Nupe Studio',
+            'created_at': now,
+            'updated_at': now,
+          };
+          _playlists.add(playlist);
+          return _jsonResponse(_playlistOut(playlist), statusCode: 201);
+        } catch (e) {
+          return _jsonResponse({'error': e.toString()}, statusCode: 400);
+        }
+      }
+    }
+
+    // PUT / DELETE /api/playlists/<id>
+    final playlistIdMatch = RegExp(r'^/api/playlists/(\d+)$').firstMatch(normalizedPath);
+    if (playlistIdMatch != null && request.method == Method.put) {
+      final id = int.parse(playlistIdMatch.group(1)!);
+      final index = _playlists.indexWhere((p) => p['id'] == id);
+      if (index == -1) return _jsonResponse({'error': 'Playlist not found'}, statusCode: 404);
+      try {
+        final data = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+        final name = (data['name'] as String?)?.trim();
+        if (data.containsKey('name') && (name == null || name.isEmpty)) {
+          return _jsonResponse({'error': 'Playlist name is required.'}, statusCode: 400);
+        }
+        final updated = {
+          ..._playlists[index],
+          if (name != null) 'name': name,
+          if (data.containsKey('description')) 'description': data['description'] ?? '',
+          if (data.containsKey('cover')) 'cover': data['cover'] ?? '',
+          if (data.containsKey('song_ids')) 'song_ids': _intList(data['song_ids']),
+          if (data['is_featured'] is bool) 'is_featured': data['is_featured'],
+          if (data['status'] == 'published' || data['status'] == 'draft') 'status': data['status'],
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
+        };
+        _playlists[index] = updated;
+        return _jsonResponse(_playlistOut(updated));
+      } catch (e) {
+        return _jsonResponse({'error': e.toString()}, statusCode: 400);
+      }
+    }
+    if (playlistIdMatch != null && request.method == Method.delete) {
+      final id = int.parse(playlistIdMatch.group(1)!);
+      _playlists.removeWhere((p) => p['id'] == id);
+      return _jsonResponse({'status': 'deleted', 'id': id});
     }
 
     // 7. GET /api/analytics
@@ -1004,5 +1362,378 @@ class NupeSongsApiRoute extends Route {
       {'error': 'Not Found', 'path': path},
       statusCode: 404,
     );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Studio helpers: events, stats, reports
+  // ---------------------------------------------------------------------------
+
+  static String _clip(String value, int max) {
+    final v = value.trim();
+    return v.length <= max ? v : v.substring(0, max);
+  }
+
+  static List<int> _intList(dynamic value) => value is List
+      ? value.map((v) => v is int ? v : int.tryParse('$v')).whereType<int>().toList()
+      : <int>[];
+
+  static String _temporaryPassword() {
+    const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    final r = Random.secure();
+    return List.generate(10, (_) => chars[r.nextInt(chars.length)]).join();
+  }
+
+  Future<void> _recordPlayEvent(Session session, Request request, int songId,
+      String kind, int? listenerId) async {
+    try {
+      String? platform;
+      if (listenerId != null) {
+        platform = (await NupeListener.db.findById(session, listenerId))?.platform;
+      }
+      await NupePlayEvent.db.insertRow(
+        session,
+        NupePlayEvent(
+          songId: songId,
+          listenerId: listenerId,
+          kind: kind,
+          platform: platform,
+          createdAt: DateTime.now().toUtc(),
+        ),
+      );
+    } catch (e) {
+      session.log('Nupe play event not recorded: $e', level: LogLevel.warning);
+    }
+  }
+
+  static Future<Map<int, int>> _streamsPerListener(Session session) async {
+    final out = <int, int>{};
+    try {
+      final result = await session.db.unsafeQuery(
+          'SELECT "listenerId", COUNT(*) FROM nupe_play_event '
+          'WHERE kind = \'play\' AND "listenerId" IS NOT NULL GROUP BY "listenerId"');
+      for (final row in result) {
+        out[row[0] as int] = (row[1] as num).toInt();
+      }
+    } catch (e) {
+      session.log('Stream totals unavailable: $e', level: LogLevel.warning);
+    }
+    return out;
+  }
+
+  /// Client timezone: `tz` uses JavaScript's getTimezoneOffset() convention
+  /// (minutes to add to local time to get UTC). Returns local = utc + offset.
+  static Duration _tzOffset(Request request) {
+    final tz = int.tryParse(request.url.queryParameters['tz'] ?? '') ?? 0;
+    return Duration(minutes: -tz.clamp(-840, 840));
+  }
+
+  /// UTC instant of local midnight [daysAgo] days before today.
+  static DateTime _localMidnight(DateTime nowUtc, Duration off, int daysAgo) {
+    final l = nowUtc.add(off);
+    return DateTime.utc(l.year, l.month, l.day - daysAgo).subtract(off);
+  }
+
+  static String _dayKey(DateTime utc, Duration off) {
+    final l = utc.add(off);
+    return '${l.year}-${l.month.toString().padLeft(2, '0')}-${l.day.toString().padLeft(2, '0')}';
+  }
+
+  static Map<String, dynamic>? _songById(int id) =>
+      _songs.where((s) => s['id'] == id).firstOrNull;
+
+  static Map<String, dynamic> _songRef(int id) {
+    final s = _songById(id);
+    return {
+      'id': id,
+      'title': s?['title'] ?? 'Deleted track #$id',
+      'artist': (s?['artist'] as Map?)?['name'] ?? '',
+      'artwork': s?['artwork'] ?? '',
+      'genre': (s?['genre'] as Map?)?['name'] ?? '',
+    };
+  }
+
+  static List<Map<String, dynamic>> _rank(Map<String, int> counts, int limit,
+      Map<String, dynamic> Function(String key, int count) build) {
+    final entries = counts.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    return entries.take(limit).map((e) => build(e.key, e.value)).toList();
+  }
+
+  Future<Map<String, dynamic>> _overview(Session session, Request request) async {
+    final now = DateTime.now().toUtc();
+    final off = _tzOffset(request);
+    final today = _localMidnight(now, off, 0);
+    final yesterday = _localMidnight(now, off, 1);
+    final start = _localMidnight(now, off, 13);
+    final week = _localMidnight(now, off, 6);
+    final prevWeek = _localMidnight(now, off, 13);
+
+    final events = await NupePlayEvent.db.find(session, where: (t) => t.createdAt >= start);
+    final listeners = await NupeListener.db.find(session);
+    final online = await NupeListenerService.countOnline(session);
+
+    final days = [for (var i = 13; i >= 0; i--) _dayKey(_localMidnight(now, off, i), off)];
+    final streamsPerDay = {for (final d in days) d: 0};
+    final downloadsPerDay = {for (final d in days) d: 0};
+    final newPerDay = {for (final d in days) d: 0};
+    final songCounts = <String, int>{};
+    final artistCounts = <String, int>{};
+    var streamsToday = 0, streamsYesterday = 0, downloadsToday = 0, streams7 = 0, streamsPrev7 = 0;
+
+    for (final e in events) {
+      final key = _dayKey(e.createdAt, off);
+      if (e.kind == 'download') {
+        if (downloadsPerDay.containsKey(key)) downloadsPerDay[key] = downloadsPerDay[key]! + 1;
+        if (!e.createdAt.isBefore(today)) downloadsToday++;
+        continue;
+      }
+      if (streamsPerDay.containsKey(key)) streamsPerDay[key] = streamsPerDay[key]! + 1;
+      if (!e.createdAt.isBefore(today)) {
+        streamsToday++;
+      } else if (!e.createdAt.isBefore(yesterday)) {
+        streamsYesterday++;
+      }
+      if (!e.createdAt.isBefore(week)) {
+        streams7++;
+        songCounts['${e.songId}'] = (songCounts['${e.songId}'] ?? 0) + 1;
+        final artist = _songRef(e.songId)['artist'] as String;
+        if (artist.isNotEmpty) artistCounts[artist] = (artistCounts[artist] ?? 0) + 1;
+      } else if (!e.createdAt.isBefore(prevWeek)) {
+        streamsPrev7++;
+      }
+    }
+
+    var newToday = 0, newYesterday = 0, new7 = 0, newPrev7 = 0;
+    for (final l in listeners) {
+      final key = _dayKey(l.createdAt, off);
+      if (newPerDay.containsKey(key)) newPerDay[key] = newPerDay[key]! + 1;
+      if (!l.createdAt.isBefore(today)) {
+        newToday++;
+      } else if (!l.createdAt.isBefore(yesterday)) {
+        newYesterday++;
+      }
+      if (!l.createdAt.isBefore(week)) {
+        new7++;
+      } else if (!l.createdAt.isBefore(prevWeek)) {
+        newPrev7++;
+      }
+    }
+
+    // Recent activity: new listeners, uploads, reports
+    final activity = <Map<String, dynamic>>[];
+    final recentListeners = [...listeners]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    for (final l in recentListeners.take(10)) {
+      activity.add({
+        'type': 'listener',
+        'title': NupeListenerService.fullName(l),
+        'subtitle': '@${l.username} joined',
+        'id': l.id,
+        'at': l.createdAt.toIso8601String(),
+      });
+    }
+    for (final s in _songs.where((s) => s['uploaded_at'] != null)) {
+      activity.add({
+        'type': 'upload',
+        'title': s['title'],
+        'subtitle': 'Uploaded · ${(s['artist'] as Map?)?['name'] ?? ''}',
+        'id': s['id'],
+        'at': s['uploaded_at'],
+      });
+    }
+    final reports = await NupeReport.db.find(session,
+        orderBy: (t) => t.createdAt, orderDescending: true, limit: 10);
+    for (final r in reports) {
+      activity.add({
+        'type': 'report',
+        'title': r.itemLabel ?? '${r.itemType} #${r.itemId}',
+        'subtitle': 'Reported · ${r.reason}',
+        'id': r.id,
+        'at': r.createdAt.toIso8601String(),
+      });
+    }
+    activity.sort((a, b) => '${b['at']}'.compareTo('${a['at']}'));
+
+    return {
+      'kpis': {
+        'listeners_total': listeners.length,
+        'online': online,
+        'new_today': newToday,
+        'new_yesterday': newYesterday,
+        'new_7d': new7,
+        'new_prev_7d': newPrev7,
+        'streams_today': streamsToday,
+        'streams_yesterday': streamsYesterday,
+        'downloads_today': downloadsToday,
+        'streams_7d': streams7,
+        'streams_prev_7d': streamsPrev7,
+      },
+      'streams_per_day': [
+        for (final d in days) {'date': d, 'streams': streamsPerDay[d], 'downloads': downloadsPerDay[d]}
+      ],
+      'new_listeners_per_day': [for (final d in days) {'date': d, 'count': newPerDay[d]}],
+      'top_songs': _rank(songCounts, 5,
+          (k, c) => {..._songRef(int.parse(k)), 'count': c}),
+      'top_artists': _rank(artistCounts, 5, (k, c) {
+        final a = _artists.where((x) => x['name'] == k).firstOrNull;
+        return {'name': k, 'image': a?['image'], 'count': c};
+      }),
+      'activity': activity.take(15).toList(),
+      'pending_reports': await NupeReport.db.count(session, where: (t) => t.status.equals('pending')),
+      'server_time': now.toIso8601String(),
+    };
+  }
+
+  Future<Map<String, dynamic>> _charts(Session session, Request request) async {
+    final now = DateTime.now().toUtc();
+    final off = _tzOffset(request);
+    final range = request.url.queryParameters['range'] ?? 'week';
+    final daysBack = switch (range) { 'today' => 0, 'month' => 29, _ => 6 };
+    final from = _localMidnight(now, off, daysBack);
+    final events = await NupePlayEvent.db.find(session,
+        where: (t) => (t.createdAt >= from) & t.kind.equals('play'));
+
+    final songCounts = <String, int>{};
+    final artistCounts = <String, int>{};
+    final genreCounts = <String, int>{};
+    final listenerCounts = <String, int>{};
+    for (final e in events) {
+      final ref = _songRef(e.songId);
+      songCounts['${e.songId}'] = (songCounts['${e.songId}'] ?? 0) + 1;
+      final artist = ref['artist'] as String;
+      if (artist.isNotEmpty) artistCounts[artist] = (artistCounts[artist] ?? 0) + 1;
+      final genre = ref['genre'] as String;
+      if (genre.isNotEmpty) genreCounts[genre] = (genreCounts[genre] ?? 0) + 1;
+      if (e.listenerId != null) {
+        listenerCounts['${e.listenerId}'] = (listenerCounts['${e.listenerId}'] ?? 0) + 1;
+      }
+    }
+    final topListenerIds = _rank(listenerCounts, 10, (k, c) => {'id': int.parse(k), 'count': c});
+    final ids = topListenerIds.map((r) => r['id'] as int).toSet();
+    final people = ids.isEmpty
+        ? <NupeListener>[]
+        : await NupeListener.db.find(session, where: (t) => t.id.inSet(ids));
+    final byId = {for (final l in people) l.id!: l};
+
+    return {
+      'range': range,
+      'from': from.toIso8601String(),
+      'total_streams': events.length,
+      'unique_listeners': listenerCounts.length,
+      'anonymous_streams': events.where((e) => e.listenerId == null).length,
+      'top_songs': _rank(songCounts, 10, (k, c) => {..._songRef(int.parse(k)), 'count': c}),
+      'top_artists': _rank(artistCounts, 10, (k, c) {
+        final a = _artists.where((x) => x['name'] == k).firstOrNull;
+        return {'name': k, 'image': a?['image'], 'count': c};
+      }),
+      'top_genres': _rank(genreCounts, 10, (k, c) {
+        final g = _genres.where((x) => x['name'] == k).firstOrNull;
+        return {'name': k, 'color': g == null ? null : _genreOut(g)['color'], 'count': c};
+      }),
+      'top_listeners': topListenerIds.map((r) {
+        final l = byId[r['id']];
+        return {
+          'id': r['id'],
+          'full_name': l == null ? 'Deleted listener' : NupeListenerService.fullName(l),
+          'username': l?.username ?? '',
+          'count': r['count'],
+        };
+      }).toList(),
+    };
+  }
+
+  Future<Map<String, dynamic>> _listenerDetail(Session session, NupeListener l) async {
+    final now = DateTime.now().toUtc();
+    final events = await NupePlayEvent.db.find(session,
+        where: (t) => t.listenerId.equals(l.id),
+        orderBy: (t) => t.createdAt,
+        orderDescending: true,
+        limit: 2000);
+    final devices = <String, Map<String, dynamic>>{};
+    void seeDevice(String? platform, DateTime at, {bool counted = true}) {
+      final key = (platform == null || platform.trim().isEmpty) ? 'unknown' : platform.trim().toLowerCase();
+      final d = devices.putIfAbsent(key, () => {'platform': key, 'last_used': at.toIso8601String(), 'plays': 0});
+      if (counted) d['plays'] = (d['plays'] as int) + 1;
+      if (at.toIso8601String().compareTo(d['last_used'] as String) > 0) d['last_used'] = at.toIso8601String();
+    }
+    for (final e in events) {
+      if (e.kind == 'play') seeDevice(e.platform, e.createdAt);
+    }
+    if (l.platform != null && l.lastSeenAt != null) {
+      seeDevice(l.platform, l.lastSeenAt!, counted: false);
+    }
+    final songCounts = <String, int>{};
+    for (final e in events.where((e) => e.kind == 'play')) {
+      songCounts['${e.songId}'] = (songCounts['${e.songId}'] ?? 0) + 1;
+    }
+    return {
+      ...NupeListenerService.toAdminJson(l, now),
+      'first_name': l.firstName ?? '',
+      'last_name': l.lastName ?? '',
+      'total_streams': events.where((e) => e.kind == 'play').length,
+      'total_downloads': events.where((e) => e.kind == 'download').length,
+      'devices': devices.values.toList()
+        ..sort((a, b) => '${b['last_used']}'.compareTo('${a['last_used']}')),
+      'top_songs': _rank(songCounts, 5, (k, c) => {..._songRef(int.parse(k)), 'count': c}),
+      'history': events.take(50).map((e) => {
+            ..._songRef(e.songId),
+            'kind': e.kind,
+            'platform': e.platform,
+            'at': e.createdAt.toIso8601String(),
+          }).toList(),
+    };
+  }
+
+  static String? _itemLabel(String type, String id) {
+    final n = int.tryParse(id);
+    Map<String, dynamic>? found;
+    switch (type) {
+      case 'song':
+        found = _songs.where((s) => s['id'] == n).firstOrNull;
+        return found?['title'] as String?;
+      case 'artist':
+        found = _artists.where((a) => a['id'] == n).firstOrNull;
+      case 'album':
+        found = _albums.where((a) => a['id'] == n).firstOrNull;
+      case 'playlist':
+        found = _playlists.where((p) => p['id'] == n).firstOrNull;
+    }
+    return found?['name'] as String?;
+  }
+
+  /// "Remove" on a report unpublishes the item where the studio can (songs, playlists).
+  static void _hideReportedItem(NupeReport report) {
+    final n = int.tryParse(report.itemId);
+    if (report.itemType == 'song') {
+      final i = _songs.indexWhere((s) => s['id'] == n);
+      if (i != -1) _songs[i] = {..._songs[i], 'status': 'draft'};
+    } else if (report.itemType == 'playlist') {
+      final i = _playlists.indexWhere((p) => p['id'] == n);
+      if (i != -1) _playlists[i] = {..._playlists[i], 'status': 'draft'};
+    }
+  }
+
+  static Map<String, dynamic> _reportJson(NupeReport r, Map<int, NupeListener> people) {
+    Map<String, dynamic>? person(int? id) {
+      if (id == null) return null;
+      final l = people[id];
+      return {
+        'id': id,
+        'full_name': l == null ? 'Deleted listener' : NupeListenerService.fullName(l),
+        'username': l?.username ?? '',
+        'is_disabled': l?.isDisabled ?? false,
+      };
+    }
+    return {
+      'id': r.id,
+      'item_type': r.itemType,
+      'item_id': r.itemId,
+      'item_label': r.itemLabel ?? _itemLabel(r.itemType, r.itemId),
+      'reason': r.reason,
+      'details': r.details,
+      'reporter': person(r.reporterId),
+      'target': person(r.targetListenerId),
+      'status': r.status,
+      'created_at': r.createdAt.toIso8601String(),
+      'resolved_at': r.resolvedAt?.toIso8601String(),
+    };
   }
 }
