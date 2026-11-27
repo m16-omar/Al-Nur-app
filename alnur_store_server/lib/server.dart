@@ -58,11 +58,19 @@ void run(List<String> args) async {
 
   // Setup the executive Admin panel routes.
   final adminFile = File(Uri(path: 'web/admin/index.html').toFilePath());
-  pod.webServer.addRoute(StaticRoute.file(adminFile), '/admin/**');
+  // no-cache: browsers must revalidate (cheap via ETag) so redesigns show up
+  // immediately after a deploy instead of serving a stale cached copy.
+  pod.webServer.addRoute(
+    StaticRoute.file(adminFile, cacheControlFactory: StaticRoute.privateNoCache()),
+    '/admin/**',
+  );
 
   // Setup the executive Nupe Songs Studio & CMS routes.
   final nupeAdminFile = File(Uri(path: 'web/nupe-admin/index.html').toFilePath());
-  pod.webServer.addRoute(StaticRoute.file(nupeAdminFile), '/nupe-admin/**');
+  pod.webServer.addRoute(
+    StaticRoute.file(nupeAdminFile, cacheControlFactory: StaticRoute.privateNoCache()),
+    '/nupe-admin/**',
+  );
 
   // Setup Nupe Songs REST API endpoints
   pod.webServer.addRoute(NupeSongsApiRoute(), '/api/**');
