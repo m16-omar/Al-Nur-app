@@ -4,6 +4,8 @@ import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
 import 'package:serverpod/serverpod.dart' hide Message;
 
+import '../security/input_sanitizer.dart';
+
 /// Service for sending transactional emails (Registration OTP, Password Reset,
 /// Order Receipts, and VIP Concierge notifications) using HTTPS Port 443 relay
 /// and Gmail SMTP fallback.
@@ -13,7 +15,12 @@ class EmailService {
   static const String senderName = 'Al-Nur Modest Haute Couture';
 
   static const String relayUrl = 'https://al-nur-tau.vercel.app/api/send-email';
-  static const String relaySecret = 'alnur_luxury_vault_2026';
+  /// Shared secret for the HTTPS email relay, from the `emailRelaySecret`
+  /// password (never hard-coded). The relay is skipped when it is not set.
+  static String? _relaySecret(Session session) {
+    final v = session.passwords['emailRelaySecret']?.trim();
+    return (v == null || v.isEmpty) ? null : v;
+  }
 
   /// Dispatches email over HTTPS Port 443 REST relay to bypass container firewall blocks
   static Future<bool> _dispatchViaHttpsRelay(
@@ -22,6 +29,12 @@ class EmailService {
     required String subject,
     required String htmlBody,
   }) async {
+    final relaySecret = _relaySecret(session);
+    if (relaySecret == null) {
+      session.log('[EmailService] emailRelaySecret not set; HTTPS relay skipped.',
+          level: LogLevel.warning);
+      return false;
+    }
     HttpClient? httpClient;
     try {
       httpClient = HttpClient()..connectionTimeout = const Duration(seconds: 8);
@@ -188,6 +201,10 @@ class EmailService {
     required double totalAmount,
     required String canonicalStatus,
   }) async {
+    // Customer-entered values are escaped before going into the HTML email.
+    customerName = InputSanitizer.html(customerName);
+    shippingAddress = InputSanitizer.html(shippingAddress);
+    orderRef = InputSanitizer.html(orderRef);
     final status = canonicalStatus.toLowerCase().trim();
     int currentStep = 1;
     String stageNumber = '1';
@@ -342,7 +359,9 @@ class EmailService {
     required String email,
     String? name,
   }) async {
-    final customerName = (name != null && name.trim().isNotEmpty) ? name.trim() : 'Valued Patron';
+    final customerName = (name != null && name.trim().isNotEmpty)
+        ? InputSanitizer.html(name.trim())
+        : 'Valued Patron';
     const subject = '✨ Ahlan wa Sahlan! Welcome to Al-Nur Haute Couture';
     final htmlContent = _buildGeneralEmailHtml(
       title: 'Welcome to Al-Nur Modest Haute Couture',

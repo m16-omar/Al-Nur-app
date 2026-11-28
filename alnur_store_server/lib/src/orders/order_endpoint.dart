@@ -4,6 +4,10 @@ import 'dart:io';
 import 'package:serverpod/serverpod.dart';
 import '../generated/protocol.dart';
 import '../idempotency/idempotency_manager.dart';
+import '../security/admin_auth.dart';
+import '../security/customer_auth.dart';
+import '../security/input_sanitizer.dart';
+import '../security/rate_limiter.dart';
 import '../util/email_service.dart';
 
 /// Endpoint for handling orders, checkout, and payment fulfillment with
@@ -25,6 +29,41 @@ class OrderEndpoint extends Endpoint {
     required String itemsJson,
     String? paymentReference,
   }) async {
+    RateLimiter.enforce(session, 'order.createOrder',
+        max: 20, window: const Duration(hours: 1));
+
+    // ---- Validate & clean input ----
+    final cleanEmail = InputSanitizer.email(customerEmail);
+    if (cleanEmail.isEmpty) {
+      throw ArgumentError('A valid customer email is required.');
+    }
+    if (!totalAmount.isFinite || totalAmount <= 0 || totalAmount > 100000000) {
+      throw ArgumentError('Invalid order total.');
+    }
+    if (itemsJson.length > 100000) {
+      throw ArgumentError('Order has too many items.');
+    }
+    try {
+      final decoded = jsonDecode(itemsJson);
+      if (decoded is! List) throw const FormatException();
+    } catch (_) {
+      throw ArgumentError('Invalid order items.');
+    }
+    // A signed-in customer can only place orders for their own account.
+    final signedIn = await CustomerAuth.signedInEmail(session);
+    if (signedIn != null && signedIn != cleanEmail) {
+      throw NotAuthorizedException(
+        reason: AuthenticationFailureReason.insufficientAccess,
+        message: 'You can only place orders for your own account.',
+      );
+    }
+    customerEmail = cleanEmail;
+    customerName = InputSanitizer.text(customerName, maxLength: 120);
+    customerPhone = InputSanitizer.phone(customerPhone);
+    shippingAddress = InputSanitizer.text(shippingAddress, maxLength: 400);
+    itemsJson = _sanitizeItems(itemsJson);
+    paymentReference = InputSanitizer.optionalText(paymentReference, maxLength: 120);
+
     return await IdempotencyManager.run<StoreOrder>(
       session: session,
       idempotencyKey: idempotencyKey,
@@ -50,7 +89,9 @@ class OrderEndpoint extends Endpoint {
           customerPhone: customerPhone.trim(),
           shippingAddress: shippingAddress.trim(),
           totalAmount: totalAmount,
-          paymentStatus: paymentReference != null ? 'paid' : 'pending',
+          // Payment is never trusted from the client: it stays 'pending' until
+          // an admin confirms it (or a verified gateway callback marks it).
+          paymentStatus: 'pending',
           fulfillmentStatus: 'placed',
           idempotencyKey: idempotencyKey,
           paymentReference: paymentReference,
@@ -116,8 +157,9 @@ class OrderEndpoint extends Endpoint {
     String? customerEmail,
     String? adminKey,
   }) async {
-    // If authorized admin key is provided, return all orders for admin dashboard
-    if (adminKey != null && adminKey.trim() == 'AlNur2026!') {
+    // Admins (signed in to the admin panel) see every order. The legacy
+    // [adminKey] parameter is ignored: it was a shared secret in public code.
+    if (AlnurAdminAuth.isAdmin(session)) {
       return await StoreOrder.db.find(
         session,
         orderBy: (t) => t.createdAt,
@@ -125,12 +167,10 @@ class OrderEndpoint extends Endpoint {
       );
     }
 
-    // STRICT ISOLATION: A non-empty customer email is required.
+    // STRICT ISOLATION: only the signed-in owner of [customerEmail].
     final cleanEmail = customerEmail?.trim().toLowerCase();
-    if (cleanEmail == null || cleanEmail.isEmpty) {
-      // NEVER leak all orders to unauthenticated or empty customer email callers.
-      return [];
-    }
+    if (cleanEmail == null || cleanEmail.isEmpty) return [];
+    if (!await CustomerAuth.canAccess(session, cleanEmail)) return [];
 
     return await StoreOrder.db.find(
       session,
@@ -145,9 +185,7 @@ class OrderEndpoint extends Endpoint {
     Session session, {
     required String adminKey,
   }) async {
-    if (adminKey.trim() != 'AlNur2026!') {
-      return [];
-    }
+    AlnurAdminAuth.requireAdmin(session);
     return await StoreOrder.db.find(
       session,
       orderBy: (t) => t.createdAt,
@@ -155,15 +193,35 @@ class OrderEndpoint extends Endpoint {
     );
   }
 
-  /// Official Selar Merchant Integration Credentials
-  static const String selarApiKey = 'sat_873skzy08l1889v50814bs77093r4818j38f8';
-  static const String selarStoreUrl = 'https://selar.com/h3wa923367';
+  /// Monnify credentials come from Serverpod passwords (never from code):
+  /// `monnifyApiKey`, `monnifySecretKey`, `monnifyContractCode` and optional
+  /// `monnifyBaseUrl` (defaults to the sandbox).
+  static String? _secret(Session session, String name) {
+    final v = session.passwords[name]?.trim();
+    return (v == null || v.isEmpty) ? null : v;
+  }
 
-  /// Official Monnify Merchant Integration Credentials (Sandbox / Live)
-  static const String monnifyApiKey = 'MK_TEST_F0NB310FSJ';
-  static const String monnifySecretKey = 'GH7QBNC73BVC5XWQ4BHTYYHDDHANB35B';
-  static const String monnifyContractCode = '6355760337';
-  static const String monnifyBaseUrl = 'https://sandbox.monnify.com';
+  /// Payment statuses an admin may set.
+  static const _paymentStatuses = {
+    'paid', 'pending', 'refunded', 'failed', 'verified', 'cancelled',
+  };
+
+  /// Cleans the free-text fields inside the order items JSON.
+  static String _sanitizeItems(String itemsJson) {
+    final list = jsonDecode(itemsJson) as List;
+    final cleaned = list.take(200).map((item) {
+      if (item is! Map) return <String, dynamic>{};
+      return item.map((k, v) => MapEntry(
+            InputSanitizer.text('$k', maxLength: 40),
+            v is String
+                ? (k == 'imageUrl'
+                    ? (InputSanitizer.imageUrl(v) ?? '')
+                    : InputSanitizer.text(v, maxLength: 300))
+                : (v is num || v is bool || v == null ? v : InputSanitizer.text('$v', maxLength: 300)),
+          ));
+    }).toList();
+    return jsonEncode(cleaned);
+  }
 
   /// Initializes a Monnify payment transaction with exact dynamic Naira amount,
   /// returning the Monnify hosted checkout URL (supporting Cards, Dynamic Bank Transfer, and USSD).
@@ -176,6 +234,25 @@ class OrderEndpoint extends Endpoint {
     String? customerPhone,
     String? redirectUrl,
   }) async {
+    RateLimiter.enforce(session, 'order.initializeMonnifyPayment',
+        max: 20, window: const Duration(minutes: 10));
+    if (!amount.isFinite || amount <= 0 || amount > 100000000) {
+      throw ArgumentError('Invalid amount.');
+    }
+    final monnifyApiKey = _secret(session, 'monnifyApiKey');
+    final monnifySecretKey = _secret(session, 'monnifySecretKey');
+    final monnifyContractCode = _secret(session, 'monnifyContractCode');
+    final monnifyBaseUrl =
+        _secret(session, 'monnifyBaseUrl') ?? 'https://sandbox.monnify.com';
+    if (monnifyApiKey == null || monnifySecretKey == null || monnifyContractCode == null) {
+      session.log('Monnify is not configured (monnifyApiKey / monnifySecretKey / monnifyContractCode).',
+          level: LogLevel.error);
+      return null;
+    }
+    customerName = InputSanitizer.text(customerName, maxLength: 120);
+    customerEmail = InputSanitizer.email(customerEmail);
+    orderRef = InputSanitizer.text(orderRef, maxLength: 80);
+    redirectUrl = InputSanitizer.url(redirectUrl);
     try {
       final client = HttpClient()..connectionTimeout = const Duration(seconds: 12);
 
@@ -240,8 +317,8 @@ class OrderEndpoint extends Endpoint {
         session.log('Monnify init-transaction failed: ${initResp.statusCode} -> $initBody', level: LogLevel.error);
         return null;
       }
-    } catch (e, stack) {
-      session.log('Monnify initialization error: $e\n$stack', level: LogLevel.error);
+    } catch (e) {
+      session.log('Monnify initialization error: $e', level: LogLevel.error);
       return null;
     }
   }
@@ -255,6 +332,7 @@ class OrderEndpoint extends Endpoint {
     required String status,
     String? idempotencyKey,
   }) async {
+    AlnurAdminAuth.requireAdmin(session);
     final effectiveKey = idempotencyKey ?? 'webhook-$paymentReference';
 
     return await IdempotencyManager.run<StoreOrder?>(
@@ -275,8 +353,10 @@ class OrderEndpoint extends Endpoint {
         if (order == null) return null;
 
         order.paymentReference = paymentReference;
-        order.paymentStatus =
-            status.toLowerCase() == 'success' ? 'paid' : status;
+        final st = status.toLowerCase().trim();
+        order.paymentStatus = st == 'success'
+            ? 'paid'
+            : (_paymentStatuses.contains(st) ? st : 'pending');
         order.updatedAt = DateTime.now();
 
         return await StoreOrder.db.updateRow(session, order);
@@ -295,6 +375,7 @@ class OrderEndpoint extends Endpoint {
     required String orderRef,
     required String fulfillmentStatus,
   }) async {
+    AlnurAdminAuth.requireAdmin(session);
     final order = await StoreOrder.db.findFirstRow(
       session,
       where: (t) => t.orderRef.equals(orderRef),
@@ -341,15 +422,20 @@ class OrderEndpoint extends Endpoint {
     required String paymentStatus,
     String? paymentReference,
   }) async {
+    AlnurAdminAuth.requireAdmin(session);
     final order = await StoreOrder.db.findFirstRow(
       session,
       where: (t) => t.orderRef.equals(orderRef),
     );
     if (order == null) return null;
 
-    order.paymentStatus = paymentStatus.toLowerCase().trim();
+    final cleanStatus = paymentStatus.toLowerCase().trim();
+    if (!_paymentStatuses.contains(cleanStatus)) {
+      throw ArgumentError('Unknown payment status.');
+    }
+    order.paymentStatus = cleanStatus;
     if (paymentReference != null && paymentReference.isNotEmpty) {
-      order.paymentReference = paymentReference;
+      order.paymentReference = InputSanitizer.text(paymentReference, maxLength: 120);
     }
     order.updatedAt = DateTime.now();
 
@@ -361,6 +447,7 @@ class OrderEndpoint extends Endpoint {
     Session session, {
     required String orderRef,
   }) async {
+    AlnurAdminAuth.requireAdmin(session);
     final order = await StoreOrder.db.findFirstRow(
       session,
       where: (t) => t.orderRef.equals(orderRef),

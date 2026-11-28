@@ -4,9 +4,21 @@ import 'package:serverpod/serverpod.dart';
 import '../generated/protocol.dart';
 import '../util/cloudflare_r2_config.dart';
 import '../util/storage_path_helper.dart';
+import '../security/admin_auth.dart';
 
 /// Endpoint for handling file and image uploads and storage backed by Cloudflare R2.
 class StorageEndpoint extends Endpoint {
+  static const _maxUploadBytes = 10 * 1024 * 1024; // 10 MB
+  static const _allowedExtensions = {'jpg', 'jpeg', 'png', 'webp', 'gif', 'avif'};
+
+  /// Only the public bucket can be targeted from clients.
+  static String _storage(String? id) {
+    if (id != null && id != 'public') {
+      throw ArgumentError('Unknown storage.');
+    }
+    return 'public';
+  }
+
   /// Checks whether Cloudflare R2 cloud storage is actively connected.
   Future<bool> isCloudflareConfigured(Session session) async {
     return CloudflareR2Setup.isConfigured;
@@ -20,12 +32,15 @@ class StorageEndpoint extends Endpoint {
     String? storageId,
     int? maxFileSize,
   }) async {
+    AlnurAdminAuth.requireAdmin(session);
     final sanitizedPath = StoragePathHelper.sanitizePath(path);
-    final targetStorage = storageId ?? 'public';
+    final targetStorage = _storage(storageId);
     return await session.storage.createDirectFileUploadDescription(
       storageId: targetStorage,
       path: sanitizedPath,
-      maxFileSize: maxFileSize ?? 20 * 1024 * 1024, // 20 MB default
+      maxFileSize: (maxFileSize == null || maxFileSize > _maxUploadBytes)
+          ? _maxUploadBytes
+          : maxFileSize,
     );
   }
 
@@ -35,8 +50,9 @@ class StorageEndpoint extends Endpoint {
     required String path,
     String? storageId,
   }) async {
+    AlnurAdminAuth.requireAdmin(session);
     final sanitizedPath = StoragePathHelper.sanitizePath(path);
-    final targetStorage = storageId ?? 'public';
+    final targetStorage = _storage(storageId);
 
     final verified = await session.storage.verifyDirectFileUpload(
       storageId: targetStorage,
@@ -73,12 +89,28 @@ class StorageEndpoint extends Endpoint {
     String? mimeType,
     String? storageId,
   }) async {
+    AlnurAdminAuth.requireAdmin(session);
     try {
       final sanitizedPath = StoragePathHelper.sanitizePath(path);
-      final targetStorage = storageId ?? 'public';
+      final targetStorage = _storage(storageId);
 
+      final ext = sanitizedPath.split('.').last.toLowerCase();
+      if (!_allowedExtensions.contains(ext)) {
+        return StorageUploadResult(
+          success: false,
+          path: sanitizedPath,
+          error: 'Only image files (jpg, png, webp, gif, avif) can be uploaded.',
+        );
+      }
       final cleanBase64 = StoragePathHelper.stripBase64Header(base64Data);
       final bytes = base64.decode(cleanBase64);
+      if (bytes.length > _maxUploadBytes) {
+        return StorageUploadResult(
+          success: false,
+          path: sanitizedPath,
+          error: 'File is larger than 10 MB.',
+        );
+      }
       final byteData = ByteData.sublistView(bytes);
 
       await session.storage.storeFile(
@@ -102,10 +134,11 @@ class StorageEndpoint extends Endpoint {
         mimeType: detectedMime,
       );
     } catch (e) {
+      session.log('Upload failed: $e', level: LogLevel.warning);
       return StorageUploadResult(
         success: false,
         path: path,
-        error: e.toString(),
+        error: 'Upload failed. Check the file and try again.',
       );
     }
   }
@@ -118,6 +151,7 @@ class StorageEndpoint extends Endpoint {
     required String fileName,
     String? productSlug,
   }) async {
+    AlnurAdminAuth.requireAdmin(session);
     final path = StoragePathHelper.generatePath(
       folder: 'products',
       filename: fileName,
@@ -140,7 +174,7 @@ class StorageEndpoint extends Endpoint {
   }) async {
     final sanitizedPath = StoragePathHelper.sanitizePath(path);
     final uri = await session.storage.getPublicUrl(
-      storageId: storageId ?? 'public',
+      storageId: _storage(storageId),
       path: sanitizedPath,
     );
     return uri?.toString();
@@ -154,7 +188,7 @@ class StorageEndpoint extends Endpoint {
   }) async {
     final sanitizedPath = StoragePathHelper.sanitizePath(path);
     return await session.storage.fileExists(
-      storageId: storageId ?? 'public',
+      storageId: _storage(storageId),
       path: sanitizedPath,
     );
   }
@@ -165,10 +199,11 @@ class StorageEndpoint extends Endpoint {
     required String path,
     String? storageId,
   }) async {
+    AlnurAdminAuth.requireAdmin(session);
     final sanitizedPath = StoragePathHelper.sanitizePath(path);
     try {
       await session.storage.deleteFile(
-        storageId: storageId ?? 'public',
+        storageId: _storage(storageId),
         path: sanitizedPath,
       );
       return true;

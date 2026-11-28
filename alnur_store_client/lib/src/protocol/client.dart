@@ -561,6 +561,49 @@ class EndpointProduct extends _i1.EndpointRef {
   );
 }
 
+/// Login / session endpoints for the Al-Nur Store admin panel.
+///
+/// Returns JSON strings so the plain-JavaScript admin page can use them
+/// without a generated client.
+/// {@category Endpoint}
+class EndpointAdminAuth extends _i1.EndpointRef {
+  EndpointAdminAuth(_i1.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'adminAuth';
+
+  /// Signs in with the configured admin credentials.
+  ///
+  /// Locked for 15 minutes after 5 failed attempts for an email or 10 from one IP.
+  _i2.Future<String> login({
+    required String email,
+    required String password,
+    bool? remember,
+  }) => caller.callServerEndpoint<String>(
+    'adminAuth',
+    'login',
+    {
+      'email': email,
+      'password': password,
+      'remember': remember,
+    },
+  );
+
+  /// Returns the signed-in admin, or `{ok:false}` if the token is invalid.
+  _i2.Future<String> me() => caller.callServerEndpoint<String>(
+    'adminAuth',
+    'me',
+    {},
+  );
+
+  /// Revokes the current admin token.
+  _i2.Future<bool> logout() => caller.callServerEndpoint<bool>(
+    'adminAuth',
+    'logout',
+    {},
+  );
+}
+
 /// Endpoint for handling file and image uploads and storage backed by Cloudflare R2.
 /// {@category Endpoint}
 class EndpointStorage extends _i1.EndpointRef {
@@ -832,6 +875,7 @@ class Client extends _i1.ServerpodClientShared {
     greeting = EndpointGreeting(this);
     order = EndpointOrder(this);
     product = EndpointProduct(this);
+    adminAuth = EndpointAdminAuth(this);
     storage = EndpointStorage(this);
     user = EndpointUser(this);
     modules = Modules(this);
@@ -851,6 +895,8 @@ class Client extends _i1.ServerpodClientShared {
 
   late final EndpointProduct product;
 
+  late final EndpointAdminAuth adminAuth;
+
   late final EndpointStorage storage;
 
   late final EndpointUser user;
@@ -866,6 +912,7 @@ class Client extends _i1.ServerpodClientShared {
     'greeting': greeting,
     'order': order,
     'product': product,
+    'adminAuth': adminAuth,
     'storage': storage,
     'user': user,
   };

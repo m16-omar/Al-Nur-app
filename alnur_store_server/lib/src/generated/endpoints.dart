@@ -19,20 +19,21 @@ import '../categories/category_endpoint.dart' as _i5;
 import '../greetings/greeting_endpoint.dart' as _i6;
 import '../orders/order_endpoint.dart' as _i7;
 import '../products/product_endpoint.dart' as _i8;
-import '../storage/storage_endpoint.dart' as _i9;
-import '../users/user_endpoint.dart' as _i10;
+import '../security/admin_auth_endpoint.dart' as _i9;
+import '../storage/storage_endpoint.dart' as _i10;
+import '../users/user_endpoint.dart' as _i11;
 import 'package:alnur_store_server/src/generated/categories/store_category.dart'
-    as _i11;
-import 'package:alnur_store_server/src/generated/products/store_product.dart'
     as _i12;
-import 'package:alnur_store_server/src/generated/users/user_account_info.dart'
+import 'package:alnur_store_server/src/generated/products/store_product.dart'
     as _i13;
-import 'package:alnur_store_server/src/generated/users/user_address.dart'
+import 'package:alnur_store_server/src/generated/users/user_account_info.dart'
     as _i14;
-import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
+import 'package:alnur_store_server/src/generated/users/user_address.dart'
     as _i15;
-import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
+import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
     as _i16;
+import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
+    as _i17;
 
 class Endpoints extends _i1.EndpointDispatch {
   @override
@@ -80,13 +81,19 @@ class Endpoints extends _i1.EndpointDispatch {
           'product',
           null,
         ),
-      'storage': _i9.StorageEndpoint()
+      'adminAuth': _i9.AdminAuthEndpoint()
+        ..initialize(
+          server,
+          'adminAuth',
+          null,
+        ),
+      'storage': _i10.StorageEndpoint()
         ..initialize(
           server,
           'storage',
           null,
         ),
-      'user': _i10.UserEndpoint()
+      'user': _i11.UserEndpoint()
         ..initialize(
           server,
           'user',
@@ -369,7 +376,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'category': _i1.ParameterDescription(
               name: 'category',
-              type: _i1.getType<_i11.StoreCategory>(),
+              type: _i1.getType<_i12.StoreCategory>(),
               nullable: false,
             ),
           },
@@ -388,7 +395,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'category': _i1.ParameterDescription(
               name: 'category',
-              type: _i1.getType<_i11.StoreCategory>(),
+              type: _i1.getType<_i12.StoreCategory>(),
               nullable: false,
             ),
           },
@@ -798,7 +805,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'product': _i1.ParameterDescription(
               name: 'product',
-              type: _i1.getType<_i12.StoreProduct>(),
+              type: _i1.getType<_i13.StoreProduct>(),
               nullable: false,
             ),
             'idempotencyKey': _i1.ParameterDescription(
@@ -823,7 +830,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'product': _i1.ParameterDescription(
               name: 'product',
-              type: _i1.getType<_i12.StoreProduct>(),
+              type: _i1.getType<_i13.StoreProduct>(),
               nullable: false,
             ),
           },
@@ -858,6 +865,63 @@ class Endpoints extends _i1.EndpointDispatch {
         ),
       },
     );
+    connectors['adminAuth'] = _i1.EndpointConnector(
+      name: 'adminAuth',
+      endpoint: endpoints['adminAuth']!,
+      methodConnectors: {
+        'login': _i1.MethodConnector(
+          name: 'login',
+          params: {
+            'email': _i1.ParameterDescription(
+              name: 'email',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'password': _i1.ParameterDescription(
+              name: 'password',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'remember': _i1.ParameterDescription(
+              name: 'remember',
+              type: _i1.getType<bool?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['adminAuth'] as _i9.AdminAuthEndpoint).login(
+                    session,
+                    email: params['email'],
+                    password: params['password'],
+                    remember: params['remember'],
+                  ),
+        ),
+        'me': _i1.MethodConnector(
+          name: 'me',
+          params: {},
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['adminAuth'] as _i9.AdminAuthEndpoint).me(session),
+        ),
+        'logout': _i1.MethodConnector(
+          name: 'logout',
+          params: {},
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['adminAuth'] as _i9.AdminAuthEndpoint)
+                  .logout(session),
+        ),
+      },
+    );
     connectors['storage'] = _i1.EndpointConnector(
       name: 'storage',
       endpoint: endpoints['storage']!,
@@ -869,7 +933,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['storage'] as _i9.StorageEndpoint)
+              ) async => (endpoints['storage'] as _i10.StorageEndpoint)
                   .isCloudflareConfigured(session),
         ),
         'getDirectUploadDescription': _i1.MethodConnector(
@@ -895,7 +959,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['storage'] as _i9.StorageEndpoint)
+              ) async => (endpoints['storage'] as _i10.StorageEndpoint)
                   .getDirectUploadDescription(
                     session,
                     path: params['path'],
@@ -921,7 +985,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['storage'] as _i9.StorageEndpoint)
+              ) async => (endpoints['storage'] as _i10.StorageEndpoint)
                   .verifyDirectUpload(
                     session,
                     path: params['path'],
@@ -957,7 +1021,7 @@ class Endpoints extends _i1.EndpointDispatch {
                 _i1.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['storage'] as _i9.StorageEndpoint).uploadBase64(
+                  (endpoints['storage'] as _i10.StorageEndpoint).uploadBase64(
                     session,
                     path: params['path'],
                     base64Data: params['base64Data'],
@@ -988,7 +1052,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['storage'] as _i9.StorageEndpoint)
+              ) async => (endpoints['storage'] as _i10.StorageEndpoint)
                   .uploadProductImage(
                     session,
                     base64Data: params['base64Data'],
@@ -1015,7 +1079,7 @@ class Endpoints extends _i1.EndpointDispatch {
                 _i1.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['storage'] as _i9.StorageEndpoint).getPublicUrl(
+                  (endpoints['storage'] as _i10.StorageEndpoint).getPublicUrl(
                     session,
                     path: params['path'],
                     storageId: params['storageId'],
@@ -1040,7 +1104,7 @@ class Endpoints extends _i1.EndpointDispatch {
                 _i1.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['storage'] as _i9.StorageEndpoint).fileExists(
+                  (endpoints['storage'] as _i10.StorageEndpoint).fileExists(
                     session,
                     path: params['path'],
                     storageId: params['storageId'],
@@ -1065,7 +1129,7 @@ class Endpoints extends _i1.EndpointDispatch {
                 _i1.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['storage'] as _i9.StorageEndpoint).deleteFile(
+                  (endpoints['storage'] as _i10.StorageEndpoint).deleteFile(
                     session,
                     path: params['path'],
                     storageId: params['storageId'],
@@ -1090,7 +1154,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['user'] as _i10.UserEndpoint).getProfile(
+              ) async => (endpoints['user'] as _i11.UserEndpoint).getProfile(
                 session,
                 email: params['email'],
               ),
@@ -1100,7 +1164,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'info': _i1.ParameterDescription(
               name: 'info',
-              type: _i1.getType<_i13.UserAccountInfo>(),
+              type: _i1.getType<_i14.UserAccountInfo>(),
               nullable: false,
             ),
           },
@@ -1108,7 +1172,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['user'] as _i10.UserEndpoint).updateProfile(
+              ) async => (endpoints['user'] as _i11.UserEndpoint).updateProfile(
                 session,
                 info: params['info'],
               ),
@@ -1126,7 +1190,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['user'] as _i10.UserEndpoint).getAddresses(
+              ) async => (endpoints['user'] as _i11.UserEndpoint).getAddresses(
                 session,
                 email: params['email'],
               ),
@@ -1136,7 +1200,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'address': _i1.ParameterDescription(
               name: 'address',
-              type: _i1.getType<_i14.UserAddress>(),
+              type: _i1.getType<_i15.UserAddress>(),
               nullable: false,
             ),
           },
@@ -1144,7 +1208,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['user'] as _i10.UserEndpoint).saveAddress(
+              ) async => (endpoints['user'] as _i11.UserEndpoint).saveAddress(
                 session,
                 address: params['address'],
               ),
@@ -1168,7 +1232,7 @@ class Endpoints extends _i1.EndpointDispatch {
                 _i1.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['user'] as _i10.UserEndpoint).setDefaultAddress(
+                  (endpoints['user'] as _i11.UserEndpoint).setDefaultAddress(
                     session,
                     id: params['id'],
                     email: params['email'],
@@ -1192,7 +1256,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['user'] as _i10.UserEndpoint).deleteAddress(
+              ) async => (endpoints['user'] as _i11.UserEndpoint).deleteAddress(
                 session,
                 id: params['id'],
                 email: params['email'],
@@ -1217,7 +1281,7 @@ class Endpoints extends _i1.EndpointDispatch {
                 _i1.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['user'] as _i10.UserEndpoint).sendWelcomeEmail(
+                  (endpoints['user'] as _i11.UserEndpoint).sendWelcomeEmail(
                     session,
                     email: params['email'],
                     name: params['name'],
@@ -1247,7 +1311,7 @@ class Endpoints extends _i1.EndpointDispatch {
                 _i1.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['user'] as _i10.UserEndpoint).registerCustomer(
+                  (endpoints['user'] as _i11.UserEndpoint).registerCustomer(
                     session,
                     email: params['email'],
                     fullName: params['fullName'],
@@ -1261,14 +1325,14 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['user'] as _i10.UserEndpoint)
+              ) async => (endpoints['user'] as _i11.UserEndpoint)
                   .getAdminCustomers(session),
         ),
       },
     );
-    modules['serverpod_auth_idp'] = _i15.Endpoints()
+    modules['serverpod_auth_idp'] = _i16.Endpoints()
       ..initializeEndpoints(server);
-    modules['serverpod_auth_core'] = _i16.Endpoints()
+    modules['serverpod_auth_core'] = _i17.Endpoints()
       ..initializeEndpoints(server);
   }
 }

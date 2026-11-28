@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:serverpod/serverpod.dart';
 import '../generated/protocol.dart';
+import '../security/rate_limiter.dart';
 
 class AiAssistantEndpoint extends Endpoint {
   /// Analyzes customer query, modesty guidelines, budget, and occasion,
@@ -15,6 +16,10 @@ class AiAssistantEndpoint extends Endpoint {
     String? occasion,
     String? preferredCategory,
   }) async {
+    // Each query can call the paid Gemini API: 20 per 10 minutes per IP.
+    RateLimiter.enforce(session, 'aiAssistant.query',
+        max: 20, window: const Duration(minutes: 10));
+    if (userQuery.length > 1000) userQuery = userQuery.substring(0, 1000);
     final queryLower = userQuery.toLowerCase().trim();
 
     // 1. Detect occasion if not explicitly supplied

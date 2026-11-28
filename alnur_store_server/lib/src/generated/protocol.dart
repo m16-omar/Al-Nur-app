@@ -26,17 +26,18 @@ import 'nupe/nupe_play_event.dart' as _i10;
 import 'nupe/nupe_report.dart' as _i11;
 import 'orders/store_order.dart' as _i12;
 import 'products/store_product.dart' as _i13;
-import 'storage/upload_result.dart' as _i14;
-import 'users/user_account_info.dart' as _i15;
-import 'users/user_address.dart' as _i16;
+import 'security/rate_limit_exception.dart' as _i14;
+import 'storage/upload_result.dart' as _i15;
+import 'users/user_account_info.dart' as _i16;
+import 'users/user_address.dart' as _i17;
 import 'package:alnur_store_server/src/generated/categories/store_category.dart'
-    as _i17;
-import 'package:alnur_store_server/src/generated/orders/store_order.dart'
     as _i18;
-import 'package:alnur_store_server/src/generated/products/store_product.dart'
+import 'package:alnur_store_server/src/generated/orders/store_order.dart'
     as _i19;
-import 'package:alnur_store_server/src/generated/users/user_address.dart'
+import 'package:alnur_store_server/src/generated/products/store_product.dart'
     as _i20;
+import 'package:alnur_store_server/src/generated/users/user_address.dart'
+    as _i21;
 export 'ai/ai_stylist.dart';
 export 'categories/store_category.dart';
 export 'greetings/greeting.dart';
@@ -46,6 +47,7 @@ export 'nupe/nupe_play_event.dart';
 export 'nupe/nupe_report.dart';
 export 'orders/store_order.dart';
 export 'products/store_product.dart';
+export 'security/rate_limit_exception.dart';
 export 'storage/upload_result.dart';
 export 'users/user_account_info.dart';
 export 'users/user_address.dart';
@@ -1054,14 +1056,17 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i13.StoreProduct) {
       return _i13.StoreProduct.fromJson(data) as T;
     }
-    if (t == _i14.StorageUploadResult) {
-      return _i14.StorageUploadResult.fromJson(data) as T;
+    if (t == _i14.RateLimitException) {
+      return _i14.RateLimitException.fromJson(data) as T;
     }
-    if (t == _i15.UserAccountInfo) {
-      return _i15.UserAccountInfo.fromJson(data) as T;
+    if (t == _i15.StorageUploadResult) {
+      return _i15.StorageUploadResult.fromJson(data) as T;
     }
-    if (t == _i16.UserAddress) {
-      return _i16.UserAddress.fromJson(data) as T;
+    if (t == _i16.UserAccountInfo) {
+      return _i16.UserAccountInfo.fromJson(data) as T;
+    }
+    if (t == _i17.UserAddress) {
+      return _i17.UserAddress.fromJson(data) as T;
     }
     if (t == _i1.getType<_i5.AiStylistResponse?>()) {
       return (data != null ? _i5.AiStylistResponse.fromJson(data) : null) as T;
@@ -1090,15 +1095,19 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i1.getType<_i13.StoreProduct?>()) {
       return (data != null ? _i13.StoreProduct.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i14.StorageUploadResult?>()) {
-      return (data != null ? _i14.StorageUploadResult.fromJson(data) : null)
+    if (t == _i1.getType<_i14.RateLimitException?>()) {
+      return (data != null ? _i14.RateLimitException.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i15.UserAccountInfo?>()) {
-      return (data != null ? _i15.UserAccountInfo.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i15.StorageUploadResult?>()) {
+      return (data != null ? _i15.StorageUploadResult.fromJson(data) : null)
+          as T;
     }
-    if (t == _i1.getType<_i16.UserAddress?>()) {
-      return (data != null ? _i16.UserAddress.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i16.UserAccountInfo?>()) {
+      return (data != null ? _i16.UserAccountInfo.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i17.UserAddress?>()) {
+      return (data != null ? _i17.UserAddress.fromJson(data) : null) as T;
     }
     if (t == List<_i13.StoreProduct>) {
       return (data as List)
@@ -1123,25 +1132,25 @@ class Protocol extends _i1.SerializationManagerServer {
               : null)
           as T;
     }
-    if (t == List<_i17.StoreCategory>) {
+    if (t == List<_i18.StoreCategory>) {
       return (data as List)
-              .map((e) => deserialize<_i17.StoreCategory>(e))
+              .map((e) => deserialize<_i18.StoreCategory>(e))
               .toList()
           as T;
     }
-    if (t == List<_i18.StoreOrder>) {
-      return (data as List).map((e) => deserialize<_i18.StoreOrder>(e)).toList()
+    if (t == List<_i19.StoreOrder>) {
+      return (data as List).map((e) => deserialize<_i19.StoreOrder>(e)).toList()
           as T;
     }
-    if (t == List<_i19.StoreProduct>) {
+    if (t == List<_i20.StoreProduct>) {
       return (data as List)
-              .map((e) => deserialize<_i19.StoreProduct>(e))
+              .map((e) => deserialize<_i20.StoreProduct>(e))
               .toList()
           as T;
     }
-    if (t == List<_i20.UserAddress>) {
+    if (t == List<_i21.UserAddress>) {
       return (data as List)
-              .map((e) => deserialize<_i20.UserAddress>(e))
+              .map((e) => deserialize<_i21.UserAddress>(e))
               .toList()
           as T;
     }
@@ -1168,9 +1177,10 @@ class Protocol extends _i1.SerializationManagerServer {
       _i11.NupeReport => 'NupeReport',
       _i12.StoreOrder => 'StoreOrder',
       _i13.StoreProduct => 'StoreProduct',
-      _i14.StorageUploadResult => 'StorageUploadResult',
-      _i15.UserAccountInfo => 'UserAccountInfo',
-      _i16.UserAddress => 'UserAddress',
+      _i14.RateLimitException => 'RateLimitException',
+      _i15.StorageUploadResult => 'StorageUploadResult',
+      _i16.UserAccountInfo => 'UserAccountInfo',
+      _i17.UserAddress => 'UserAddress',
       _ => null,
     };
   }
@@ -1203,11 +1213,13 @@ class Protocol extends _i1.SerializationManagerServer {
         return 'StoreOrder';
       case _i13.StoreProduct():
         return 'StoreProduct';
-      case _i14.StorageUploadResult():
+      case _i14.RateLimitException():
+        return 'RateLimitException';
+      case _i15.StorageUploadResult():
         return 'StorageUploadResult';
-      case _i15.UserAccountInfo():
+      case _i16.UserAccountInfo():
         return 'UserAccountInfo';
-      case _i16.UserAddress():
+      case _i17.UserAddress():
         return 'UserAddress';
     }
     className = _i2.Protocol().getClassNameForObject(data);
@@ -1258,14 +1270,17 @@ class Protocol extends _i1.SerializationManagerServer {
     if (dataClassName == 'StoreProduct') {
       return deserialize<_i13.StoreProduct>(data['data']);
     }
+    if (dataClassName == 'RateLimitException') {
+      return deserialize<_i14.RateLimitException>(data['data']);
+    }
     if (dataClassName == 'StorageUploadResult') {
-      return deserialize<_i14.StorageUploadResult>(data['data']);
+      return deserialize<_i15.StorageUploadResult>(data['data']);
     }
     if (dataClassName == 'UserAccountInfo') {
-      return deserialize<_i15.UserAccountInfo>(data['data']);
+      return deserialize<_i16.UserAccountInfo>(data['data']);
     }
     if (dataClassName == 'UserAddress') {
-      return deserialize<_i16.UserAddress>(data['data']);
+      return deserialize<_i17.UserAddress>(data['data']);
     }
     if (dataClassName.startsWith('serverpod.')) {
       data['className'] = dataClassName.substring(10);
@@ -1317,10 +1332,10 @@ class Protocol extends _i1.SerializationManagerServer {
         return _i12.StoreOrder.t;
       case _i13.StoreProduct:
         return _i13.StoreProduct.t;
-      case _i15.UserAccountInfo:
-        return _i15.UserAccountInfo.t;
-      case _i16.UserAddress:
-        return _i16.UserAddress.t;
+      case _i16.UserAccountInfo:
+        return _i16.UserAccountInfo.t;
+      case _i17.UserAddress:
+        return _i17.UserAddress.t;
     }
     return null;
   }

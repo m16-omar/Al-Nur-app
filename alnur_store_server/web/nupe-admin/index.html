@@ -228,6 +228,60 @@
     .ds .label { display: block; margin-bottom: 6px; font-size: 12px; font-weight: 500; color: var(--muted); }
     .ds .label .req { color: var(--faint); font-weight: 400; }
     .ds .hint { margin-top: 5px; font-size: 11px; color: var(--faint); }
+
+    /* ---- Track form: audio & artwork preview ---- */
+    .ds [hidden] { display: none !important; }
+    .ds .media-prev { margin-top: 8px; border: 1px solid var(--border); border-radius: 10px; background: var(--subtle); padding: 10px; min-width: 0; }
+    .ds .media-prev > [data-show] { display: none; }
+    .ds .media-prev[data-state="empty"] > [data-show~="empty"],
+    .ds .media-prev[data-state="loading"] > [data-show~="loading"],
+    .ds .media-prev[data-state="error"] > [data-show~="error"],
+    .ds .media-prev[data-state="ready"] > [data-show~="ready"] { display: flex; }
+    .ds .mp-msg { align-items: center; gap: 8px; font-size: 12px; color: var(--muted); min-height: 32px; }
+    .ds .mp-msg svg { width: 15px; height: 15px; flex-shrink: 0; }
+    .ds .mp-msg.err { color: var(--danger); flex-wrap: wrap; }
+    .ds .mp-spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border-strong); border-top-color: var(--accent); animation: mpSpin .8s linear infinite; flex-shrink: 0; }
+    @keyframes mpSpin { to { transform: rotate(360deg); } }
+    .ds .mp-player { flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+    .ds .mp-row { display: flex; align-items: center; gap: 10px; min-width: 0; width: 100%; }
+    .ds .mp-play { width: 34px; height: 34px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--accent-strong); color: #fff; flex-shrink: 0; border: 0; cursor: pointer; }
+    .ds .mp-play:hover { background: var(--accent-hover); }
+    .ds .mp-play svg { width: 15px; height: 15px; }
+    .ds .mp-time { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; flex-shrink: 0; }
+    .ds .mp-range { -webkit-appearance: none; appearance: none; height: 4px; border-radius: 999px; background: var(--border-strong); outline: none; min-width: 0; cursor: pointer; accent-color: var(--accent-strong); }
+    .ds .mp-range::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--accent-strong); border: 0; }
+    .ds .mp-range::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--accent-strong); border: 0; }
+    .ds .mp-seek { flex: 1 1 auto; }
+    .ds .mp-vol { width: 72px; flex: 0 1 72px; }
+    .ds .mp-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+    .ds .mp-tools .icon-btn { width: 28px; height: 28px; }
+    .ds .mp-speed { height: 28px; padding: 0 6px; font-size: 11px; border-radius: 7px; border: 1px solid var(--border); background: var(--panel); color: var(--text); }
+    .ds .mp-buffer { font-size: 11px; color: var(--faint); display: none; align-items: center; gap: 6px; }
+    .ds .mp-player.buffering .mp-buffer { display: inline-flex; }
+    .ds .mini-btn { height: 26px; padding: 0 9px; font-size: 11px; font-weight: 500; border-radius: 7px; border: 1px solid var(--border); background: var(--panel); color: var(--text); display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+    .ds .mini-btn:hover { border-color: var(--border-strong); }
+    .ds .mini-btn svg { width: 12px; height: 12px; }
+    .ds .art-prev { margin-top: 8px; display: flex; gap: 12px; align-items: flex-start; min-width: 0; }
+    .ds .art-box { width: 120px; height: 120px; border-radius: 12px; border: 1px solid var(--border); background: var(--subtle); overflow: hidden; flex-shrink: 0; display: flex; align-items: center; justify-content: center; position: relative; }
+    .ds .art-box img { width: 100%; height: 100%; object-fit: cover; display: none; }
+    .ds .art-box[data-state="ready"] img { display: block; }
+    .ds .art-box .art-ph { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px; text-align: center; font-size: 11px; color: var(--faint); }
+    .ds .art-box[data-state="ready"] .art-ph { display: none; }
+    .ds .art-box[data-state="error"] .art-ph { color: var(--danger); }
+    .ds .art-box .art-ph svg { width: 22px; height: 22px; }
+    .ds .art-meta { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--muted); }
+    .ds .art-meta .err { color: var(--danger); }
+    .ds .art-meta .ok { color: var(--ok); }
+    .ds .detected { font-weight: 400; color: var(--accent); }
+    .ds .detected button { color: var(--accent); text-decoration: underline; margin-left: 4px; background: none; border: 0; padding: 0; cursor: pointer; font-size: inherit; }
+    .ds .link-check { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .ds .link-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); }
+    .ds .link-chip svg { width: 12px; height: 12px; }
+    .ds .link-chip.ok { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 35%, transparent); }
+    .ds .link-chip.err { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 35%, transparent); }
+    .ds .field-error { margin-top: 5px; font-size: 11px; color: var(--danger); display: none; }
+    .ds .field-error.show { display: block; }
+    @media (max-width: 420px) { .ds .mp-vol { width: 56px; flex-basis: 56px; } .ds .art-box { width: 96px; height: 96px; } }
     .ds .field {
       width: 100%; height: 34px; padding: 0 10px; border-radius: 6px;
       background: var(--bg); border: 1px solid var(--border); color: var(--text);
@@ -548,18 +602,18 @@
             <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Studio Admin Email</label>
             <div class="relative">
               <i data-lucide="mail" class="w-4 h-4 absolute left-3.5 top-3 text-slate-500"></i>
-              <input type="email" id="studioEmailInput" required value="admin@nupesongs.com" placeholder="admin@nupesongs.com" class="w-full bg-studio-950 border border-studio-border rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition">
+              <input type="email" id="studioEmailInput" required autocomplete="username" placeholder="admin@nupesongs.com" class="w-full bg-studio-950 border border-studio-border rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition">
             </div>
           </div>
 
           <div>
             <div class="flex items-center justify-between mb-1.5">
               <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Studio Master Key</label>
-              <span class="text-[10px] text-indigo-400 cursor-pointer hover:underline" onclick="fillStudioCredentials()">Use Demo Passkey</span>
+              
             </div>
             <div class="relative">
               <i data-lucide="lock" class="w-4 h-4 absolute left-3.5 top-3 text-slate-500"></i>
-              <input type="password" id="studioPasswordInput" required value="nupe2026admin" placeholder="••••••••••••" class="w-full bg-studio-950 border border-studio-border rounded-xl pl-10 pr-10 py-2.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition">
+              <input type="password" id="studioPasswordInput" required autocomplete="current-password" placeholder="••••••••••••" class="w-full bg-studio-950 border border-studio-border rounded-xl pl-10 pr-10 py-2.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition">
               <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3.5 top-3 text-slate-500 hover:text-slate-300">
                 <i data-lucide="eye" id="togglePasswordIcon" class="w-4 h-4"></i>
               </button>
@@ -580,22 +634,8 @@
           </button>
         </form>
 
-        <!-- Fast Development / Admin Access -->
+        <!-- Other portals -->
         <div class="mt-6 pt-5 border-t border-studio-border">
-          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 text-center mb-3">Quick Studio Access</p>
-          <div onclick="fillStudioCredentials()" class="flex items-center justify-between p-2.5 rounded-xl bg-studio-950/80 hover:bg-studio-800/80 border border-studio-border cursor-pointer transition">
-            <div class="flex items-center space-x-3">
-              <div class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-xs">
-                NS
-              </div>
-              <div>
-                <p class="text-xs font-bold text-white">Nupe Studio Admin</p>
-                <p class="text-[10px] text-slate-400 font-mono">admin@nupesongs.com</p>
-              </div>
-            </div>
-            <span class="px-2 py-1 rounded-md text-[10px] font-semibold bg-indigo-500/20 text-indigo-300">Use</span>
-          </div>
-
           <!-- Switch to Al-Nur Store Portal Link -->
           <div class="mt-4 pt-3 border-t border-studio-border text-center">
             <a href="/admin" class="inline-flex items-center space-x-1.5 text-xs text-amber-400 hover:text-amber-300 font-semibold px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 transition">
@@ -1008,7 +1048,8 @@
               </div>
               <div>
                 <label class="label" for="newTrackDuration">Duration (sec)</label>
-                <input type="number" id="newTrackDuration" value="240" min="1" class="field num">
+                <input type="number" id="newTrackDuration" min="1" placeholder="240" class="field num">
+                <p id="trkDetected" class="hint detected" hidden></p>
               </div>
               <div>
                 <label class="label" for="newTrackStatus">Status</label>
@@ -1020,12 +1061,56 @@
             </div>
             <div>
               <label class="label" for="newTrackAudioUrl">Audio URL <span class="req">· required</span></label>
-              <input type="url" id="newTrackAudioUrl" required placeholder="https://res.cloudinary.com/.../song.mp3" class="field">
+              <input type="url" id="newTrackAudioUrl" required placeholder="https://res.cloudinary.com/.../song.mp3" class="field" oninput="trkAudioInput()" onchange="trkAudioInput(true)">
               <p class="hint">Direct MP3 link from Cloudinary, R2 or any public host.</p>
+              <p id="trkAudioError" class="field-error" role="alert">Audio could not load - check the link. Fix it before saving.</p>
+              <div id="trkAudioPreview" class="media-prev" data-state="empty" aria-live="polite">
+                <audio id="trkAudio" preload="metadata"></audio>
+                <div data-show="empty" class="mp-msg"><i data-lucide="music-2"></i><span>Paste an audio link to preview it here.</span></div>
+                <div data-show="loading" class="mp-msg"><span class="mp-spin"></span><span>Loading audio...</span></div>
+                <div data-show="error" class="mp-msg err"><i data-lucide="alert-circle"></i><span>Audio could not load - check the link</span><button type="button" class="mini-btn" onclick="trkAudioRetry()"><i data-lucide="rotate-ccw"></i>Retry</button></div>
+                <div data-show="ready" class="mp-player" id="trkPlayer">
+                  <div class="mp-row">
+                    <button type="button" class="mp-play" id="trkPlayBtn" onclick="trkTogglePlay()" aria-label="Play preview"><i data-lucide="play"></i></button>
+                    <span class="mp-time" id="trkCur">0:00</span>
+                    <input type="range" class="mp-range mp-seek" id="trkSeek" min="0" max="1000" value="0" step="1" aria-label="Seek" oninput="trkSeekTo(this.value)">
+                    <span class="mp-time" id="trkDur">0:00</span>
+                  </div>
+                  <div class="mp-row">
+                    <span class="mp-buffer"><span class="mp-spin"></span>Buffering...</span>
+                    <div class="mp-tools">
+                      <button type="button" class="icon-btn" id="trkMuteBtn" onclick="trkToggleMute()" aria-label="Mute"><i data-lucide="volume-2"></i></button>
+                      <input type="range" class="mp-range mp-vol" id="trkVol" min="0" max="1" step="0.05" value="1" aria-label="Volume" oninput="trkSetVolume(this.value)">
+                      <select class="mp-speed" id="trkSpeed" aria-label="Playback speed" onchange="trkSetSpeed(this.value)">
+                        <option value="0.5">0.5×</option>
+                        <option value="1" selected>1×</option>
+                        <option value="1.5">1.5×</option>
+                        <option value="2">2×</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
             <div>
               <label class="label" for="newTrackArtworkUrl">Artwork URL</label>
-              <input type="url" id="newTrackArtworkUrl" placeholder="https://res.cloudinary.com/.../cover.png" class="field">
+              <input type="url" id="newTrackArtworkUrl" placeholder="https://res.cloudinary.com/.../cover.png" class="field" oninput="trkArtInput()" onchange="trkArtInput(true)">
+              <div class="art-prev">
+                <div class="art-box" id="trkArtBox" data-state="empty">
+                  <img id="trkArtImg" alt="Artwork preview">
+                  <div class="art-ph" id="trkArtPh"><i data-lucide="image"></i><span>No artwork yet</span></div>
+                </div>
+                <div class="art-meta">
+                  <span id="trkArtStatus">No artwork yet</span>
+                  <span id="trkArtInfo" class="hint" style="margin-top:0"></span>
+                  <div><button type="button" class="mini-btn" id="trkArtClear" onclick="trkArtClear()" hidden><i data-lucide="x"></i>Clear artwork</button></div>
+                </div>
+              </div>
+            </div>
+            <div class="link-check">
+              <button type="button" class="btn btn-secondary" id="trkTestBtn" onclick="testTrackLinks()"><i data-lucide="link-2"></i>Test links</button>
+              <span id="trkTestAudio" class="link-chip" hidden></span>
+              <span id="trkTestArt" class="link-chip" hidden></span>
             </div>
             <div>
               <label class="label" for="newTrackLyrics">Lyrics</label>
@@ -1383,11 +1468,6 @@
         if (audio) audio.pause();
         showLogin();
       }
-    }
-
-    function fillStudioCredentials() {
-      document.getElementById('studioEmailInput').value = 'admin@nupesongs.com';
-      document.getElementById('studioPasswordInput').value = 'nupe2026admin';
     }
 
     function togglePasswordVisibility() {
@@ -3367,6 +3447,8 @@
 
     async function submitNewTrack(e) {
       e.preventDefault();
+      // Check the audio (required to load) and artwork (warn) before saving.
+      if (!(await validateTrackMedia(e.target))) return;
       const payload = {
         title: document.getElementById('newTrackTitle').value,
         artist_name: document.getElementById('newTrackArtist').value,
@@ -3694,6 +3776,334 @@
     }
 
     // ------------------------------------------------------------
+    // TRACK FORM: live audio & artwork preview, link checks
+    // Uses plain <audio>/<img> elements, which load cross-origin media
+    // (Cloudinary, R2, any public host) without needing CORS headers.
+    // ------------------------------------------------------------
+    const TRK_LOAD_TIMEOUT_MS = 20000;
+    const trk = {
+      audioUrl: '', audioState: 'empty', detected: null,
+      artUrl: '', artState: 'empty', artToken: 0,
+      audioTimer: null, artTimer: null,
+    };
+    const trkEl = (id) => document.getElementById(id);
+    const trkAudioEl = () => trkEl('trkAudio');
+
+    function trkFmt(sec) {
+      if (!isFinite(sec) || sec < 0) return '0:00';
+      const s = Math.floor(sec % 60), m = Math.floor(sec / 60) % 60, h = Math.floor(sec / 3600);
+      return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(s).padStart(2, '0');
+    }
+    function trkIcon(el, name) {
+      el.innerHTML = `<i data-lucide="${name}"></i>`;
+      lucide.createIcons();
+    }
+    function trkIsHttpUrl(v) {
+      try { const u = new URL(v); return u.protocol === 'https:' || u.protocol === 'http:'; } catch (_) { return false; }
+    }
+
+    // ---------- Audio ----------
+    function trkSetAudioState(state) {
+      trk.audioState = state;
+      trkEl('trkAudioPreview').dataset.state = state;
+      if (state !== 'error') trkEl('trkAudioError').classList.remove('show');
+      lucide.createIcons();
+    }
+    function trkStopAudio() {
+      const a = trkAudioEl();
+      if (!a) return;
+      a.pause();
+      a.removeAttribute('src');
+      a.load();
+      trkUpdatePlayBtn();
+    }
+    function trkLoadAudio(url) {
+      const a = trkAudioEl();
+      trk.audioUrl = url;
+      trk.detected = null;
+      trkShowDetected();
+      a.pause();
+      trkEl('trkSeek').value = 0;
+      trkEl('trkCur').textContent = '0:00';
+      trkEl('trkDur').textContent = '0:00';
+      if (!url) { trkStopAudio(); trkSetAudioState('empty'); return; }
+      if (!trkIsHttpUrl(url)) { trkStopAudio(); trkSetAudioState('error'); return; }
+      trkSetAudioState('loading');
+      a.src = url;            // preload="metadata": fetches headers/duration only, never autoplays
+      a.load();
+    }
+    function trkAudioInput(now) {
+      clearTimeout(trk.audioTimer);
+      const url = trkEl('newTrackAudioUrl').value.trim();
+      trkResetTestChip('trkTestAudio');
+      if (url === trk.audioUrl && trk.audioState !== 'error') return;
+      trk.audioTimer = setTimeout(() => trkLoadAudio(url), now ? 0 : 450);
+    }
+    function trkAudioRetry() { trkLoadAudio(trkEl('newTrackAudioUrl').value.trim()); }
+    function trkTogglePlay() {
+      const a = trkAudioEl();
+      if (!a.src) return;
+      if (a.paused) {
+        // Pause the studio's main player so two songs never play at once.
+        if (typeof audio !== 'undefined' && audio && !audio.paused) { audio.pause(); updatePlayIcon(false); }
+        a.play().catch(() => trkSetAudioState('error'));
+      } else {
+        a.pause();
+      }
+    }
+    function trkUpdatePlayBtn() {
+      const a = trkAudioEl(), btn = trkEl('trkPlayBtn');
+      if (!a || !btn) return;
+      const playing = !a.paused && !a.ended;
+      btn.setAttribute('aria-label', playing ? 'Pause preview' : 'Play preview');
+      trkIcon(btn, playing ? 'pause' : 'play');
+    }
+    function trkSeekTo(v) {
+      const a = trkAudioEl();
+      if (isFinite(a.duration) && a.duration > 0) a.currentTime = (v / 1000) * a.duration;
+    }
+    function trkSetVolume(v) {
+      const a = trkAudioEl();
+      a.volume = Number(v);
+      a.muted = Number(v) === 0;
+      trkIcon(trkEl('trkMuteBtn'), a.muted ? 'volume-x' : (a.volume < 0.5 ? 'volume-1' : 'volume-2'));
+    }
+    function trkToggleMute() {
+      const a = trkAudioEl();
+      a.muted = !a.muted;
+      if (!a.muted && a.volume === 0) { a.volume = 0.8; trkEl('trkVol').value = 0.8; }
+      trkIcon(trkEl('trkMuteBtn'), a.muted ? 'volume-x' : (a.volume < 0.5 ? 'volume-1' : 'volume-2'));
+    }
+    function trkSetSpeed(v) { trkAudioEl().playbackRate = Number(v) || 1; }
+
+    function trkShowDetected() {
+      const el = trkEl('trkDetected');
+      const input = trkEl('newTrackDuration');
+      if (trk.detected == null) { el.hidden = true; el.innerHTML = ''; return; }
+      const current = parseInt(input.value, 10);
+      if (!input.value.trim()) {
+        input.value = trk.detected;              // empty -> auto-fill
+        el.hidden = false;
+        el.textContent = `Auto-filled from audio`;
+        return;
+      }
+      el.hidden = false;
+      if (current === trk.detected) { el.textContent = `Detected: ${trk.detected}s ✓`; return; }
+      el.innerHTML = `Detected: ${trk.detected}s<button type="button" onclick="trkUseDetected()">Use</button>`;
+    }
+    function trkUseDetected() {
+      if (trk.detected == null) return;
+      trkEl('newTrackDuration').value = trk.detected;
+      trkShowDetected();
+    }
+
+    (function wireTrackAudio() {
+      const a = trkAudioEl();
+      if (!a) return;
+      const player = trkEl('trkPlayer');
+      a.addEventListener('loadedmetadata', () => {
+        if (!a.src) return;
+        trkEl('trkDur').textContent = trkFmt(a.duration);
+        if (isFinite(a.duration) && a.duration > 0) {
+          trk.detected = Math.round(a.duration);
+          trkShowDetected();
+        }
+        a.playbackRate = Number(trkEl('trkSpeed').value) || 1;
+        trkSetAudioState('ready');
+        trkUpdatePlayBtn();
+      });
+      a.addEventListener('error', () => {
+        if (!a.getAttribute('src')) return;   // ignore the error from clearing src
+        a.pause();
+        trkSetAudioState('error');
+      });
+      a.addEventListener('timeupdate', () => {
+        trkEl('trkCur').textContent = trkFmt(a.currentTime);
+        if (isFinite(a.duration) && a.duration > 0) trkEl('trkSeek').value = Math.round((a.currentTime / a.duration) * 1000);
+      });
+      a.addEventListener('durationchange', () => { if (isFinite(a.duration)) trkEl('trkDur').textContent = trkFmt(a.duration); });
+      a.addEventListener('play', trkUpdatePlayBtn);
+      a.addEventListener('pause', trkUpdatePlayBtn);
+      a.addEventListener('ended', () => { trkUpdatePlayBtn(); trkEl('trkSeek').value = 0; });
+      a.addEventListener('waiting', () => player.classList.add('buffering'));
+      a.addEventListener('playing', () => player.classList.remove('buffering'));
+      a.addEventListener('canplay', () => player.classList.remove('buffering'));
+    })();
+
+    // Resolves true/false once the preview audio has loaded or failed.
+    function trkEnsureAudio() {
+      const url = trkEl('newTrackAudioUrl').value.trim();
+      if (url !== trk.audioUrl || trk.audioState === 'empty') trkLoadAudio(url);
+      if (trk.audioState === 'ready') return Promise.resolve(true);
+      if (trk.audioState === 'error') return Promise.resolve(false);
+      const a = trkAudioEl();
+      return new Promise(resolve => {
+        const done = (ok) => { clearTimeout(t); a.removeEventListener('loadedmetadata', onOk); a.removeEventListener('error', onErr); resolve(ok); };
+        const onOk = () => done(true);
+        const onErr = () => { if (a.getAttribute('src')) done(false); };
+        const t = setTimeout(() => { trkSetAudioState('error'); done(false); }, TRK_LOAD_TIMEOUT_MS);
+        a.addEventListener('loadedmetadata', onOk);
+        a.addEventListener('error', onErr);
+      });
+    }
+
+    // ---------- Artwork ----------
+    function trkSetArt(state, status, info) {
+      trk.artState = state;
+      const box = trkEl('trkArtBox');
+      box.dataset.state = state;
+      const ph = trkEl('trkArtPh');
+      if (state === 'error') ph.innerHTML = '<i data-lucide="image-off"></i><span>Could not load</span>';
+      else if (state === 'loading') ph.innerHTML = '<span class="mp-spin"></span><span>Loading...</span>';
+      else ph.innerHTML = '<i data-lucide="image"></i><span>No artwork yet</span>';
+      const st = trkEl('trkArtStatus');
+      st.textContent = status;
+      st.className = state === 'error' ? 'err' : (state === 'ready' ? 'ok' : '');
+      trkEl('trkArtInfo').textContent = info || '';
+      trkEl('trkArtClear').hidden = !trkEl('newTrackArtworkUrl').value.trim();
+      lucide.createIcons();
+    }
+    function trkLoadArt(url) {
+      trk.artUrl = url;
+      const token = ++trk.artToken;
+      const img = trkEl('trkArtImg');
+      if (!url) { img.removeAttribute('src'); trkSetArt('empty', 'No artwork yet'); return; }
+      if (!trkIsHttpUrl(url)) { img.removeAttribute('src'); trkSetArt('error', 'Artwork could not load - check the link'); return; }
+      trkSetArt('loading', 'Loading artwork...');
+      const probe = new Image();
+      probe.decoding = 'async';
+      probe.onload = () => {
+        if (token !== trk.artToken) return;
+        img.src = url;
+        let info = `${probe.naturalWidth} × ${probe.naturalHeight}px`;
+        // File size is only exposed when the host allows it (Timing-Allow-Origin).
+        try {
+          const entry = performance.getEntriesByName(probe.src).pop();
+          const bytes = entry && (entry.encodedBodySize || entry.transferSize);
+          if (bytes) info += ` · ${bytes >= 1048576 ? (bytes / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(bytes / 1024)) + ' KB'}`;
+        } catch (_) {}
+        if (probe.naturalWidth && probe.naturalWidth < 300) info += ' · small for cover art';
+        trkSetArt('ready', 'Artwork loaded', info);
+      };
+      probe.onerror = () => {
+        if (token !== trk.artToken) return;
+        img.removeAttribute('src');
+        trkSetArt('error', 'Artwork could not load - check the link');
+      };
+      probe.src = url;
+    }
+    function trkArtInput(now) {
+      clearTimeout(trk.artTimer);
+      const url = trkEl('newTrackArtworkUrl').value.trim();
+      trkResetTestChip('trkTestArt');
+      trkEl('trkArtClear').hidden = !url;
+      if (url === trk.artUrl && trk.artState !== 'error') return;
+      trk.artTimer = setTimeout(() => trkLoadArt(url), now ? 0 : 350);
+    }
+    function trkArtClear() {
+      trkEl('newTrackArtworkUrl').value = '';
+      trkResetTestChip('trkTestArt');
+      trkLoadArt('');
+      trkEl('newTrackArtworkUrl').focus();
+    }
+    function trkEnsureArt() {
+      const url = trkEl('newTrackArtworkUrl').value.trim();
+      if (url !== trk.artUrl || trk.artState === 'empty') trkLoadArt(url);
+      if (!url) return Promise.resolve(true);
+      return new Promise(resolve => {
+        const started = Date.now();
+        (function poll() {
+          if (trk.artState === 'ready') return resolve(true);
+          if (trk.artState === 'error') return resolve(false);
+          if (Date.now() - started > TRK_LOAD_TIMEOUT_MS) { trkSetArt('error', 'Artwork could not load - check the link'); return resolve(false); }
+          setTimeout(poll, 120);
+        })();
+      });
+    }
+
+    // ---------- Test links ----------
+    function trkResetTestChip(id) { const el = trkEl(id); if (el) { el.hidden = true; el.className = 'link-chip'; } }
+    function trkChip(id, state, text) {
+      const el = trkEl(id);
+      el.hidden = false;
+      el.className = 'link-chip' + (state === 'ok' ? ' ok' : state === 'err' ? ' err' : '');
+      const icon = state === 'ok' ? 'check-circle-2' : state === 'err' ? 'x-circle' : (state === 'skip' ? 'minus-circle' : null);
+      el.innerHTML = (icon ? `<i data-lucide="${icon}"></i>` : '<span class="mp-spin"></span>') + `<span>${text}</span>`;
+      lucide.createIcons();
+    }
+    async function testTrackLinks() {
+      const btn = trkEl('trkTestBtn');
+      btn.disabled = true;
+      const audioUrl = trkEl('newTrackAudioUrl').value.trim();
+      const artUrl = trkEl('newTrackArtworkUrl').value.trim();
+      // Force a fresh check of both links.
+      trk.audioUrl = null; trk.artUrl = null;
+      if (audioUrl) trkChip('trkTestAudio', 'wait', 'Checking audio...'); else trkChip('trkTestAudio', 'err', 'Audio: no link');
+      if (artUrl) trkChip('trkTestArt', 'wait', 'Checking artwork...'); else trkChip('trkTestArt', 'skip', 'Artwork: none');
+      const [audioOk, artOk] = await Promise.all([
+        audioUrl ? trkEnsureAudio() : Promise.resolve(false),
+        artUrl ? trkEnsureArt() : Promise.resolve(true),
+      ]);
+      if (audioUrl) trkChip('trkTestAudio', audioOk ? 'ok' : 'err', audioOk ? `Audio OK${trk.detected ? ' · ' + trkFmt(trk.detected) : ''}` : 'Audio could not load');
+      if (artUrl) trkChip('trkTestArt', artOk ? 'ok' : 'err', artOk ? 'Artwork OK' : 'Artwork could not load');
+      btn.disabled = false;
+    }
+
+    // ---------- Validation before save ----------
+    async function validateTrackMedia(form) {
+      const submit = form.querySelector('button[type=submit]');
+      const label = submit.textContent;
+      submit.disabled = true;
+      submit.textContent = 'Checking links...';
+      try {
+        const audioUrl = trkEl('newTrackAudioUrl').value.trim();
+        if (audioUrl) {
+          const ok = await trkEnsureAudio();
+          if (!ok) {
+            trkEl('trkAudioError').classList.add('show');
+            trkEl('newTrackAudioUrl').focus();
+            showToast('Audio could not load - check the link before saving', 'error');
+            return false;
+          }
+        }
+        const artUrl = trkEl('newTrackArtworkUrl').value.trim();
+        if (artUrl) {
+          const ok = await trkEnsureArt();
+          if (!ok && !confirm('Artwork failed to load, save anyway?')) {
+            trkEl('newTrackArtworkUrl').focus();
+            return false;
+          }
+        }
+        return true;
+      } finally {
+        submit.disabled = false;
+        submit.textContent = label;
+      }
+    }
+
+    // ---------- Lifecycle ----------
+    // Called whenever the Add/Edit modal opens: loads previews for the
+    // current field values (never autoplays) and stops any previous song.
+    function initTrackPreview() {
+      trkStopAudio();
+      trk.audioUrl = null; trk.artUrl = null; trk.detected = null;
+      trkEl('trkSeek').value = 0;
+      trkEl('trkSpeed').value = '1';
+      trkEl('trkPlayer').classList.remove('buffering');
+      trkResetTestChip('trkTestAudio');
+      trkResetTestChip('trkTestArt');
+      trkShowDetected();
+      trkLoadAudio(trkEl('newTrackAudioUrl').value.trim());
+      trkLoadArt(trkEl('newTrackArtworkUrl').value.trim());
+    }
+    function teardownTrackPreview() {
+      clearTimeout(trk.audioTimer);
+      clearTimeout(trk.artTimer);
+      trkStopAudio();
+      trk.artToken++;
+    }
+
+    // ------------------------------------------------------------
     // MODAL HELPERS
     // ------------------------------------------------------------
     function openModal(id) {
@@ -3721,6 +4131,7 @@
       document.getElementById('newTrackStatus').value = 'published';
       setFormMode('addTrackModal', 'addTrackTitle', false, ['Add song', 'Edit song'], ['Save song', 'Save changes']);
       openModal('addTrackModal');
+      initTrackPreview();
     }
     function openAddArtistModal() {
       editingArtistId = null;
@@ -3754,6 +4165,7 @@
       document.getElementById('newTrackStatus').value = songStatus(t);
       setFormMode('addTrackModal', 'addTrackTitle', true, ['Add song', 'Edit song'], ['Save song', 'Save changes']);
       openModal('addTrackModal');
+      initTrackPreview();
     }
     function openEditArtistModal(id) {
       const a = artists.find(x => x.id === id);
@@ -3777,7 +4189,10 @@
       setFormMode('addAlbumModal', 'addAlbumTitle', true, ['New album or EP', 'Edit album'], ['Save album', 'Save changes']);
       openModal('addAlbumModal');
     }
-    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+      if (id === 'addTrackModal') teardownTrackPreview();   // stop preview audio on close / cancel / Esc / save
+    }
 
     const MODAL_IDS = ['addTrackModal', 'addArtistModal', 'addAlbumModal', 'genreModal', 'playlistModal', 'passwordModal', 'lyricsModal'];
     document.addEventListener('keydown', (e) => {

@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'package:serverpod/serverpod.dart';
 import '../generated/protocol.dart';
 import '../idempotency/idempotency_manager.dart';
+import '../security/admin_auth.dart';
+import '../security/input_sanitizer.dart';
+import '../security/rate_limiter.dart';
 
 class ProductEndpoint extends Endpoint {
   /// Fetches products, filtering optionally by categoryId and search query.
@@ -11,6 +14,7 @@ class ProductEndpoint extends Endpoint {
     String? categoryId,
     String? search,
   }) async {
+    if (search != null && search.length > 100) search = search.substring(0, 100);
     final existing = await StoreProduct.db.find(session);
     final hasLegacy = existing.any((p) =>
         p.categoryId == 'abayas' ||
@@ -48,6 +52,7 @@ class ProductEndpoint extends Endpoint {
 
   /// Explicitly resets and reseeds the catalog with the 28 official Nigerian luxury products.
   Future<List<StoreProduct>> reseedProducts(Session session) async {
+    AlnurAdminAuth.requireAdmin(session);
     final existing = await StoreProduct.db.find(session);
     for (final p in existing) {
       await StoreProduct.db.deleteRow(session, p);
@@ -66,6 +71,8 @@ class ProductEndpoint extends Endpoint {
 
   /// Toggles favorite status on a product.
   Future<StoreProduct?> toggleFavorite(Session session, int productId) async {
+    RateLimiter.enforce(session, 'product.toggleFavorite',
+        max: 60, window: const Duration(minutes: 1));
     final product = await StoreProduct.db.findById(session, productId);
     if (product == null) return null;
 
@@ -81,6 +88,8 @@ class ProductEndpoint extends Endpoint {
     StoreProduct product, {
     String? idempotencyKey,
   }) async {
+    AlnurAdminAuth.requireAdmin(session);
+    product = _clean(product);
     return await IdempotencyManager.run<StoreProduct>(
       session: session,
       idempotencyKey: idempotencyKey,
@@ -103,11 +112,27 @@ class ProductEndpoint extends Endpoint {
     Session session,
     StoreProduct product,
   ) async {
-    return await StoreProduct.db.updateRow(session, product);
+    AlnurAdminAuth.requireAdmin(session);
+    return await StoreProduct.db.updateRow(session, _clean(product));
+  }
+
+  /// Validates admin-entered product fields (no markup, safe image URLs).
+  StoreProduct _clean(StoreProduct p) {
+    if (!p.price.isFinite || p.price < 0) {
+      throw ArgumentError('Price must be a positive number.');
+    }
+    return p.copyWith(
+      name: InputSanitizer.text(p.name, maxLength: 160),
+      slug: InputSanitizer.text(p.slug, maxLength: 160),
+      categoryId: InputSanitizer.text(p.categoryId, maxLength: 60),
+      description: InputSanitizer.text(p.description, maxLength: 4000, multiline: true),
+      imageUrl: InputSanitizer.imageUrl(p.imageUrl) ?? '',
+    );
   }
 
   /// Deletes a product by ID.
   Future<bool> deleteProduct(Session session, int id) async {
+    AlnurAdminAuth.requireAdmin(session);
     final product = await StoreProduct.db.findById(session, id);
     if (product == null) return false;
     await StoreProduct.db.deleteRow(session, product);

@@ -6,6 +6,9 @@ import 'package:serverpod_auth_idp_server/providers/email.dart';
 
 import 'src/generated/endpoints.dart';
 import 'src/generated/protocol.dart';
+import 'src/nupe/nupe_listener_service.dart';
+import 'src/security/admin_auth.dart';
+import 'src/security/http_security.dart';
 import 'src/util/cloudflare_r2_config.dart';
 import 'src/util/email_service.dart';
 import 'src/web/routes/app_config_route.dart';
@@ -15,7 +18,29 @@ import 'src/web/routes/root.dart';
 /// The starting point of the Serverpod server.
 void run(List<String> args) async {
   // Initialize Serverpod and connect it with your generated code.
-  final pod = Serverpod(args, Protocol(), Endpoints());
+  // CORS: Serverpod's default is `Access-Control-Allow-Origin: *`. We drop
+  // that default here and let HttpSecurity.apiMiddleware echo back only
+  // trusted origins (see lib/src/security/http_security.dart).
+  final pod = Serverpod(
+    args,
+    Protocol(),
+    Endpoints(),
+    httpResponseHeaders: Headers.build((mh) {
+      mh.accessControlAllowMethods =
+          AccessControlAllowMethodsHeader.methods([Method.post]);
+    }),
+    // Preflight (OPTIONS) is answered by Serverpod before any middleware,
+    // so it stays permissive. The real response only carries an
+    // Access-Control-Allow-Origin for trusted origins, so untrusted sites
+    // can never read API responses (and there are no cookies to abuse).
+    httpOptionsResponseHeaders: Headers.build((mh) {
+      mh.accessControlAllowOrigin =
+          const AccessControlAllowOriginHeader.wildcard();
+      mh.accessControlAllowHeaders = AccessControlAllowHeadersHeader.headers(
+        ['Content-Type', 'Authorization', 'Accept', 'User-Agent', 'X-Requested-With'],
+      );
+    }),
+  );
 
   // Initialize Cloudflare R2 cloud storage (falls back gracefully to database storage if credentials are not yet set)
   CloudflareR2Setup.configure(pod);
@@ -37,6 +62,22 @@ void run(List<String> args) async {
       ),
     ],
   );
+
+  // Recognise Al-Nur admin tokens (scope `alnur.admin`) before the JWT
+  // handler, and skip JWT parsing for Nupe listener tokens (they are checked
+  // by the Nupe routes themselves).
+  final jwtHandler = pod.authenticationHandler;
+  pod.authenticationHandler = (session, token) async {
+    if (AlnurAdminAuth.looksLikeAdminToken(token)) {
+      return AlnurAdminAuth.authenticate(token);
+    }
+    if (NupeListenerService.looksLikeListenerToken(token)) return null;
+    return jwtHandler?.call(session, token);
+  };
+
+  // Security headers + CORS origin allowlist on both servers.
+  pod.server.addMiddleware(HttpSecurity.apiMiddleware);
+  pod.webServer.addMiddleware(HttpSecurity.webMiddleware, '/');
 
   // Setup a default page at the web root.
   // These are used by the default page.

@@ -1,5 +1,6 @@
 import 'package:serverpod/serverpod.dart';
 import '../generated/protocol.dart';
+import '../security/admin_auth.dart';
 
 class CategoryEndpoint extends Endpoint {
   /// Default official Al-Nur collections: Rings, Perfumes, Jewelries, Wedding Rings, Wristwatches, Necklaces, Bangles
@@ -101,6 +102,7 @@ class CategoryEndpoint extends Endpoint {
 
   /// Explicitly reseeds the store categories to the official 5 luxury departments.
   Future<List<StoreCategory>> reseedCategories(Session session) async {
+    AlnurAdminAuth.requireAdmin(session);
     final existing = await StoreCategory.db.find(session);
     for (final cat in existing) {
       await StoreCategory.db.deleteRow(session, cat);
@@ -119,6 +121,7 @@ class CategoryEndpoint extends Endpoint {
     Session session,
     StoreCategory category,
   ) async {
+    AlnurAdminAuth.requireAdmin(session);
     return await StoreCategory.db.insertRow(session, category);
   }
 
@@ -127,11 +130,13 @@ class CategoryEndpoint extends Endpoint {
     Session session,
     StoreCategory category,
   ) async {
+    AlnurAdminAuth.requireAdmin(session);
     return await StoreCategory.db.updateRow(session, category);
   }
 
   /// Deletes a category by ID.
   Future<bool> deleteCategory(Session session, int id) async {
+    AlnurAdminAuth.requireAdmin(session);
     final cat = await StoreCategory.db.findById(session, id);
     if (cat == null) return false;
     await StoreCategory.db.deleteRow(session, cat);

@@ -36,6 +36,10 @@ product:
   - createProduct:
   - updateProduct:
   - deleteProduct:
+adminAuth:
+  - login:
+  - me:
+  - logout:
 storage:
   - isCloudflareConfigured:
   - getDirectUploadDescription:

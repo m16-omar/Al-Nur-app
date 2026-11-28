@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:serverpod/serverpod.dart';
+import 'package:serverpod_auth_idp_server/core.dart' show Argon2HashUtil, Argon2HashParameters;
 
 import '../generated/protocol.dart';
 
@@ -26,7 +26,6 @@ class NupeListenerService {
   /// Minimum gap between presence writes for the same listener.
   static const _presenceWriteGap = Duration(seconds: 60);
 
-  static const _pbkdf2Iterations = 60000;
   static const _tokenPrefix = 'nl1';
 
   static final Random _random = Random.secure();
@@ -65,17 +64,43 @@ class NupeListenerService {
   }
 
   // ---------------------------------------------------------------------------
-  // Password hashing (PBKDF2-HMAC-SHA256)
+  // Password hashing
+  //
+  // New hashes use Argon2id (OWASP minimum: 19 MiB memory, 2 passes, 1 lane)
+  // in PHC format ("$argon2id$..."), computed in a background isolate.
+  // Older PBKDF2-HMAC-SHA256 hashes ("60000$salt$hash") still verify and are
+  // upgraded to Argon2id on the next successful sign-in.
   // ---------------------------------------------------------------------------
 
-  static String hashPassword(String password) {
-    final salt = Uint8List.fromList(
-        List<int>.generate(16, (_) => _random.nextInt(256)));
-    final hash = _pbkdf2(utf8.encode(password), salt, _pbkdf2Iterations, 32);
-    return '$_pbkdf2Iterations\$${base64.encode(salt)}\$${base64.encode(hash)}';
+  static final Argon2HashUtil _argon2 = Argon2HashUtil(
+    hashPepper: 'nupe-listener-v1',
+    hashSaltLength: 16,
+    parameters: Argon2HashParameters(memory: 19456, iterations: 2, lanes: 1),
+  );
+
+  static Future<String> hashPassword(String password) =>
+      _argon2.createHashFromString(secret: password);
+
+  /// True for hashes that should be upgraded to Argon2id.
+  static bool needsRehash(String stored) => !stored.startsWith(r'$argon2');
+
+  static Future<bool> verifyPassword(String password, String stored) async {
+    if (stored.startsWith(r'$argon2')) {
+      return _argon2.validateHashFromString(secret: password, hashString: stored);
+    }
+    return _verifyLegacyPbkdf2(password, stored);
   }
 
-  static bool verifyPassword(String password, String stored) {
+  /// Burns comparable time when an account does not exist, so response time
+  /// does not reveal which usernames/emails are registered.
+  static Future<void> dummyVerify(String password) async {
+    _dummyHash ??= await hashPassword('dummy-password-for-timing');
+    await verifyPassword(password, _dummyHash!);
+  }
+
+  static String? _dummyHash;
+
+  static bool _verifyLegacyPbkdf2(String password, String stored) {
     final parts = stored.split(r'$');
     if (parts.length != 3) return false;
     final iterations = int.tryParse(parts[0]);

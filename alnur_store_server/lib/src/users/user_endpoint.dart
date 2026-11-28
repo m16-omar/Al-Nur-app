@@ -2,6 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:serverpod/serverpod.dart';
 import '../generated/protocol.dart';
+import '../security/admin_auth.dart';
+import '../security/customer_auth.dart';
+import '../security/input_sanitizer.dart';
+import '../security/rate_limiter.dart';
 import '../util/email_service.dart';
 
 /// Endpoint for managing user profiles, account details, and delivery addresses.
@@ -13,6 +17,7 @@ class UserEndpoint extends Endpoint {
     required String email,
   }) async {
     final cleanEmail = email.trim().toLowerCase();
+    await CustomerAuth.requireOwner(session, cleanEmail);
     var profile = await UserAccountInfo.db.findFirstRow(
       session,
       where: (t) => t.userEmail.equals(cleanEmail),
@@ -40,6 +45,15 @@ class UserEndpoint extends Endpoint {
     required UserAccountInfo info,
   }) async {
     final cleanEmail = info.userEmail.trim().toLowerCase();
+    await CustomerAuth.requireOwner(session, cleanEmail);
+    info = info.copyWith(
+      id: null,
+      fullName: InputSanitizer.text(info.fullName, maxLength: 120),
+      phoneNumber: InputSanitizer.phone(info.phoneNumber),
+      avatarUrl: InputSanitizer.imageUrl(info.avatarUrl),
+      bio: InputSanitizer.optionalText(info.bio, maxLength: 500, multiline: true),
+      preferredCurrency: InputSanitizer.optionalText(info.preferredCurrency, maxLength: 8),
+    );
     final existing = await UserAccountInfo.db.findFirstRow(
       session,
       where: (t) => t.userEmail.equals(cleanEmail),
@@ -53,11 +67,11 @@ class UserEndpoint extends Endpoint {
     }
 
     final updated = existing.copyWith(
-      fullName: info.fullName.trim(),
-      phoneNumber: info.phoneNumber?.trim(),
-      avatarUrl: info.avatarUrl?.trim(),
-      preferredCurrency: info.preferredCurrency?.trim() ?? 'NGN',
-      bio: info.bio?.trim(),
+      fullName: info.fullName,
+      phoneNumber: info.phoneNumber,
+      avatarUrl: info.avatarUrl,
+      preferredCurrency: info.preferredCurrency ?? 'NGN',
+      bio: info.bio,
     );
 
     return await UserAccountInfo.db.updateRow(session, updated);
@@ -69,6 +83,7 @@ class UserEndpoint extends Endpoint {
     required String email,
   }) async {
     final cleanEmail = email.trim().toLowerCase();
+    await CustomerAuth.requireOwner(session, cleanEmail);
     final addresses = await UserAddress.db.find(
       session,
       where: (t) => t.userEmail.equals(cleanEmail),
@@ -93,6 +108,19 @@ class UserEndpoint extends Endpoint {
     required UserAddress address,
   }) async {
     final cleanEmail = address.userEmail.trim().toLowerCase();
+    await CustomerAuth.requireOwner(session, cleanEmail);
+
+    // Updating an existing address: it must belong to the same account
+    // (stops one customer overwriting another customer's address by id).
+    if (address.id != null) {
+      final existing = await UserAddress.db.findById(session, address.id!);
+      if (existing == null || existing.userEmail.trim().toLowerCase() != cleanEmail) {
+        throw NotAuthorizedException(
+          reason: AuthenticationFailureReason.insufficientAccess,
+          message: 'Address not found.',
+        );
+      }
+    }
 
     // If marked as default, unset any existing default address
     if (address.isDefault) {
@@ -112,15 +140,18 @@ class UserEndpoint extends Endpoint {
 
     final sanitizedAddress = address.copyWith(
       userEmail: cleanEmail,
-      title: address.title.trim().isNotEmpty ? address.title.trim() : 'Home',
-      recipientName: address.recipientName.trim(),
-      phoneNumber: address.phoneNumber.trim(),
-      streetAddress: address.streetAddress.trim(),
-      city: address.city.trim(),
-      state: address.state.trim(),
-      country: address.country?.trim() ?? 'Nigeria',
-      postalCode: address.postalCode?.trim(),
-      additionalInstructions: address.additionalInstructions?.trim(),
+      title: InputSanitizer.text(address.title, maxLength: 60).isNotEmpty
+          ? InputSanitizer.text(address.title, maxLength: 60)
+          : 'Home',
+      recipientName: InputSanitizer.text(address.recipientName, maxLength: 120),
+      phoneNumber: InputSanitizer.phone(address.phoneNumber),
+      streetAddress: InputSanitizer.text(address.streetAddress, maxLength: 300),
+      city: InputSanitizer.text(address.city, maxLength: 80),
+      state: InputSanitizer.text(address.state, maxLength: 80),
+      country: InputSanitizer.optionalText(address.country, maxLength: 80) ?? 'Nigeria',
+      postalCode: InputSanitizer.optionalText(address.postalCode, maxLength: 20),
+      additionalInstructions: InputSanitizer.optionalText(
+          address.additionalInstructions, maxLength: 500, multiline: true),
     );
 
     if (sanitizedAddress.id != null) {
@@ -137,6 +168,7 @@ class UserEndpoint extends Endpoint {
     required String email,
   }) async {
     final cleanEmail = email.trim().toLowerCase();
+    await CustomerAuth.requireOwner(session, cleanEmail);
     final address = await UserAddress.db.findById(session, id);
     if (address == null || address.userEmail.toLowerCase() != cleanEmail) {
       return false;
@@ -165,6 +197,7 @@ class UserEndpoint extends Endpoint {
     required String email,
   }) async {
     final cleanEmail = email.trim().toLowerCase();
+    await CustomerAuth.requireOwner(session, cleanEmail);
     final address = await UserAddress.db.findById(session, id);
     if (address == null || address.userEmail.toLowerCase() != cleanEmail) {
       return false;
@@ -180,10 +213,18 @@ class UserEndpoint extends Endpoint {
     required String email,
     String? name,
   }) async {
+    final cleanEmail = email.trim().toLowerCase();
+    // Only the signed-in owner, and at most 3 per hour, so this can't be used
+    // to spam arbitrary inboxes.
+    if (!await CustomerAuth.canAccess(session, cleanEmail)) return false;
+    if (!RateLimiter.hit('welcome-email|$cleanEmail',
+        max: 3, window: const Duration(hours: 1))) {
+      return false;
+    }
     return await EmailService.sendWelcomeEmail(
       session,
-      email: email.trim().toLowerCase(),
-      name: name,
+      email: cleanEmail,
+      name: InputSanitizer.optionalText(name, maxLength: 80),
     );
   }
 
@@ -194,17 +235,23 @@ class UserEndpoint extends Endpoint {
     required String fullName,
     String? phoneNumber,
   }) async {
-    final cleanEmail = email.trim().toLowerCase();
-    final cleanName = fullName.trim().isNotEmpty
-        ? fullName.trim()
-        : (cleanEmail.contains('@') ? cleanEmail.split('@')[0] : 'Valued Customer');
-    final cleanPhone = phoneNumber?.trim();
+    RateLimiter.enforce(session, 'user.registerCustomer',
+        max: 10, window: const Duration(hours: 1));
+    final cleanEmail = InputSanitizer.email(email);
+    if (cleanEmail.isEmpty) throw ArgumentError('A valid email is required.');
+    final safeName = InputSanitizer.text(fullName, maxLength: 120);
+    final cleanName = safeName.isNotEmpty
+        ? safeName
+        : cleanEmail.split('@')[0];
+    final cleanPhone =
+        phoneNumber == null ? null : InputSanitizer.phone(phoneNumber);
 
     var profile = await UserAccountInfo.db.findFirstRow(
       session,
       where: (t) => t.userEmail.equals(cleanEmail),
     );
 
+    var isNew = false;
     if (profile == null) {
       profile = UserAccountInfo(
         userEmail: cleanEmail,
@@ -213,7 +260,10 @@ class UserEndpoint extends Endpoint {
         preferredCurrency: 'NGN',
       );
       profile = await UserAccountInfo.db.insertRow(session, profile);
+      isNew = true;
     } else {
+      // Changing an existing profile requires being signed in as its owner.
+      await CustomerAuth.requireOwner(session, cleanEmail);
       profile = profile.copyWith(
         fullName: cleanName,
         phoneNumber: cleanPhone ?? profile.phoneNumber,
@@ -221,22 +271,26 @@ class UserEndpoint extends Endpoint {
       profile = await UserAccountInfo.db.updateRow(session, profile);
     }
 
-    // Automatically dispatch luxury welcome email asynchronously
-    try {
-      unawaited(
-        EmailService.sendWelcomeEmail(
-          session,
-          email: cleanEmail,
-          name: cleanName,
-        ),
-      );
-    } catch (_) {}
+    // Welcome email only for a newly created profile (not on every call).
+    if (isNew) {
+      try {
+        unawaited(
+          EmailService.sendWelcomeEmail(
+            session,
+            email: cleanEmail,
+            name: cleanName,
+          ),
+        );
+      } catch (_) {}
+    }
 
     return profile;
   }
 
   /// Retrieves live registered customers and buyers directly from PostgreSQL database.
   Future<String> getAdminCustomers(Session session) async {
+    AlnurAdminAuth.requireAdmin(session);
+    final adminEmail = AlnurAdminAuth.credentials()?.email;
     // 1. Fetch all user accounts
     final accounts = await UserAccountInfo.db.find(
       session,
@@ -357,9 +411,7 @@ class UserEndpoint extends Endpoint {
 
       // Determine role
       String role = 'Customer';
-      if (email == 'uabdullahi676@gmail.com' ||
-          email == 'amina@alnur.store' ||
-          email.contains('admin')) {
+      if (adminEmail != null && email == adminEmail) {
         role = 'Super Administrator';
       } else if (lifetimeSpend >= 200000 || ordersCount >= 5) {
         role = 'VIP Gold Member';

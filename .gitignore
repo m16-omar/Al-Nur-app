@@ -26,3 +26,25 @@ build/
 # Serverpod credentials
 **/config/passwords.yaml
 **/config/firebase_service_account_key.json
+
+# Secrets & local environment files (never commit)
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+*.pem
+*.key
+*.p12
+*.keystore
+*.jks
+**/config/google_client_secret.json
+**/android/key.properties
+
+# Backups / dumps
+*.bak
+*.backup
+*.sql.gz
+*.dump
+*~

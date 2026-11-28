@@ -6,7 +6,8 @@ class SelarPaymentService {
   static const String _prefKeySelarApiKey = 'alnur_selar_api_key';
 
   static const String defaultStoreUrl = 'https://selar.com/h3wa923367';
-  static const String defaultApiKey = 'sat_873skzy08l1889v50814bs77093r4818j38f8';
+  /// Never ship API keys in the app: Selar keys belong on the server only.
+  static const String defaultApiKey = '';
 
   /// Retrieves the merchant Selar checkout/store URL, falling back to default
   static Future<String> getStoreUrl() async {

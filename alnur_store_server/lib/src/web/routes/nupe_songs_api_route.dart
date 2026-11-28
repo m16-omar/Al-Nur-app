@@ -6,6 +6,8 @@ import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
 import '../../nupe/nupe_listener_service.dart';
+import '../../security/input_sanitizer.dart';
+import '../../security/rate_limiter.dart';
 
 /// Dedicated Nupe Songs Studio admin account.
 ///
@@ -374,6 +376,32 @@ class NupeSongsApiRoute extends Route {
     );
   }
 
+  Response _tooMany(String key) => Response(
+        429,
+        headers: _corsHeaders().transform((mh) {
+          mh['Retry-After'] = ['${RateLimiter.retryAfterSeconds(key)}'];
+        }),
+        body: Body.fromString(jsonEncode({
+          'error': 'Too many requests. Please wait a moment and try again.',
+          'detail': 'Too many requests. Please wait a moment and try again.',
+        })),
+      );
+
+  /// Keeps only http(s) URLs in catalog media fields (blocks javascript:).
+  static void _cleanUrls(Map<String, dynamic> data) {
+    for (final k in const ['audio_file', 'stream_url', 'artwork', 'artwork_url', 'image', 'cover', 'image_url']) {
+      if (data.containsKey(k) && data[k] != null) {
+        final v = data[k];
+        final clean = v is String ? InputSanitizer.url(v) : null;
+        if (clean == null) {
+          data.remove(k);
+        } else {
+          data[k] = clean;
+        }
+      }
+    }
+  }
+
   Response _authError(String message, int statusCode) =>
       _jsonResponse({'detail': message, 'error': message}, statusCode: statusCode);
 
@@ -410,6 +438,14 @@ class NupeSongsApiRoute extends Route {
             statusCode: 400);
       }
 
+      final ip = clientIpOf(request);
+      final ipKey = 'studio-login-ip|$ip';
+      final emailKey = 'studio-login-email|${email.trim().toLowerCase()}';
+      if (RateLimiter.isBlocked(ipKey, max: 10) ||
+          RateLimiter.isBlocked(emailKey, max: 5)) {
+        return _tooMany(ipKey);
+      }
+
       if (_StudioAdminAuth.credentials(session) == null) {
         return _jsonResponse(
           {'error': 'Nupe Studio admin account is not configured on this server.'},
@@ -419,8 +455,11 @@ class NupeSongsApiRoute extends Route {
 
       final studioSession =
           _StudioAdminAuth.login(session, email, password, remember: remember);
+      if (studioSession != null) RateLimiter.reset(emailKey);
       if (studioSession == null) {
-        session.log('Failed Nupe Studio login attempt for "$email"',
+        RateLimiter.hit(ipKey, max: 1 << 30, window: const Duration(minutes: 15));
+        RateLimiter.hit(emailKey, max: 1 << 30, window: const Duration(minutes: 15));
+        session.log('Failed Nupe Studio login attempt from $ip',
             level: LogLevel.warning);
         return _jsonResponse(
           {'error': 'Invalid studio email or password.'},
@@ -552,7 +591,7 @@ class NupeSongsApiRoute extends Route {
         return _jsonResponse({'error': 'User not found.'}, statusCode: 404);
       }
       final temp = _temporaryPassword();
-      listener.passwordHash = NupeListenerService.hashPassword(temp);
+      listener.passwordHash = await NupeListenerService.hashPassword(temp);
       await NupeListener.db.updateRow(session, listener,
           columns: (t) => [t.passwordHash]);
       return _jsonResponse({'id': listener.id, 'temporary_password': temp});
@@ -657,6 +696,12 @@ class NupeSongsApiRoute extends Route {
         NupeListenerService.listenerIdFromRequest(session, request);
     final playOrDownload = RegExp(r'^/api/songs/(\d+)/(play|download)$')
         .firstMatch(normalizedPath);
+    if (playOrDownload != null &&
+        request.method == Method.post &&
+        !RateLimiter.hit('play|${clientIpOf(request)}',
+            max: 120, window: const Duration(minutes: 10))) {
+      return _tooMany('play|${clientIpOf(request)}');
+    }
     if (listenerId != null) {
       String? activity;
       if (playOrDownload != null && request.method == Method.post) {
@@ -677,6 +722,14 @@ class NupeSongsApiRoute extends Route {
     if (normalizedPath == '/api/reports' && request.method == Method.post) {
       if (listenerId == null) {
         return _authError('Sign in to report content.', 401);
+      }
+      final reporter = await NupeListener.db.findById(session, listenerId);
+      if (reporter == null || reporter.isDisabled) {
+        return _authError('This account has been disabled.', 403);
+      }
+      if (!RateLimiter.hit('report|$listenerId',
+          max: 20, window: const Duration(hours: 1))) {
+        return _tooMany('report|$listenerId');
       }
       Map<String, dynamic> data;
       try {
@@ -745,6 +798,7 @@ class NupeSongsApiRoute extends Route {
       try {
         final bodyText = await request.readAsString();
         final data = jsonDecode(bodyText) as Map<String, dynamic>;
+        _cleanUrls(data);
         final nextId = (_songs.map((s) => s['id'] as int).fold(0, (a, b) => a > b ? a : b)) + 1;
         
         final newSong = {
@@ -777,7 +831,7 @@ class NupeSongsApiRoute extends Route {
         _downloadCounts[nextId.toString()] = 0;
         return _jsonResponse(_songOut(newSong), statusCode: 201);
       } catch (e) {
-        return _jsonResponse({'error': e.toString()}, statusCode: 400);
+        return _jsonResponse({'error': 'Invalid request body.'}, statusCode: 400);
       }
     }
 
@@ -791,6 +845,7 @@ class NupeSongsApiRoute extends Route {
       try {
         final bodyText = await request.readAsString();
         final data = jsonDecode(bodyText) as Map<String, dynamic>;
+        _cleanUrls(data);
         final existing = _songs[index];
 
         final updated = {
@@ -827,7 +882,7 @@ class NupeSongsApiRoute extends Route {
         _songs[index] = updated;
         return _jsonResponse(_songOut(updated));
       } catch (e) {
-        return _jsonResponse({'error': e.toString()}, statusCode: 400);
+        return _jsonResponse({'error': 'Invalid request body.'}, statusCode: 400);
       }
     }
 
@@ -874,6 +929,7 @@ class NupeSongsApiRoute extends Route {
         try {
           final bodyText = await request.readAsString();
           final data = jsonDecode(bodyText) as Map<String, dynamic>;
+          _cleanUrls(data);
           final nextId = (_albums.map((a) => a['id'] as int).fold(0, (a, b) => a > b ? a : b)) + 1;
           final newAlbum = {
             'id': nextId,
@@ -889,7 +945,7 @@ class NupeSongsApiRoute extends Route {
           _albums.add(newAlbum);
           return _jsonResponse(newAlbum, statusCode: 201);
         } catch (e) {
-          return _jsonResponse({'error': e.toString()}, statusCode: 400);
+          return _jsonResponse({'error': 'Invalid request body.'}, statusCode: 400);
         }
       }
     }
@@ -903,6 +959,7 @@ class NupeSongsApiRoute extends Route {
       if (index == -1) return _jsonResponse({'error': 'Album not found'}, statusCode: 404);
       try {
         final data = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+        _cleanUrls(data);
         final existing = _albums[index];
         final oldName = existing['name'];
         final newName = (data['name'] as String?)?.trim();
@@ -940,7 +997,7 @@ class NupeSongsApiRoute extends Route {
         }
         return _jsonResponse(updated);
       } catch (e) {
-        return _jsonResponse({'error': e.toString()}, statusCode: 400);
+        return _jsonResponse({'error': 'Invalid request body.'}, statusCode: 400);
       }
     }
 
@@ -958,6 +1015,7 @@ class NupeSongsApiRoute extends Route {
         try {
           final bodyText = await request.readAsString();
           final data = jsonDecode(bodyText) as Map<String, dynamic>;
+          _cleanUrls(data);
           final nextId = (_artists.map((a) => a['id'] as int).fold(0, (a, b) => a > b ? a : b)) + 1;
           final newArtist = {
             'id': nextId,
@@ -971,7 +1029,7 @@ class NupeSongsApiRoute extends Route {
           _artists.add(newArtist);
           return _jsonResponse(_artistOut(newArtist), statusCode: 201);
         } catch (e) {
-          return _jsonResponse({'error': e.toString()}, statusCode: 400);
+          return _jsonResponse({'error': 'Invalid request body.'}, statusCode: 400);
         }
       }
     }
@@ -985,6 +1043,7 @@ class NupeSongsApiRoute extends Route {
       if (index == -1) return _jsonResponse({'error': 'Artist not found'}, statusCode: 404);
       try {
         final data = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+        _cleanUrls(data);
         final existing = _artists[index];
         final oldName = existing['name'];
         final newName = (data['name'] as String?)?.trim();
@@ -1018,7 +1077,7 @@ class NupeSongsApiRoute extends Route {
         }
         return _jsonResponse(_artistOut(updated));
       } catch (e) {
-        return _jsonResponse({'error': e.toString()}, statusCode: 400);
+        return _jsonResponse({'error': 'Invalid request body.'}, statusCode: 400);
       }
     }
 
@@ -1036,6 +1095,7 @@ class NupeSongsApiRoute extends Route {
         try {
           final bodyText = await request.readAsString();
           final data = jsonDecode(bodyText) as Map<String, dynamic>;
+          _cleanUrls(data);
           final nextId = (_genres.map((g) => g['id'] as int).fold(0, (a, b) => a > b ? a : b)) + 1;
           final newGenre = {
             'id': nextId,
@@ -1047,7 +1107,7 @@ class NupeSongsApiRoute extends Route {
           _genres.add(newGenre);
           return _jsonResponse(_genreOut(newGenre), statusCode: 201);
         } catch (e) {
-          return _jsonResponse({'error': e.toString()}, statusCode: 400);
+          return _jsonResponse({'error': 'Invalid request body.'}, statusCode: 400);
         }
       }
     }
@@ -1060,6 +1120,7 @@ class NupeSongsApiRoute extends Route {
       if (index == -1) return _jsonResponse({'error': 'Genre not found'}, statusCode: 404);
       try {
         final data = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+        _cleanUrls(data);
         final existing = _genres[index];
         final oldName = existing['name'];
         final newName = (data['name'] as String?)?.trim();
@@ -1084,7 +1145,7 @@ class NupeSongsApiRoute extends Route {
         }
         return _jsonResponse(_genreOut(updated));
       } catch (e) {
-        return _jsonResponse({'error': e.toString()}, statusCode: 400);
+        return _jsonResponse({'error': 'Invalid request body.'}, statusCode: 400);
       }
     }
     if (genreIdMatch != null && request.method == Method.delete) {
@@ -1107,6 +1168,7 @@ class NupeSongsApiRoute extends Route {
       if (request.method == Method.post) {
         try {
           final data = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+          _cleanUrls(data);
           final name = (data['name'] as String?)?.trim() ?? '';
           if (name.isEmpty) {
             return _jsonResponse({'error': 'Playlist name is required.'}, statusCode: 400);
@@ -1128,7 +1190,7 @@ class NupeSongsApiRoute extends Route {
           _playlists.add(playlist);
           return _jsonResponse(_playlistOut(playlist), statusCode: 201);
         } catch (e) {
-          return _jsonResponse({'error': e.toString()}, statusCode: 400);
+          return _jsonResponse({'error': 'Invalid request body.'}, statusCode: 400);
         }
       }
     }
@@ -1141,6 +1203,7 @@ class NupeSongsApiRoute extends Route {
       if (index == -1) return _jsonResponse({'error': 'Playlist not found'}, statusCode: 404);
       try {
         final data = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+        _cleanUrls(data);
         final name = (data['name'] as String?)?.trim();
         if (data.containsKey('name') && (name == null || name.isEmpty)) {
           return _jsonResponse({'error': 'Playlist name is required.'}, statusCode: 400);
@@ -1158,7 +1221,7 @@ class NupeSongsApiRoute extends Route {
         _playlists[index] = updated;
         return _jsonResponse(_playlistOut(updated));
       } catch (e) {
-        return _jsonResponse({'error': e.toString()}, statusCode: 400);
+        return _jsonResponse({'error': 'Invalid request body.'}, statusCode: 400);
       }
     }
     if (playlistIdMatch != null && request.method == Method.delete) {
@@ -1200,15 +1263,33 @@ class NupeSongsApiRoute extends Route {
       if (identifier.isEmpty || password.isEmpty) {
         return _authError('Username and password are required.', 400);
       }
+      final loginIpKey = 'listener-login-ip|${clientIpOf(request)}';
+      final loginIdKey = 'listener-login-id|$identifier';
+      if (RateLimiter.isBlocked(loginIpKey, max: 30) ||
+          RateLimiter.isBlocked(loginIdKey, max: 10)) {
+        return _tooMany(loginIdKey);
+      }
       final listener = await NupeListener.db.findFirstRow(
         session,
         where: (t) => identifier.contains('@')
             ? t.email.equals(identifier)
             : t.username.equals(identifier),
       );
-      if (listener == null ||
-          !NupeListenerService.verifyPassword(password, listener.passwordHash)) {
+      var passwordOk = false;
+      if (listener == null) {
+        await NupeListenerService.dummyVerify(password);
+      } else {
+        passwordOk = await NupeListenerService.verifyPassword(password, listener.passwordHash);
+      }
+      if (listener == null || !passwordOk) {
+        RateLimiter.hit(loginIpKey, max: 1 << 30, window: const Duration(minutes: 15));
+        RateLimiter.hit(loginIdKey, max: 1 << 30, window: const Duration(minutes: 15));
         return _authError('No active account found with the given credentials.', 401);
+      }
+      RateLimiter.reset(loginIdKey);
+      if (NupeListenerService.needsRehash(listener.passwordHash)) {
+        listener.passwordHash = await NupeListenerService.hashPassword(password);
+        await NupeListener.db.updateRow(session, listener, columns: (t) => [t.passwordHash]);
       }
       if (listener.isDisabled) {
         return _authError('This account has been disabled.', 403);
@@ -1227,6 +1308,10 @@ class NupeSongsApiRoute extends Route {
 
     // 9. POST /api/auth/register  {username, email, password, first_name?, last_name?}
     if (normalizedPath == '/api/auth/register' && request.method == Method.post) {
+      final regKey = 'listener-register|${clientIpOf(request)}';
+      if (!RateLimiter.hit(regKey, max: 10, window: const Duration(hours: 1))) {
+        return _tooMany(regKey);
+      }
       Map<String, dynamic> data;
       try {
         data = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
@@ -1276,9 +1361,9 @@ class NupeSongsApiRoute extends Route {
           NupeListener(
             username: username,
             email: email,
-            firstName: (firstName?.isEmpty ?? true) ? null : firstName,
-            lastName: (lastName?.isEmpty ?? true) ? null : lastName,
-            passwordHash: NupeListenerService.hashPassword(password),
+            firstName: InputSanitizer.optionalText(firstName, maxLength: 60),
+            lastName: InputSanitizer.optionalText(lastName, maxLength: 60),
+            passwordHash: await NupeListenerService.hashPassword(password),
             createdAt: now,
             lastSeenAt: now,
             lastActivity: 'Created account',
@@ -1313,6 +1398,10 @@ class NupeSongsApiRoute extends Route {
 
     // 11. POST /api/auth/token/refresh  {refresh}
     if (normalizedPath == '/api/auth/token/refresh' && request.method == Method.post) {
+      final refreshKey = 'listener-refresh|${clientIpOf(request)}';
+      if (!RateLimiter.hit(refreshKey, max: 60, window: const Duration(minutes: 10))) {
+        return _tooMany(refreshKey);
+      }
       String refresh = '';
       try {
         final data = jsonDecode(await request.readAsString()) as Map<String, dynamic>;

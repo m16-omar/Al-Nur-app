@@ -6,7 +6,9 @@ class MonnifyPaymentService {
   static const String _prefKeyApiKey = 'alnur_monnify_api_key';
 
   static const String defaultContractCode = '6355760337';
-  static const String defaultApiKey = 'MK_TEST_F0NB310FSJ';
+  /// Monnify credentials live on the server (Serverpod passwords); the app
+  /// never needs them.
+  static const String defaultApiKey = '';
 
   /// Retrieves the active Monnify contract code
   static Future<String> getContractCode() async {
